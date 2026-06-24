@@ -2,579 +2,459 @@
 
 @section('title', 'Integrasi SIAKAD')
 @section('page_title', 'Integrasi SIAKAD')
-@section('page_subtitle', 'Pantau data camaba yang siap disinkronkan ke sistem akademik.')
+@section('page_subtitle', 'Monitoring sinkronisasi data camaba dari PMB ke SIAKAD.')
 
 @section('content')
 <div class="space-y-8">
 
-    {{-- Header --}}
-    <div class="overflow-hidden rounded-3xl bg-polmind-blue shadow-xl shadow-blue-900/20">
-        <div class="grid gap-6 p-6 text-white lg:grid-cols-3 lg:p-8">
-            <div class="lg:col-span-2">
-                <p class="text-sm font-bold uppercase tracking-wide text-blue-100">
-                    Integrasi PMB → SIAKAD
-                </p>
-
-                <h2 class="mt-3 text-3xl font-black sm:text-4xl">
-                    Sinkronisasi Data Mahasiswa Baru
-                </h2>
-
-                <p class="mt-4 max-w-2xl text-sm leading-6 text-blue-100">
-                    Data camaba yang sudah daftar ulang valid akan masuk ke antrian siap sinkron.
-                    Pada tahap integrasi, SIAKAD akan mengambil data dari PMB dan mengembalikan NIM setelah data berhasil dibuat.
-                </p>
-
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-blue-100">
-                        Status: Mode Persiapan
-                    </span>
-                    <span class="rounded-full bg-polmind-yellow px-4 py-2 text-xs font-black text-polmind-blue-dark">
-                        Target Integrasi Juli 2026
-                    </span>
-                </div>
-            </div>
-
-            <div class="rounded-3xl bg-white/10 p-6">
-                <p class="text-sm font-bold text-blue-100">Siap Sinkron</p>
-                <p class="mt-3 text-5xl font-black">12</p>
-
-                <div class="mt-5 h-3 overflow-hidden rounded-full bg-white/20">
-                    <div class="h-full w-[43%] rounded-full bg-polmind-yellow"></div>
-                </div>
-
-                <p class="mt-4 text-xs leading-5 text-blue-100">
-                    Dari 28 camaba yang sudah dinyatakan diterima.
-                </p>
-            </div>
+    @if(session('success'))
+        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+            {{ session('success') }}
         </div>
-    </div>
+    @endif
+
+    @if($errors->any())
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+            {{ $errors->first() }}
+        </div>
+    @endif
 
     {{-- Summary Cards --}}
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['label' => 'Siap Sinkron', 'value' => '12', 'desc' => 'Daftar ulang valid', 'class' => 'bg-blue-100 text-polmind-blue'],
-            ['label' => 'Berhasil Sinkron', 'value' => '0', 'desc' => 'Sudah masuk SIAKAD', 'class' => 'bg-green-100 text-green-700'],
-            ['label' => 'Gagal Sinkron', 'value' => '0', 'desc' => 'Perlu pengecekan ulang', 'class' => 'bg-red-100 text-red-700'],
-            ['label' => 'Menunggu NIM', 'value' => '12', 'desc' => 'NIM dibuat oleh SIAKAD', 'class' => 'bg-yellow-100 text-yellow-700'],
+            [
+                'label' => 'Siap Sinkron',
+                'value' => $readySyncApplicants,
+                'desc' => 'Daftar ulang valid',
+                'class' => 'text-purple-700',
+            ],
+            [
+                'label' => 'Proses Sinkron',
+                'value' => $processingApplicants,
+                'desc' => 'Sedang diproses',
+                'class' => 'text-yellow-700',
+            ],
+            [
+                'label' => 'Sudah Sinkron',
+                'value' => $syncedApplicants,
+                'desc' => 'NIM sudah diterima',
+                'class' => 'text-green-700',
+            ],
+            [
+                'label' => 'Gagal Sinkron',
+                'value' => $failedApplicants,
+                'desc' => 'Perlu dicek ulang',
+                'class' => 'text-red-700',
+            ],
         ] as $card)
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                        <p class="mt-3 text-4xl font-black text-polmind-blue">{{ $card['value'] }}</p>
-                        <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
-                    </div>
-
-                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $card['class'] }}">
-                        API
-                    </span>
-                </div>
+                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
+                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
     </div>
 
-    <div class="grid gap-8 xl:grid-cols-3">
+    {{-- Integration Flow --}}
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="text-xl font-black text-polmind-blue">Flow Integrasi PMB → SIAKAD</h2>
 
-        {{-- Main Content --}}
-        <div class="space-y-8 xl:col-span-2">
-
-            {{-- Integration Flow --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
-                        Alur Integrasi Data
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Flow sementara yang akan digunakan untuk integrasi PMB dengan SIAKAD.
-                    </p>
-                </div>
-
-                <div class="mt-6 grid gap-5 md:grid-cols-4">
-                    @foreach([
-                        ['title' => 'DU Valid', 'desc' => 'Camaba sudah daftar ulang valid.', 'icon' => '✅'],
-                        ['title' => 'Siap Sinkron', 'desc' => 'Data masuk antrian sinkron.', 'icon' => '📦'],
-                        ['title' => 'SIAKAD Pull', 'desc' => 'SIAKAD mengambil data PMB.', 'icon' => '🔄'],
-                        ['title' => 'NIM Dibuat', 'desc' => 'SIAKAD mengembalikan NIM.', 'icon' => '🎓'],
-                    ] as $index => $flow)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                            <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">
-                                {{ $flow['icon'] }}
-                            </div>
-
-                            <p class="mt-4 text-xs font-black text-polmind-blue">
-                                {{ $index + 1 }}. {{ $flow['title'] }}
-                            </p>
-
-                            <p class="mt-2 text-xs leading-5 text-slate-600">
-                                {{ $flow['desc'] }}
-                            </p>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
-            {{-- Filter --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
-                    <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
-                            Filter Data Sinkron
-                        </h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Cari data berdasarkan nama, nomor pendaftaran, prodi, status sinkron, atau status NIM.
-                        </p>
-                    </div>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Export Data Siap Sinkron',
-                                text: 'Export data siap sinkron akan dihubungkan setelah backend aktif.',
-                                icon: 'info',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
-                        Export
-                    </button>
-                </div>
-
-                <form action="#" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-                    <div class="xl:col-span-2">
-                        <label class="text-sm font-bold text-slate-700">Pencarian</label>
-                        <input type="text"
-                               name="keyword"
-                               placeholder="Nama / no. pendaftaran / NISN / NIM"
-                               class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                    </div>
-
-                    <div>
-                        <label class="text-sm font-bold text-slate-700">Program Studi</label>
-                        <select name="study_program"
-                                class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                            <option value="">Semua Prodi</option>
-                            <option>TRPL</option>
-                            <option>Bisnis Digital</option>
-                            <option>TRM</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-sm font-bold text-slate-700">Status Sinkron</label>
-                        <select name="sync_status"
-                                class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                            <option value="">Semua Status</option>
-                            <option>Belum Siap</option>
-                            <option>Siap Sinkron</option>
-                            <option>Proses Sinkron</option>
-                            <option>Berhasil Sinkron</option>
-                            <option>Gagal Sinkron</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label class="text-sm font-bold text-slate-700">Status NIM</label>
-                        <select name="nim_status"
-                                class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                            <option value="">Semua Status</option>
-                            <option>Belum Ada NIM</option>
-                            <option>Sudah Ada NIM</option>
-                        </select>
-                    </div>
-
-                    <div class="flex items-end gap-3 xl:col-span-5">
-                        <button type="submit"
-                                class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
-                            Terapkan Filter
-                        </button>
-
-                        <a href="{{ url('/admin/integrations') }}"
-                           class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                            Reset
-                        </a>
-                    </div>
-                </form>
-            </div>
-
-            {{-- Sync Queue --}}
-            <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
-                    <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
-                            Antrian Sinkronisasi
-                        </h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Data camaba yang sudah daftar ulang valid dan siap masuk ke SIAKAD.
-                        </p>
-                    </div>
-
-                    <span class="rounded-full bg-blue-100 px-4 py-2 text-xs font-black text-polmind-blue">
-                        12 Siap Sinkron
+        <div class="mt-6 grid gap-4 md:grid-cols-4">
+            @foreach([
+                ['step' => '01', 'title' => 'Daftar Ulang Valid', 'desc' => 'Camaba sudah diterima dan pembayaran DU valid.'],
+                ['step' => '02', 'title' => 'Siap Sinkron', 'desc' => 'Status sync_status menjadi siap_sinkron.'],
+                ['step' => '03', 'title' => 'SIAKAD Proses', 'desc' => 'Data camaba ditarik/dikirim ke SIAKAD.'],
+                ['step' => '04', 'title' => 'NIM Diterima', 'desc' => 'SIAKAD mengembalikan NIM ke PMB.'],
+            ] as $flow)
+                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    <span class="rounded-full bg-polmind-blue px-3 py-1 text-xs font-black text-white">
+                        {{ $flow['step'] }}
                     </span>
+                    <h3 class="mt-4 font-black text-slate-900">{{ $flow['title'] }}</h3>
+                    <p class="mt-2 text-xs leading-5 text-slate-500">{{ $flow['desc'] }}</p>
                 </div>
+            @endforeach
+        </div>
+    </div>
 
-                @php
-                    $syncData = [
-                        [
-                            'registration' => 'PMB20260002',
-                            'name' => 'Siti Aminah',
-                            'program' => 'Bisnis Digital',
-                            'class' => 'Reguler A',
-                            'du_status' => 'Daftar Ulang Valid',
-                            'sync_status' => 'Siap Sinkron',
-                            'sync_key' => 'ready',
-                            'nim' => '-',
-                            'updated_at' => '24 Juni 2026 08:30',
-                        ],
-                        [
-                            'registration' => 'PMB20260004',
-                            'name' => 'Dewi Lestari',
-                            'program' => 'TRPL',
-                            'class' => 'Reguler A',
-                            'du_status' => 'Daftar Ulang Valid',
-                            'sync_status' => 'Siap Sinkron',
-                            'sync_key' => 'ready',
-                            'nim' => '-',
-                            'updated_at' => '24 Juni 2026 09:15',
-                        ],
-                        [
-                            'registration' => 'PMB20260006',
-                            'name' => 'Fajar Nugraha',
-                            'program' => 'TRM',
-                            'class' => 'Reguler B',
-                            'du_status' => 'Daftar Ulang Valid',
-                            'sync_status' => 'Proses Sinkron',
-                            'sync_key' => 'process',
-                            'nim' => '-',
-                            'updated_at' => '24 Juni 2026 10:02',
-                        ],
-                        [
-                            'registration' => 'PMB20260007',
-                            'name' => 'Nabila Putri',
-                            'program' => 'TRPL',
-                            'class' => 'Reguler A',
-                            'du_status' => 'Daftar Ulang Valid',
-                            'sync_status' => 'Berhasil Sinkron',
-                            'sync_key' => 'success',
-                            'nim' => '26010001',
-                            'updated_at' => '24 Juni 2026 10:45',
-                        ],
-                        [
-                            'registration' => 'PMB20260008',
-                            'name' => 'Raka Maulana',
-                            'program' => 'Bisnis Digital',
-                            'class' => 'Reguler B',
-                            'du_status' => 'Daftar Ulang Valid',
-                            'sync_status' => 'Gagal Sinkron',
-                            'sync_key' => 'failed',
-                            'nim' => '-',
-                            'updated_at' => '24 Juni 2026 11:20',
-                        ],
-                    ];
-
-                    $badgeClasses = [
-                        'ready' => 'bg-blue-100 text-polmind-blue',
-                        'process' => 'bg-yellow-100 text-yellow-700',
-                        'success' => 'bg-green-100 text-green-700',
-                        'failed' => 'bg-red-100 text-red-700',
-                    ];
-                @endphp
-
-                <div class="overflow-x-auto">
-                    <table class="w-full min-w-[1100px] text-left text-sm">
-                        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                            <tr>
-                                <th class="px-6 py-4">Camaba</th>
-                                <th class="px-6 py-4">Prodi</th>
-                                <th class="px-6 py-4">Kelas</th>
-                                <th class="px-6 py-4">Status DU</th>
-                                <th class="px-6 py-4">Status Sinkron</th>
-                                <th class="px-6 py-4">NIM</th>
-                                <th class="px-6 py-4">Update</th>
-                                <th class="px-6 py-4 text-right">Aksi</th>
-                            </tr>
-                        </thead>
-
-                        <tbody class="divide-y divide-slate-200 bg-white">
-                            @foreach($syncData as $item)
-                                <tr class="transition hover:bg-slate-50">
-                                    <td class="px-6 py-5">
-                                        <div class="flex items-center gap-3">
-                                            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">
-                                                {{ collect(explode(' ', $item['name']))->map(fn($n) => substr($n, 0, 1))->take(2)->implode('') }}
-                                            </div>
-
-                                            <div>
-                                                <p class="font-bold text-slate-900">{{ $item['name'] }}</p>
-                                                <p class="mt-1 text-xs text-slate-500">{{ $item['registration'] }}</p>
-                                            </div>
-                                        </div>
-                                    </td>
-
-                                    <td class="px-6 py-5">
-                                        <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
-                                            {{ $item['program'] }}
-                                        </span>
-                                    </td>
-
-                                    <td class="px-6 py-5 font-semibold text-slate-700">
-                                        {{ $item['class'] }}
-                                    </td>
-
-                                    <td class="px-6 py-5">
-                                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
-                                            {{ $item['du_status'] }}
-                                        </span>
-                                    </td>
-
-                                    <td class="px-6 py-5">
-                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClasses[$item['sync_key']] }}">
-                                            {{ $item['sync_status'] }}
-                                        </span>
-                                    </td>
-
-                                    <td class="px-6 py-5">
-                                        @if($item['nim'] !== '-')
-                                            <span class="font-black text-polmind-blue">{{ $item['nim'] }}</span>
-                                        @else
-                                            <span class="text-slate-500">Belum ada</span>
-                                        @endif
-                                    </td>
-
-                                    <td class="px-6 py-5 text-slate-600">
-                                        {{ $item['updated_at'] }}
-                                    </td>
-
-                                    <td class="px-6 py-5 text-right">
-                                        <div class="flex justify-end gap-2">
-                                            <a href="{{ url('/admin/applicants/' . $item['registration']) }}"
-                                               class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                                                Detail
-                                            </a>
-
-                                            <button type="button"
-                                                    onclick="Swal.fire({
-                                                        title: 'Sinkron Ulang?',
-                                                        text: 'Data akan dikirim ulang ke antrian sinkron SIAKAD.',
-                                                        icon: 'question',
-                                                        showCancelButton: true,
-                                                        confirmButtonText: 'Ya, Sinkron',
-                                                        cancelButtonText: 'Batal',
-                                                        confirmButtonColor: '#003B82'
-                                                    })"
-                                                    class="rounded-xl bg-polmind-blue px-3 py-2 text-xs font-bold text-white hover:bg-polmind-blue-dark">
-                                                Sinkron
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-
-                <div class="flex flex-col justify-between gap-4 border-t border-slate-200 p-6 md:flex-row md:items-center">
-                    <p class="text-sm text-slate-500">
-                        Menampilkan <span class="font-bold text-slate-700">1-5</span> dari <span class="font-bold text-slate-700">12</span> data siap sinkron
-                    </p>
-
-                    <div class="flex gap-2">
-                        <button class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-500">
-                            Sebelumnya
-                        </button>
-                        <button class="rounded-xl bg-polmind-blue px-4 py-2 text-sm font-bold text-white">
-                            1
-                        </button>
-                        <button class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
-                            2
-                        </button>
-                    </div>
-                </div>
-            </div>
-
-            {{-- API Endpoint --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
-                        Endpoint Integrasi
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Draft endpoint yang akan digunakan SIAKAD untuk komunikasi dengan PMB.
-                    </p>
-                </div>
-
-                <div class="mt-6 space-y-4">
-                    @foreach([
-                        ['method' => 'GET', 'url' => '/api/pmb/applicants/ready-sync', 'desc' => 'Mengambil daftar camaba siap sinkron.'],
-                        ['method' => 'GET', 'url' => '/api/pmb/applicants/{id}', 'desc' => 'Mengambil detail data camaba.'],
-                        ['method' => 'POST', 'url' => '/api/pmb/applicants/{id}/mark-synced', 'desc' => 'Menandai data berhasil diambil SIAKAD.'],
-                        ['method' => 'POST', 'url' => '/api/pmb/applicants/{id}/receive-nim', 'desc' => 'Menerima NIM dari SIAKAD.'],
-                    ] as $endpoint)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                            <div class="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-                                <div>
-                                    <div class="flex items-center gap-3">
-                                        <span class="rounded-full bg-polmind-blue px-3 py-1 text-xs font-black text-white">
-                                            {{ $endpoint['method'] }}
-                                        </span>
-                                        <code class="text-sm font-black text-slate-900">{{ $endpoint['url'] }}</code>
-                                    </div>
-
-                                    <p class="mt-3 text-sm leading-6 text-slate-600">
-                                        {{ $endpoint['desc'] }}
-                                    </p>
-                                </div>
-
-                                <button type="button"
-                                        onclick="Swal.fire({
-                                            title: 'Endpoint API',
-                                            text: 'Endpoint ini akan dibuat pada tahap backend API.',
-                                            icon: 'info',
-                                            confirmButtonColor: '#003B82'
-                                        })"
-                                        class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                                    Detail
-                                </button>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
+    {{-- Filter --}}
+    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="border-b border-slate-200 pb-5">
+            <h2 class="text-xl font-black text-polmind-blue">Filter Data Sinkron</h2>
+            <p class="mt-2 text-sm leading-6 text-slate-600">
+                Cari berdasarkan nama, nomor pendaftaran, NIK, NISN, NIM, atau asal sekolah.
+            </p>
         </div>
 
-        {{-- Side Panel --}}
-        <aside class="space-y-6">
-
-            {{-- Integration Status --}}
-            <div class="rounded-3xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-2xl">
-                    ⚠️
-                </div>
-
-                <h3 class="mt-5 text-lg font-black text-yellow-800">
-                    Status Integrasi
-                </h3>
-
-                <p class="mt-3 text-sm leading-6 text-yellow-800">
-                    Saat ini halaman masih berupa UI persiapan. Sinkronisasi aktual akan aktif setelah API PMB dan endpoint SIAKAD selesai dibuat.
-                </p>
-
-                <div class="mt-5 rounded-2xl bg-white/70 p-4">
-                    <p class="text-xs font-black uppercase tracking-wide text-yellow-800">
-                        Mode Saat Ini
-                    </p>
-                    <p class="mt-2 text-lg font-black text-yellow-900">
-                        Simulasi / UI Only
-                    </p>
-                </div>
+        <form action="{{ route('admin.integrations.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+            <div class="xl:col-span-2">
+                <label class="text-sm font-bold text-slate-700">Pencarian</label>
+                <input type="text"
+                       name="keyword"
+                       value="{{ request('keyword') }}"
+                       placeholder="Nama, no pendaftaran, NIK, NISN, NIM..."
+                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
-            {{-- Sync Requirements --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Syarat Siap Sinkron
-                </h2>
+            <div>
+                <label class="text-sm font-bold text-slate-700">Program Studi</label>
+                <select name="study_program"
+                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Semua Prodi</option>
+                    @foreach($studyPrograms as $program)
+                        <option value="{{ $program->id }}" @selected(request('study_program') == $program->id)>
+                            {{ $program->code }} - {{ $program->name }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Data hanya boleh dikirim ke SIAKAD jika memenuhi syarat berikut.
-                </p>
+            <div>
+                <label class="text-sm font-bold text-slate-700">Status Sinkron</label>
+                <select name="sync_status"
+                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Semua Status</option>
+                    @foreach([
+                        'siap_sinkron' => 'Siap Sinkron',
+                        'proses_sinkron' => 'Proses Sinkron',
+                        'sudah_sinkron' => 'Sudah Sinkron',
+                        'gagal_sinkron' => 'Gagal Sinkron',
+                    ] as $key => $label)
+                        <option value="{{ $key }}" @selected(request('sync_status') === $key)>
+                            {{ $label }}
+                        </option>
+                    @endforeach
+                </select>
+            </div>
+
+            <div class="flex items-end gap-3 xl:col-span-4">
+                <button type="submit"
+                        class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                    Terapkan Filter
+                </button>
+
+                <a href="{{ route('admin.integrations.index') }}"
+                   class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <div class="grid gap-8 xl:grid-cols-[1fr_360px]">
+
+        {{-- Main Table --}}
+        <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+                <div>
+                    <h2 class="text-xl font-black text-polmind-blue">Data Siap Integrasi</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Data ini bersumber dari camaba yang sudah daftar ulang valid.
+                    </p>
+                </div>
+
+                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+                    {{ $applicants->total() }} Data
+                </span>
+            </div>
+
+            @php
+                $syncLabels = [
+                    'siap_sinkron' => 'Siap Sinkron',
+                    'proses_sinkron' => 'Proses Sinkron',
+                    'sudah_sinkron' => 'Sudah Sinkron',
+                    'gagal_sinkron' => 'Gagal Sinkron',
+                ];
+
+                $syncClasses = [
+                    'siap_sinkron' => 'bg-purple-100 text-purple-700',
+                    'proses_sinkron' => 'bg-yellow-100 text-yellow-700',
+                    'sudah_sinkron' => 'bg-green-100 text-green-700',
+                    'gagal_sinkron' => 'bg-red-100 text-red-700',
+                ];
+            @endphp
+
+            <div class="overflow-x-auto">
+                <table class="w-full min-w-[1200px] text-left text-sm">
+                    <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                        <tr>
+                            <th class="px-6 py-4">Camaba</th>
+                            <th class="px-6 py-4">Akademik</th>
+                            <th class="px-6 py-4">Data Diri</th>
+                            <th class="px-6 py-4">Daftar Ulang</th>
+                            <th class="px-6 py-4">Status Sinkron</th>
+                            <th class="px-6 py-4">Payload</th>
+                            <th class="px-6 py-4 text-right">Aksi</th>
+                        </tr>
+                    </thead>
+
+                    <tbody class="divide-y divide-slate-200">
+                        @forelse($applicants as $applicant)
+                            @php
+                                $payload = [
+                                    'registration_number' => $applicant->registration_number,
+                                    'full_name' => $applicant->full_name,
+                                    'nik' => $applicant->nik,
+                                    'nisn' => $applicant->nisn,
+                                    'study_program' => $applicant->studyProgram?->code,
+                                    'class_type' => $applicant->classType?->code,
+                                    'school_name' => $applicant->education?->school_name,
+                                    'sync_status' => $applicant->sync_status,
+                                ];
+                            @endphp
+
+                            <tr class="transition hover:bg-slate-50">
+                                <td class="px-6 py-5">
+                                    <p class="font-black text-polmind-blue">
+                                        {{ $applicant->registration_number }}
+                                    </p>
+                                    <p class="mt-1 font-bold text-slate-800">
+                                        {{ $applicant->full_name }}
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ $applicant->email }}
+                                    </p>
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
+                                        {{ $applicant->studyProgram?->code ?? '-' }}
+                                    </span>
+                                    <p class="mt-2 text-xs text-slate-500">
+                                        {{ $applicant->classType?->name ?? '-' }}
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ $applicant->admissionWave?->name ?? '-' }}
+                                    </p>
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <p class="font-semibold text-slate-700">
+                                        NIK: {{ $applicant->nik ?? '-' }}
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        NISN: {{ $applicant->nisn ?? '-' }}
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        {{ $applicant->education?->school_name ?? '-' }}
+                                    </p>
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
+                                        {{ str_replace('_', ' ', ucfirst($applicant->reRegistration?->status ?? '-')) }}
+                                    </span>
+
+                                    @if($applicant->reRegistration?->ready_sync_at)
+                                        <p class="mt-2 text-xs text-slate-500">
+                                            Siap: {{ $applicant->reRegistration->ready_sync_at->format('d M Y H:i') }}
+                                        </p>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $syncClasses[$applicant->sync_status] ?? 'bg-slate-100 text-slate-600' }}">
+                                        {{ $syncLabels[$applicant->sync_status] ?? $applicant->sync_status }}
+                                    </span>
+
+                                    @if($applicant->nim)
+                                        <p class="mt-2 text-xs font-black text-polmind-blue">
+                                            NIM: {{ $applicant->nim }}
+                                        </p>
+                                    @else
+                                        <p class="mt-2 text-xs text-slate-500">
+                                            NIM belum tersedia
+                                        </p>
+                                    @endif
+
+                                    @if($applicant->synced_at)
+                                        <p class="mt-1 text-xs text-slate-500">
+                                            {{ $applicant->synced_at->format('d M Y H:i') }}
+                                        </p>
+                                    @endif
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <button type="button"
+                                            onclick='Swal.fire({
+                                                title: "Payload SIAKAD",
+                                                html: `<pre style="text-align:left;white-space:pre-wrap;font-size:12px;background:#f1f5f9;padding:14px;border-radius:12px;">{{ json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) }}</pre>`,
+                                                width: 700,
+                                                confirmButtonColor: "#003B82"
+                                            })'
+                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
+                                        Lihat Payload
+                                    </button>
+                                </td>
+
+                                <td class="px-6 py-5">
+                                    <div class="flex justify-end gap-2">
+                                        <a href="{{ url('/admin/applicants/' . $applicant->registration_number) }}"
+                                           class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                            Detail
+                                        </a>
+
+                                        @if($applicant->sync_status === 'siap_sinkron' || $applicant->sync_status === 'gagal_sinkron')
+                                            <form action="{{ route('admin.integrations.processing', $applicant) }}"
+                                                  method="POST"
+                                                  onsubmit="return confirm('Tandai data ini sedang proses sinkron?')">
+                                                @csrf
+                                                @method('PATCH')
+
+                                                <button type="submit"
+                                                        class="rounded-xl bg-yellow-500 px-3 py-2 text-xs font-black text-polmind-blue-dark hover:brightness-95">
+                                                    Proses
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if($applicant->sync_status !== 'sudah_sinkron')
+                                            <button type="button"
+                                                    onclick="document.getElementById('synced-form-{{ $applicant->id }}').classList.toggle('hidden')"
+                                                    class="rounded-xl bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700">
+                                                Sukses
+                                            </button>
+                                        @endif
+
+                                        @if($applicant->sync_status !== 'gagal_sinkron')
+                                            <button type="button"
+                                                    onclick="document.getElementById('failed-form-{{ $applicant->id }}').classList.toggle('hidden')"
+                                                    class="rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700">
+                                                Gagal
+                                            </button>
+                                        @endif
+                                    </div>
+
+                                    <form id="synced-form-{{ $applicant->id }}"
+                                          action="{{ route('admin.integrations.synced', $applicant) }}"
+                                          method="POST"
+                                          class="mt-3 hidden rounded-2xl border border-green-200 bg-green-50 p-3">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <input type="text"
+                                               name="nim"
+                                               required
+                                               placeholder="Masukkan NIM dari SIAKAD"
+                                               class="w-full rounded-xl border border-green-200 px-3 py-2 text-xs outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100">
+
+                                        <div class="mt-2 flex justify-end gap-2">
+                                            <button type="button"
+                                                    onclick="document.getElementById('synced-form-{{ $applicant->id }}').classList.add('hidden')"
+                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                                                Batal
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white">
+                                                Simpan Sukses
+                                            </button>
+                                        </div>
+                                    </form>
+
+                                    <form id="failed-form-{{ $applicant->id }}"
+                                          action="{{ route('admin.integrations.failed', $applicant) }}"
+                                          method="POST"
+                                          class="mt-3 hidden rounded-2xl border border-red-200 bg-red-50 p-3">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <textarea name="error_message"
+                                                  rows="3"
+                                                  required
+                                                  placeholder="Tulis error sinkronisasi..."
+                                                  class="w-full rounded-xl border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100"></textarea>
+
+                                        <div class="mt-2 flex justify-end gap-2">
+                                            <button type="button"
+                                                    onclick="document.getElementById('failed-form-{{ $applicant->id }}').classList.add('hidden')"
+                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                                                Batal
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white">
+                                                Simpan Gagal
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="px-6 py-12 text-center">
+                                    <p class="text-sm font-bold text-slate-600">
+                                        Belum ada data untuk integrasi.
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Pastikan camaba sudah daftar ulang valid dan sync_status siap_sinkron.
+                                    </p>
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="border-t border-slate-200 p-6">
+                {{ $applicants->links() }}
+            </div>
+        </div>
+
+        {{-- Latest Logs --}}
+        <aside class="space-y-6">
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-black text-polmind-blue">Log Integrasi Terbaru</h2>
 
                 <div class="mt-5 space-y-3">
-                    @foreach([
-                        'Biodata camaba lengkap',
-                        'Berkas wajib valid',
-                        'Pembayaran pendaftaran valid',
-                        'Dinyatakan diterima',
-                        'Daftar ulang valid',
-                        'Belum memiliki NIM',
-                    ] as $requirement)
-                        <div class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                            <div class="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-100 text-xs font-black text-green-700">
-                                ✓
+                    @forelse($latestLogs as $log)
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-black text-slate-700">
+                                    {{ $log->system_name }} · {{ strtoupper($log->method ?? '-') }}
+                                </p>
+
+                                <span class="rounded-full px-3 py-1 text-xs font-black
+                                    {{ $log->status === 'success' ? 'bg-green-100 text-green-700' : '' }}
+                                    {{ $log->status === 'pending' ? 'bg-yellow-100 text-yellow-700' : '' }}
+                                    {{ $log->status === 'failed' ? 'bg-red-100 text-red-700' : '' }}">
+                                    {{ $log->status }}
+                                </span>
                             </div>
 
-                            <p class="text-sm font-bold leading-6 text-slate-700">
-                                {{ $requirement }}
+                            <p class="mt-3 text-xs font-bold text-polmind-blue">
+                                {{ $log->applicant?->registration_number ?? '-' }}
+                            </p>
+
+                            <p class="mt-1 text-xs text-slate-500">
+                                {{ $log->endpoint ?? '-' }}
+                            </p>
+
+                            @if($log->error_message)
+                                <p class="mt-3 rounded-xl bg-red-50 p-3 text-xs leading-5 text-red-700">
+                                    {{ $log->error_message }}
+                                </p>
+                            @endif
+
+                            <p class="mt-3 text-xs text-slate-400">
+                                {{ $log->created_at?->format('d M Y H:i') }}
                             </p>
                         </div>
-                    @endforeach
+                    @empty
+                        <p class="text-sm font-semibold text-slate-500">
+                            Belum ada log integrasi.
+                        </p>
+                    @endforelse
                 </div>
             </div>
 
-            {{-- Quick Actions --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Aksi Cepat
-                </h2>
-
-                <div class="mt-5 space-y-3">
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Sinkron Semua Data?',
-                                text: 'Semua data yang sudah siap akan masuk ke antrian sinkron.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Sinkron',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="w-full rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
-                        Sinkron Semua
-                    </button>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Cek Status API',
-                                text: 'Health check API akan dibuat setelah endpoint backend aktif.',
-                                icon: 'info',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                        Cek Status API
-                    </button>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Export Log Sinkron',
-                                text: 'Export log sinkronisasi akan dibuat pada tahap backend.',
-                                icon: 'info',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="w-full rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                        Export Log
-                    </button>
-                </div>
+            <div class="rounded-3xl border border-blue-200 bg-blue-50 p-6">
+                <h2 class="text-lg font-black text-polmind-blue">Catatan Integrasi</h2>
+                <p class="mt-3 text-sm leading-6 text-slate-700">
+                    Untuk flow real, PMB cukup menyediakan data camaba yang sudah daftar ulang valid.
+                    NIM tetap dibuat oleh SIAKAD, lalu dikirim balik ke PMB.
+                </p>
             </div>
-
-            {{-- Sync Log --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Log Terbaru
-                </h2>
-
-                <div class="mt-5 space-y-4">
-                    @foreach([
-                        ['title' => 'Data siap sinkron dibuat', 'time' => '24 Juni 2026 08:30'],
-                        ['title' => 'Daftar ulang valid diterima', 'time' => '24 Juni 2026 09:15'],
-                        ['title' => 'Simulasi endpoint API', 'time' => '24 Juni 2026 10:00'],
-                    ] as $log)
-                        <div class="flex gap-3">
-                            <div class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">
-                                i
-                            </div>
-
-                            <div>
-                                <p class="text-sm font-black text-slate-900">
-                                    {{ $log['title'] }}
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $log['time'] }}
-                                </p>
-                            </div>
-                        </div>
-                    @endforeach
-                </div>
-            </div>
-
         </aside>
     </div>
 

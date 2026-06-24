@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
+use App\Http\Controllers\Admin\IntegrationController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -83,7 +84,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
         return view('admin.master-data.index');
     })->name('master-data.index');
 
-    Route::get('/integrations', function () {
-        return view('admin.integrations.index');
-    })->name('integrations.index');
+    Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
+    Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
+    Route::patch('/integrations/{applicant}/synced', [IntegrationController::class, 'markSynced'])->name('integrations.synced');
+    Route::patch('/integrations/{applicant}/failed', [IntegrationController::class, 'markFailed'])->name('integrations.failed');
 });
