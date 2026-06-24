@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\IntegrationController;
+use App\Http\Controllers\Admin\FollowUpController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -72,9 +73,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/re-registrations/{reRegistration}/reject', [ReRegistrationController::class, 'reject'])->name('re-registrations.reject');
     Route::patch('/re-registrations/{reRegistration}/ready-sync', [ReRegistrationController::class, 'markReadySync'])->name('re-registrations.ready-sync');
 
-    Route::get('/follow-ups', function () {
-        return view('admin.follow-ups.index');
-    })->name('follow-ups.index');
+    Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('follow-ups.index');
+    Route::post('/follow-ups/{applicant}', [FollowUpController::class, 'store'])->name('follow-ups.store');
 
     Route::get('/reports', function () {
         return view('admin.reports.index');
