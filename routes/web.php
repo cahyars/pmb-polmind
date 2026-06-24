@@ -82,6 +82,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
 
+    Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
+    Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');
+    Route::patch('/master-data/study-programs/{studyProgram}/toggle', [MasterDataController::class, 'toggleStudyProgram'])->name('master-data.study-programs.toggle');
+
+    Route::post('/master-data/fee-components', [MasterDataController::class, 'storeFeeComponent'])->name('master-data.fee-components.store');
+    Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
+    Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
+
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
     Route::patch('/integrations/{applicant}/synced', [IntegrationController::class, 'markSynced'])->name('integrations.synced');

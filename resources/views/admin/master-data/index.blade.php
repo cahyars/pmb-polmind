@@ -22,6 +22,17 @@
 @endphp
 
 <div class="space-y-8">
+    @if(session('success'))
+        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+            {{ $errors->first() }}
+        </div>
+    @endif
 
     {{-- Header --}}
     <div class="rounded-3xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
@@ -202,15 +213,65 @@
 
         {{-- Prodi --}}
         <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 p-6">
-                <h2 class="text-xl font-black text-polmind-blue">Program Studi</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Data prodi untuk pilihan pendaftaran camaba.
-                </p>
+            <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+                <div>
+                    <h2 class="text-xl font-black text-polmind-blue">Program Studi</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Data prodi untuk pilihan pendaftaran camaba.
+                    </p>
+                </div>
+
+                <button type="button"
+                        onclick="document.getElementById('create-study-program-form').classList.toggle('hidden')"
+                        class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                    Tambah Prodi
+                </button>
             </div>
 
+            <form id="create-study-program-form"
+                action="{{ route('admin.master-data.study-programs.store') }}"
+                method="POST"
+                class="hidden border-b border-slate-200 bg-slate-50 p-6">
+                @csrf
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                    <input type="text" name="code" placeholder="Kode, contoh TRPL" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <input type="text" name="name" placeholder="Nama prodi" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <input type="text" name="degree" value="D4" placeholder="Jenjang" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <input type="number" name="quota" value="40" min="0" placeholder="Kuota" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                        <input type="checkbox" name="is_active" value="1" checked>
+                        Aktif
+                    </label>
+
+                    <textarea name="description" rows="3" placeholder="Deskripsi prodi"
+                            class="md:col-span-2 xl:col-span-5 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
+                </div>
+
+                <div class="mt-4 flex justify-end gap-3">
+                    <button type="button"
+                            onclick="document.getElementById('create-study-program-form').classList.add('hidden')"
+                            class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                        Batal
+                    </button>
+
+                    <button type="submit"
+                            class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                        Simpan Prodi
+                    </button>
+                </div>
+            </form>
+
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[700px] text-left text-sm">
+                <table class="w-full min-w-[900px] text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                             <th class="px-6 py-4">Kode</th>
@@ -218,8 +279,10 @@
                             <th class="px-6 py-4">Jenjang</th>
                             <th class="px-6 py-4">Kuota</th>
                             <th class="px-6 py-4">Aktif</th>
+                            <th class="px-6 py-4 text-right">Aksi</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-slate-200">
                         @forelse($studyPrograms as $program)
                             <tr>
@@ -231,12 +294,81 @@
                                 <td class="px-6 py-4 font-bold text-slate-700">{{ $program->degree }}</td>
                                 <td class="px-6 py-4 font-black text-polmind-blue">{{ $program->quota }}</td>
                                 <td class="px-6 py-4">
-                                    {{ $program->is_active ? 'Ya' : 'Tidak' }}
+                                    @if($program->is_active)
+                                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
+                                    @else
+                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Nonaktif</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-study-program-{{ $program->id }}').classList.toggle('hidden')"
+                                                class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                            Edit
+                                        </button>
+
+                                        <form action="{{ route('admin.master-data.study-programs.toggle', $program) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Ubah status aktif prodi ini?')">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button type="submit"
+                                                    class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                                {{ $program->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr id="edit-study-program-{{ $program->id }}" class="hidden bg-slate-50">
+                                <td colspan="6" class="px-6 py-5">
+                                    <form action="{{ route('admin.master-data.study-programs.update', $program) }}" method="POST">
+                                        @csrf
+                                        @method('PUT')
+
+                                        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                            <input type="text" name="code" value="{{ $program->code }}" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <input type="text" name="name" value="{{ $program->name }}" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <input type="text" name="degree" value="{{ $program->degree }}" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <input type="number" name="quota" value="{{ $program->quota }}" min="0" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                                <input type="checkbox" name="is_active" value="1" @checked($program->is_active)>
+                                                Aktif
+                                            </label>
+
+                                            <textarea name="description" rows="3"
+                                                    class="md:col-span-2 xl:col-span-5 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ $program->description }}</textarea>
+                                        </div>
+
+                                        <div class="mt-4 flex justify-end gap-3">
+                                            <button type="button"
+                                                    onclick="document.getElementById('edit-study-program-{{ $program->id }}').classList.add('hidden')"
+                                                    class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                                Batal
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                                Update Prodi
+                                            </button>
+                                        </div>
+                                    </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                                <td colspan="6" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                     Belum ada data prodi.
                                 </td>
                             </tr>
@@ -346,15 +478,68 @@
 
     {{-- Biaya --}}
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-6">
-            <h2 class="text-xl font-black text-polmind-blue">Komponen Biaya</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-                Komponen biaya untuk invoice pendaftaran dan daftar ulang.
-            </p>
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+            <div>
+                <h2 class="text-xl font-black text-polmind-blue">Komponen Biaya</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Komponen biaya untuk invoice pendaftaran dan daftar ulang.
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="document.getElementById('create-fee-component-form').classList.toggle('hidden')"
+                    class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                Tambah Biaya
+            </button>
         </div>
 
+        <form id="create-fee-component-form"
+            action="{{ route('admin.master-data.fee-components.store') }}"
+            method="POST"
+            class="hidden border-b border-slate-200 bg-slate-50 p-6">
+            @csrf
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <input type="text" name="code" placeholder="Kode, contoh SPP1" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="text" name="name" placeholder="Nama biaya" required
+                    class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <select name="type" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="registration">Pendaftaran</option>
+                    <option value="re_registration">Daftar Ulang</option>
+                </select>
+
+                <input type="number" name="amount" value="0" min="0" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="number" name="sort_order" value="1" min="0" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <input type="checkbox" name="is_active" value="1" checked>
+                    Aktif
+                </label>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button type="button"
+                        onclick="document.getElementById('create-fee-component-form').classList.add('hidden')"
+                        class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                    Batal
+                </button>
+
+                <button type="submit"
+                        class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                    Simpan Biaya
+                </button>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[850px] text-left text-sm">
+            <table class="w-full min-w-[1000px] text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                         <th class="px-6 py-4">Urutan</th>
@@ -363,8 +548,10 @@
                         <th class="px-6 py-4">Tipe</th>
                         <th class="px-6 py-4">Nominal</th>
                         <th class="px-6 py-4">Aktif</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-200">
                     @forelse($feeComponents as $fee)
                         <tr>
@@ -380,12 +567,84 @@
                                 Rp{{ number_format($fee->amount, 0, ',', '.') }}
                             </td>
                             <td class="px-6 py-4">
-                                {{ $fee->is_active ? 'Ya' : 'Tidak' }}
+                                @if($fee->is_active)
+                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
+                                @else
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Nonaktif</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button"
+                                            onclick="document.getElementById('edit-fee-component-{{ $fee->id }}').classList.toggle('hidden')"
+                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                        Edit
+                                    </button>
+
+                                    <form action="{{ route('admin.master-data.fee-components.toggle', $fee) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Ubah status aktif komponen biaya ini?')">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <button type="submit"
+                                                class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                            {{ $fee->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr id="edit-fee-component-{{ $fee->id }}" class="hidden bg-slate-50">
+                            <td colspan="7" class="px-6 py-5">
+                                <form action="{{ route('admin.master-data.fee-components.update', $fee) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                                        <input type="text" name="code" value="{{ $fee->code }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="text" name="name" value="{{ $fee->name }}" required
+                                            class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <select name="type" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                            <option value="registration" @selected($fee->type === 'registration')>Pendaftaran</option>
+                                            <option value="re_registration" @selected($fee->type === 're_registration')>Daftar Ulang</option>
+                                        </select>
+
+                                        <input type="number" name="amount" value="{{ $fee->amount }}" min="0" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="number" name="sort_order" value="{{ $fee->sort_order }}" min="0" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                            <input type="checkbox" name="is_active" value="1" @checked($fee->is_active)>
+                                            Aktif
+                                        </label>
+                                    </div>
+
+                                    <div class="mt-4 flex justify-end gap-3">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-fee-component-{{ $fee->id }}').classList.add('hidden')"
+                                                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                            Batal
+                                        </button>
+
+                                        <button type="submit"
+                                                class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                            Update Biaya
+                                        </button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                            <td colspan="7" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                 Belum ada data komponen biaya.
                             </td>
                         </tr>
