@@ -18,6 +18,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             PmbMasterSeeder::class,
             PmbDemoApplicantSeeder::class,
+            PmbTransactionSeeder::class,
         ]);
     }
 }
