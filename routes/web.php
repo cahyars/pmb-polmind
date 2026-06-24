@@ -98,6 +98,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/master-data/admission-waves/{admissionWave}', [MasterDataController::class, 'updateAdmissionWave'])->name('master-data.admission-waves.update');
     Route::patch('/master-data/admission-waves/{admissionWave}/toggle', [MasterDataController::class, 'toggleAdmissionWave'])->name('master-data.admission-waves.toggle');
 
+    Route::post('/master-data/class-types', [MasterDataController::class, 'storeClassType'])->name('master-data.class-types.store');
+    Route::put('/master-data/class-types/{classType}', [MasterDataController::class, 'updateClassType'])->name('master-data.class-types.update');
+    Route::patch('/master-data/class-types/{classType}/toggle', [MasterDataController::class, 'toggleClassType'])->name('master-data.class-types.toggle');
+
+    Route::post('/master-data/document-types', [MasterDataController::class, 'storeDocumentType'])->name('master-data.document-types.store');
+    Route::put('/master-data/document-types/{documentType}', [MasterDataController::class, 'updateDocumentType'])->name('master-data.document-types.update');
+    Route::patch('/master-data/document-types/{documentType}/toggle', [MasterDataController::class, 'toggleDocumentType'])->name('master-data.document-types.toggle');
+
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
     Route::patch('/integrations/{applicant}/synced', [IntegrationController::class, 'markSynced'])->name('integrations.synced');

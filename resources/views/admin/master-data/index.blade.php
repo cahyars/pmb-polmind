@@ -653,34 +653,145 @@
 
         {{-- Kelas --}}
         <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div class="border-b border-slate-200 p-6">
-                <h2 class="text-xl font-black text-polmind-blue">Jenis Kelas</h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Data kelas reguler pagi dan kelas karyawan/malam.
-                </p>
+            <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+                <div>
+                    <h2 class="text-xl font-black text-polmind-blue">Jenis Kelas</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Data kelas reguler pagi dan kelas karyawan/malam.
+                    </p>
+                </div>
+
+                <button type="button"
+                        onclick="document.getElementById('create-class-type-form').classList.toggle('hidden')"
+                        class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                    Tambah Kelas
+                </button>
             </div>
 
+            <form id="create-class-type-form"
+                action="{{ route('admin.master-data.class-types.store') }}"
+                method="POST"
+                class="hidden border-b border-slate-200 bg-slate-50 p-6">
+                @csrf
+
+                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <input type="text" name="code" placeholder="Kode, contoh REG_C" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <input type="text" name="name" placeholder="Nama kelas" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                    <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                        <input type="checkbox" name="is_active" value="1" checked>
+                        Aktif
+                    </label>
+
+                    <textarea name="description" rows="3" placeholder="Deskripsi kelas"
+                            class="md:col-span-2 xl:col-span-4 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
+                </div>
+
+                <div class="mt-4 flex justify-end gap-3">
+                    <button type="button"
+                            onclick="document.getElementById('create-class-type-form').classList.add('hidden')"
+                            class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                        Batal
+                    </button>
+
+                    <button type="submit"
+                            class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                        Simpan Kelas
+                    </button>
+                </div>
+            </form>
+
             <div class="overflow-x-auto">
-                <table class="w-full min-w-[600px] text-left text-sm">
+                <table class="w-full min-w-[750px] text-left text-sm">
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                             <th class="px-6 py-4">Kode</th>
                             <th class="px-6 py-4">Nama</th>
                             <th class="px-6 py-4">Deskripsi</th>
                             <th class="px-6 py-4">Aktif</th>
+                            <th class="px-6 py-4 text-right">Aksi</th>
                         </tr>
                     </thead>
+
                     <tbody class="divide-y divide-slate-200">
                         @forelse($classTypes as $classType)
                             <tr>
                                 <td class="px-6 py-4 font-black text-polmind-blue">{{ $classType->code }}</td>
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $classType->name }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $classType->description ?? '-' }}</td>
-                                <td class="px-6 py-4">{{ $classType->is_active ? 'Ya' : 'Tidak' }}</td>
+                                <td class="px-6 py-4">
+                                    @if($classType->is_active)
+                                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
+                                    @else
+                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Nonaktif</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="flex justify-end gap-2">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-class-type-{{ $classType->id }}').classList.toggle('hidden')"
+                                                class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                            Edit
+                                        </button>
+
+                                        <form action="{{ route('admin.master-data.class-types.toggle', $classType) }}"
+                                            method="POST"
+                                            onsubmit="return confirm('Ubah status aktif kelas ini?')">
+                                            @csrf
+                                            @method('PATCH')
+
+                                            <button type="submit"
+                                                    class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                                {{ $classType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                            </button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+
+                            <tr id="edit-class-type-{{ $classType->id }}" class="hidden bg-slate-50">
+                                <td colspan="5" class="px-6 py-5">
+                                    <form action="{{ route('admin.master-data.class-types.update', $classType) }}" method="POST">
+                                        @csrf
+                                        @method('PUT')
+
+                                        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                                            <input type="text" name="code" value="{{ $classType->code }}" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <input type="text" name="name" value="{{ $classType->name }}" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                                <input type="checkbox" name="is_active" value="1" @checked($classType->is_active)>
+                                                Aktif
+                                            </label>
+
+                                            <textarea name="description" rows="3"
+                                                    class="md:col-span-2 xl:col-span-4 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ $classType->description }}</textarea>
+                                        </div>
+
+                                        <div class="mt-4 flex justify-end gap-3">
+                                            <button type="button"
+                                                    onclick="document.getElementById('edit-class-type-{{ $classType->id }}').classList.add('hidden')"
+                                                    class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                                Batal
+                                            </button>
+
+                                            <button type="submit"
+                                                    class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                                Update Kelas
+                                            </button>
+                                        </div>
+                                    </form>
+                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                                <td colspan="5" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                     Belum ada data kelas.
                                 </td>
                             </tr>
@@ -694,15 +805,70 @@
 
     {{-- Berkas --}}
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-6">
-            <h2 class="text-xl font-black text-polmind-blue">Jenis Berkas</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-                Jenis dokumen yang harus atau dapat diupload oleh camaba.
-            </p>
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+            <div>
+                <h2 class="text-xl font-black text-polmind-blue">Jenis Berkas</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Jenis dokumen yang harus atau dapat diupload oleh camaba.
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="document.getElementById('create-document-type-form').classList.toggle('hidden')"
+                    class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                Tambah Berkas
+            </button>
         </div>
 
+        <form id="create-document-type-form"
+            action="{{ route('admin.master-data.document-types.store') }}"
+            method="POST"
+            class="hidden border-b border-slate-200 bg-slate-50 p-6">
+            @csrf
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <input type="text" name="code" placeholder="Kode, contoh SKL" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="text" name="name" placeholder="Nama berkas" required
+                    class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="text" name="allowed_extensions" value="pdf, jpg, jpeg, png" placeholder="pdf, jpg, png"
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="number" name="max_size_kb" value="2048" min="1" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="number" name="sort_order" value="1" min="0" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <input type="checkbox" name="is_required" value="1" checked>
+                    Wajib
+                </label>
+
+                <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <input type="checkbox" name="is_active" value="1" checked>
+                    Aktif
+                </label>
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button type="button"
+                        onclick="document.getElementById('create-document-type-form').classList.add('hidden')"
+                        class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                    Batal
+                </button>
+
+                <button type="submit"
+                        class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                    Simpan Berkas
+                </button>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[950px] text-left text-sm">
+            <table class="w-full min-w-[1100px] text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                         <th class="px-6 py-4">Urutan</th>
@@ -712,8 +878,10 @@
                         <th class="px-6 py-4">Format</th>
                         <th class="px-6 py-4">Max Size</th>
                         <th class="px-6 py-4">Aktif</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-200">
                     @forelse($documentTypes as $documentType)
                         <tr>
@@ -734,12 +902,86 @@
                                 {{ number_format($documentType->max_size_kb) }} KB
                             </td>
                             <td class="px-6 py-4">
-                                {{ $documentType->is_active ? 'Ya' : 'Tidak' }}
+                                @if($documentType->is_active)
+                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
+                                @else
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Nonaktif</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button"
+                                            onclick="document.getElementById('edit-document-type-{{ $documentType->id }}').classList.toggle('hidden')"
+                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                        Edit
+                                    </button>
+
+                                    <form action="{{ route('admin.master-data.document-types.toggle', $documentType) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Ubah status aktif jenis berkas ini?')">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <button type="submit"
+                                                class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                            {{ $documentType->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr id="edit-document-type-{{ $documentType->id }}" class="hidden bg-slate-50">
+                            <td colspan="8" class="px-6 py-5">
+                                <form action="{{ route('admin.master-data.document-types.update', $documentType) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                                        <input type="text" name="code" value="{{ $documentType->code }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="text" name="name" value="{{ $documentType->name }}" required
+                                            class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="text" name="allowed_extensions" value="{{ implode(', ', $documentType->allowed_extensions ?? []) }}"
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="number" name="max_size_kb" value="{{ $documentType->max_size_kb }}" min="1" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="number" name="sort_order" value="{{ $documentType->sort_order }}" min="0" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                            <input type="checkbox" name="is_required" value="1" @checked($documentType->is_required)>
+                                            Wajib
+                                        </label>
+
+                                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                            <input type="checkbox" name="is_active" value="1" @checked($documentType->is_active)>
+                                            Aktif
+                                        </label>
+                                    </div>
+
+                                    <div class="mt-4 flex justify-end gap-3">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-document-type-{{ $documentType->id }}').classList.add('hidden')"
+                                                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                            Batal
+                                        </button>
+
+                                        <button type="submit"
+                                                class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                            Update Berkas
+                                        </button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                            <td colspan="8" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                 Belum ada data jenis berkas.
                             </td>
                         </tr>

@@ -329,4 +329,118 @@ class MasterDataController extends Controller
 
         return back()->with('success', 'Status aktif gelombang berhasil diubah.');
     }
+
+    public function storeClassType(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:class_types,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        ClassType::create([
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jenis kelas berhasil ditambahkan.');
+    }
+
+    public function updateClassType(Request $request, ClassType $classType)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:class_types,code,' . $classType->id],
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+        ]);
+
+        $classType->update([
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jenis kelas berhasil diperbarui.');
+    }
+
+    public function toggleClassType(ClassType $classType)
+    {
+        $classType->update([
+            'is_active' => ! $classType->is_active,
+        ]);
+
+        return back()->with('success', 'Status jenis kelas berhasil diubah.');
+    }
+
+    public function storeDocumentType(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:document_types,code'],
+            'name' => ['required', 'string', 'max:255'],
+            'allowed_extensions' => ['nullable', 'string', 'max:255'],
+            'max_size_kb' => ['required', 'integer', 'min:1'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        DocumentType::create([
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'is_required' => $request->boolean('is_required'),
+            'allowed_extensions' => $this->parseExtensions($validated['allowed_extensions'] ?? null),
+            'max_size_kb' => $validated['max_size_kb'],
+            'sort_order' => $validated['sort_order'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jenis berkas berhasil ditambahkan.');
+    }
+
+    public function updateDocumentType(Request $request, DocumentType $documentType)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:document_types,code,' . $documentType->id],
+            'name' => ['required', 'string', 'max:255'],
+            'allowed_extensions' => ['nullable', 'string', 'max:255'],
+            'max_size_kb' => ['required', 'integer', 'min:1'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ]);
+
+        $documentType->update([
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'is_required' => $request->boolean('is_required'),
+            'allowed_extensions' => $this->parseExtensions($validated['allowed_extensions'] ?? null),
+            'max_size_kb' => $validated['max_size_kb'],
+            'sort_order' => $validated['sort_order'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jenis berkas berhasil diperbarui.');
+    }
+
+    public function toggleDocumentType(DocumentType $documentType)
+    {
+        $documentType->update([
+            'is_active' => ! $documentType->is_active,
+        ]);
+
+        return back()->with('success', 'Status jenis berkas berhasil diubah.');
+    }
+
+    private function parseExtensions(?string $extensions): array
+    {
+        if (! $extensions) {
+            return [];
+        }
+
+        return collect(explode(',', strtolower($extensions)))
+            ->map(fn ($extension) => trim($extension))
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray();
+    }
 }
