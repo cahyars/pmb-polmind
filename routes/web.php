@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ApplicantController;
+use App\Http\Controllers\Admin\DocumentVerificationController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -49,9 +50,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
 
-    Route::get('/documents', function () {
-        return view('admin.documents.index');
-    })->name('documents.index');
+    Route::get('/documents', [DocumentVerificationController::class, 'index'])->name('documents.index');
+    Route::patch('/documents/{document}/accept', [DocumentVerificationController::class, 'accept'])->name('documents.accept');
+    Route::patch('/documents/{document}/reject', [DocumentVerificationController::class, 'reject'])->name('documents.reject');
 
     Route::get('/payments', function () {
         return view('admin.payments.index');
