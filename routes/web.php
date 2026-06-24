@@ -80,4 +80,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/master-data', function () {
         return view('admin.master-data.index');
     })->name('master-data.index');
+
+    Route::get('/integrations', function () {
+        return view('admin.integrations.index');
+    })->name('integrations.index');
 });
