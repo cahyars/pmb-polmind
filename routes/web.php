@@ -72,4 +72,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/follow-ups', function () {
         return view('admin.follow-ups.index');
     })->name('follow-ups.index');
+
+    Route::get('/reports', function () {
+        return view('admin.reports.index');
+    })->name('reports.index');
 });
