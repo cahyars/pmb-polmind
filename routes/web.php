@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
+use App\Http\Controllers\Admin\ReRegistrationController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -65,9 +66,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/selections/{applicant}/reserve', [SelectionController::class, 'reserve'])->name('selections.reserve');
     Route::patch('/selections/{applicant}/reject', [SelectionController::class, 'reject'])->name('selections.reject');
 
-    Route::get('/re-registrations', function () {
-        return view('admin.re-registrations.index');
-    })->name('re-registrations.index');
+    Route::get('/re-registrations', [ReRegistrationController::class, 'index'])->name('re-registrations.index');
+    Route::patch('/re-registrations/{reRegistration}/validate', [ReRegistrationController::class, 'validateReRegistration'])->name('re-registrations.validate');
+    Route::patch('/re-registrations/{reRegistration}/reject', [ReRegistrationController::class, 'reject'])->name('re-registrations.reject');
+    Route::patch('/re-registrations/{reRegistration}/ready-sync', [ReRegistrationController::class, 'markReadySync'])->name('re-registrations.ready-sync');
 
     Route::get('/follow-ups', function () {
         return view('admin.follow-ups.index');
