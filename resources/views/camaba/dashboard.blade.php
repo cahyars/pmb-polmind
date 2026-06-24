@@ -371,8 +371,7 @@
                     <div class="h-full rounded-full bg-polmind-blue" style="width: {{ min($documentProgress, 100) }}%"></div>
                 </div>
 
-                <a href="{{ url('/camaba/upload-berkas') }}"
-                   class="mt-5 inline-flex w-full justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                <a href="{{ route('camaba.documents.index') }}" class="mt-5 inline-flex w-full justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                     Kelola Berkas
                 </a>
             </div>

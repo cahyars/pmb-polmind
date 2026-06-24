@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\MasterDataController;
 use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
+use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -35,6 +36,10 @@ Route::middleware('auth:applicant')
 
         Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
         Route::put('/biodata', [CamabaBiodataController::class, 'update'])->name('biodata.update');
+
+        Route::get('/upload-berkas', [CamabaDocumentController::class, 'index'])->name('documents.index');
+        Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])->name('documents.store');
+        Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
     });
 
 Route::prefix('camaba')->name('camaba.')->group(function () {
