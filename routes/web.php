@@ -40,6 +40,16 @@ Route::prefix('camaba')->name('camaba.')->group(function () {
     })->name('pengumuman');
 });
 
-Route::get('/admin/dashboard', function () {
-    return view('admin.dashboard');
+Route::prefix('admin')->name('admin.')->group(function () {
+    Route::get('/dashboard', function () {
+        return view('admin.dashboard');
+    })->name('dashboard');
+
+    Route::get('/applicants', function () {
+        return view('admin.applicants.index');
+    })->name('applicants.index');
+
+    Route::get('/applicants/{registration_number}', function ($registration_number) {
+        return view('admin.applicants.show', compact('registration_number'));
+    })->name('applicants.show');
 });
