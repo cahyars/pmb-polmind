@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
+use App\Http\Controllers\Admin\SelectionController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -59,9 +60,10 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');
     Route::patch('/payments/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payments.reject');
 
-    Route::get('/selections', function () {
-        return view('admin.selections.index');
-    })->name('selections.index');
+    Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
+    Route::patch('/selections/{applicant}/accept', [SelectionController::class, 'accept'])->name('selections.accept');
+    Route::patch('/selections/{applicant}/reserve', [SelectionController::class, 'reserve'])->name('selections.reserve');
+    Route::patch('/selections/{applicant}/reject', [SelectionController::class, 'reject'])->name('selections.reject');
 
     Route::get('/re-registrations', function () {
         return view('admin.re-registrations.index');
