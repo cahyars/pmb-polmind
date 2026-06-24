@@ -121,11 +121,11 @@
                             </p>
                         </div>
 
-                        @if($document?->original_filename)
+                        @if($document?->file_path)
                             <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
                                 <p class="text-sm font-black text-slate-800">File Saat Ini</p>
                                 <p class="mt-1 text-sm text-slate-600">
-                                    {{ $document->original_filename }}
+                                    {{ $document->original_filename ?? basename($document->file_path) }}
                                 </p>
 
                                 <div class="mt-3 flex flex-wrap gap-3">
