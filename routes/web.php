@@ -11,7 +11,7 @@ Route::get('/login', function () {
 });
 
 Route::get('/register', function () {
-    return view('auth.login');
+    return view('auth.register');
 });
 
 Route::get('/camaba/dashboard', function () {

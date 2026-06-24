@@ -28,7 +28,7 @@
                 <a href="{{ url('/login') }}" class="text-sm font-semibold text-polmind-blue hover:text-polmind-blue-dark">
                     Masuk
                 </a>
-                <a href="{{ url('/register') }}"
+                <a href="{{ url('/register') }}" 
                    class="rounded-xl bg-polmind-yellow px-5 py-2.5 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                     Daftar
                 </a>
