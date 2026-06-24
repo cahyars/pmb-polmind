@@ -10,6 +10,7 @@ use App\Models\FeeComponent;
 use App\Models\PmbYear;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class MasterDataController extends Controller
 {
@@ -158,5 +159,174 @@ class MasterDataController extends Controller
         ]);
 
         return back()->with('success', 'Status komponen biaya berhasil diubah.');
+    }
+
+    public function storePmbYear(Request $request)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:pmb_years,code'],
+            'year' => ['required', 'integer', 'min:2020', 'max:2100'],
+            'name' => ['required', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'status' => ['required', 'in:draft,active,closed,archived'],
+        ]);
+
+        if ($request->boolean('is_active')) {
+            PmbYear::query()->update(['is_active' => false]);
+        }
+
+        PmbYear::create([
+            'code' => strtoupper($validated['code']),
+            'year' => $validated['year'],
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'status' => $validated['status'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Tahun PMB berhasil ditambahkan.');
+    }
+
+    public function updatePmbYear(Request $request, PmbYear $pmbYear)
+    {
+        $validated = $request->validate([
+            'code' => ['required', 'string', 'max:50', 'unique:pmb_years,code,' . $pmbYear->id],
+            'year' => ['required', 'integer', 'min:2020', 'max:2100'],
+            'name' => ['required', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'status' => ['required', 'in:draft,active,closed,archived'],
+        ]);
+
+        if ($request->boolean('is_active')) {
+            PmbYear::where('id', '!=', $pmbYear->id)->update(['is_active' => false]);
+        }
+
+        $pmbYear->update([
+            'code' => strtoupper($validated['code']),
+            'year' => $validated['year'],
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'status' => $validated['status'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Tahun PMB berhasil diperbarui.');
+    }
+
+    public function togglePmbYear(PmbYear $pmbYear)
+    {
+        if (! $pmbYear->is_active) {
+            PmbYear::query()->update(['is_active' => false]);
+
+            $pmbYear->update([
+                'is_active' => true,
+                'status' => 'active',
+            ]);
+        } else {
+            $pmbYear->update([
+                'is_active' => false,
+            ]);
+        }
+
+        return back()->with('success', 'Status aktif Tahun PMB berhasil diubah.');
+    }
+
+    public function storeAdmissionWave(Request $request)
+    {
+        $validated = $request->validate([
+            'pmb_year_id' => ['required', 'exists:pmb_years,id'],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('admission_waves', 'code')
+                    ->where(fn ($query) => $query->where('pmb_year_id', $request->pmb_year_id)),
+            ],
+            'name' => ['required', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
+            'status' => ['required', 'in:draft,open,closed'],
+        ]);
+
+        if ($request->boolean('is_active')) {
+            AdmissionWave::where('pmb_year_id', $validated['pmb_year_id'])
+                ->update(['is_active' => false]);
+        }
+
+        AdmissionWave::create([
+            'pmb_year_id' => $validated['pmb_year_id'],
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'registration_fee' => $validated['registration_fee'],
+            'status' => $validated['status'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Gelombang pendaftaran berhasil ditambahkan.');
+    }
+
+    public function updateAdmissionWave(Request $request, AdmissionWave $admissionWave)
+    {
+        $validated = $request->validate([
+            'pmb_year_id' => ['required', 'exists:pmb_years,id'],
+            'code' => [
+                'required',
+                'string',
+                'max:50',
+                Rule::unique('admission_waves', 'code')
+                    ->where(fn ($query) => $query->where('pmb_year_id', $request->pmb_year_id))
+                    ->ignore($admissionWave->id),
+            ],
+            'name' => ['required', 'string', 'max:255'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'registration_fee' => ['required', 'numeric', 'min:0'],
+            'status' => ['required', 'in:draft,open,closed'],
+        ]);
+
+        if ($request->boolean('is_active')) {
+            AdmissionWave::where('pmb_year_id', $validated['pmb_year_id'])
+                ->where('id', '!=', $admissionWave->id)
+                ->update(['is_active' => false]);
+        }
+
+        $admissionWave->update([
+            'pmb_year_id' => $validated['pmb_year_id'],
+            'code' => strtoupper($validated['code']),
+            'name' => $validated['name'],
+            'start_date' => $validated['start_date'] ?? null,
+            'end_date' => $validated['end_date'] ?? null,
+            'registration_fee' => $validated['registration_fee'],
+            'status' => $validated['status'],
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Gelombang pendaftaran berhasil diperbarui.');
+    }
+
+    public function toggleAdmissionWave(AdmissionWave $admissionWave)
+    {
+        if (! $admissionWave->is_active) {
+            AdmissionWave::where('pmb_year_id', $admissionWave->pmb_year_id)
+                ->update(['is_active' => false]);
+
+            $admissionWave->update([
+                'is_active' => true,
+                'status' => 'open',
+            ]);
+        } else {
+            $admissionWave->update([
+                'is_active' => false,
+            ]);
+        }
+
+        return back()->with('success', 'Status aktif gelombang berhasil diubah.');
     }
 }

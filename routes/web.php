@@ -90,6 +90,14 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
     Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
 
+    Route::post('/master-data/pmb-years', [MasterDataController::class, 'storePmbYear'])->name('master-data.pmb-years.store');
+    Route::put('/master-data/pmb-years/{pmbYear}', [MasterDataController::class, 'updatePmbYear'])->name('master-data.pmb-years.update');
+    Route::patch('/master-data/pmb-years/{pmbYear}/toggle', [MasterDataController::class, 'togglePmbYear'])->name('master-data.pmb-years.toggle');
+
+    Route::post('/master-data/admission-waves', [MasterDataController::class, 'storeAdmissionWave'])->name('master-data.admission-waves.store');
+    Route::put('/master-data/admission-waves/{admissionWave}', [MasterDataController::class, 'updateAdmissionWave'])->name('master-data.admission-waves.update');
+    Route::patch('/master-data/admission-waves/{admissionWave}/toggle', [MasterDataController::class, 'toggleAdmissionWave'])->name('master-data.admission-waves.toggle');
+
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
     Route::patch('/integrations/{applicant}/synced', [IntegrationController::class, 'markSynced'])->name('integrations.synced');

@@ -88,19 +88,64 @@
             </div>
 
             <button type="button"
-                    onclick="Swal.fire({
-                        title: 'Tambah Tahun PMB',
-                        text: 'Form tambah/edit master data akan kita sambungkan di tahap berikutnya.',
-                        icon: 'info',
-                        confirmButtonColor: '#003B82'
-                    })"
+                    onclick="document.getElementById('create-pmb-year-form').classList.toggle('hidden')"
                     class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                 Tambah Tahun
             </button>
         </div>
 
+        <form id="create-pmb-year-form"
+            action="{{ route('admin.master-data.pmb-years.store') }}"
+            method="POST"
+            class="hidden border-b border-slate-200 bg-slate-50 p-6">
+            @csrf
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <input type="text" name="code" placeholder="Kode, contoh PMB2027" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="number" name="year" placeholder="2027" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="text" name="name" placeholder="Nama, contoh PMB 2027" required
+                    class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <select name="status" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="draft">Draft</option>
+                    <option value="active">Active</option>
+                    <option value="closed">Closed</option>
+                    <option value="archived">Archived</option>
+                </select>
+
+                <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <input type="checkbox" name="is_active" value="1">
+                    Aktif
+                </label>
+
+                <input type="date" name="start_date"
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="date" name="end_date"
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button type="button"
+                        onclick="document.getElementById('create-pmb-year-form').classList.add('hidden')"
+                        class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                    Batal
+                </button>
+
+                <button type="submit"
+                        class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                    Simpan Tahun
+                </button>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[850px] text-left text-sm">
+            <table class="w-full min-w-[1000px] text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                         <th class="px-6 py-4">Kode</th>
@@ -109,8 +154,10 @@
                         <th class="px-6 py-4">Periode</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4">Aktif</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-200">
                     @forelse($pmbYears as $year)
                         <tr>
@@ -129,19 +176,89 @@
                             </td>
                             <td class="px-6 py-4">
                                 @if($year->is_active)
-                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
-                                        Aktif
-                                    </span>
+                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
                                 @else
-                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                                        Tidak
-                                    </span>
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Tidak</span>
                                 @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button"
+                                            onclick="document.getElementById('edit-pmb-year-{{ $year->id }}').classList.toggle('hidden')"
+                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                        Edit
+                                    </button>
+
+                                    <form action="{{ route('admin.master-data.pmb-years.toggle', $year) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Ubah status aktif tahun PMB ini?')">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <button type="submit"
+                                                class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                            {{ $year->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr id="edit-pmb-year-{{ $year->id }}" class="hidden bg-slate-50">
+                            <td colspan="7" class="px-6 py-5">
+                                <form action="{{ route('admin.master-data.pmb-years.update', $year) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                                        <input type="text" name="code" value="{{ $year->code }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="number" name="year" value="{{ $year->year }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="text" name="name" value="{{ $year->name }}" required
+                                            class="xl:col-span-2 rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <select name="status" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                            @foreach(['draft', 'active', 'closed', 'archived'] as $status)
+                                                <option value="{{ $status }}" @selected($year->status === $status)>
+                                                    {{ ucfirst($status) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+
+                                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                            <input type="checkbox" name="is_active" value="1" @checked($year->is_active)>
+                                            Aktif
+                                        </label>
+
+                                        <input type="date" name="start_date" value="{{ $year->start_date?->format('Y-m-d') }}"
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="date" name="end_date" value="{{ $year->end_date?->format('Y-m-d') }}"
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                    </div>
+
+                                    <div class="mt-4 flex justify-end gap-3">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-pmb-year-{{ $year->id }}').classList.add('hidden')"
+                                                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                            Batal
+                                        </button>
+
+                                        <button type="submit"
+                                                class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                            Update Tahun
+                                        </button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                            <td colspan="7" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                 Belum ada data tahun PMB.
                             </td>
                         </tr>
@@ -153,15 +270,82 @@
 
     {{-- Gelombang --}}
     <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
-        <div class="border-b border-slate-200 p-6">
-            <h2 class="text-xl font-black text-polmind-blue">Gelombang Pendaftaran</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-                Gelombang aktif menentukan periode pendaftaran yang sedang dibuka.
-            </p>
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
+            <div>
+                <h2 class="text-xl font-black text-polmind-blue">Gelombang Pendaftaran</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Gelombang aktif menentukan periode pendaftaran yang sedang dibuka.
+                </p>
+            </div>
+
+            <button type="button"
+                    onclick="document.getElementById('create-admission-wave-form').classList.toggle('hidden')"
+                    class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                Tambah Gelombang
+            </button>
         </div>
 
+        <form id="create-admission-wave-form"
+            action="{{ route('admin.master-data.admission-waves.store') }}"
+            method="POST"
+            class="hidden border-b border-slate-200 bg-slate-50 p-6">
+            @csrf
+
+            <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                <select name="pmb_year_id" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Pilih Tahun PMB</option>
+                    @foreach($pmbYears as $year)
+                        <option value="{{ $year->id }}" @selected($year->is_active)>
+                            {{ $year->name }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <input type="text" name="code" placeholder="Kode, contoh GEL4" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="text" name="name" placeholder="Nama gelombang" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="number" name="registration_fee" value="350000" min="0" required
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <select name="status" required
+                        class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="draft">Draft</option>
+                    <option value="open">Open</option>
+                    <option value="closed">Closed</option>
+                </select>
+
+                <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                    <input type="checkbox" name="is_active" value="1">
+                    Aktif
+                </label>
+
+                <input type="date" name="start_date"
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                <input type="date" name="end_date"
+                    class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+            </div>
+
+            <div class="mt-4 flex justify-end gap-3">
+                <button type="button"
+                        onclick="document.getElementById('create-admission-wave-form').classList.add('hidden')"
+                        class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                    Batal
+                </button>
+
+                <button type="submit"
+                        class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                    Simpan Gelombang
+                </button>
+            </div>
+        </form>
+
         <div class="overflow-x-auto">
-            <table class="w-full min-w-[950px] text-left text-sm">
+            <table class="w-full min-w-[1100px] text-left text-sm">
                 <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                     <tr>
                         <th class="px-6 py-4">Tahun PMB</th>
@@ -171,8 +355,10 @@
                         <th class="px-6 py-4">Biaya Daftar</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4">Aktif</th>
+                        <th class="px-6 py-4 text-right">Aksi</th>
                     </tr>
                 </thead>
+
                 <tbody class="divide-y divide-slate-200">
                     @forelse($admissionWaves as $wave)
                         <tr>
@@ -193,12 +379,99 @@
                                 </span>
                             </td>
                             <td class="px-6 py-4">
-                                {{ $wave->is_active ? 'Ya' : 'Tidak' }}
+                                @if($wave->is_active)
+                                    <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">Aktif</span>
+                                @else
+                                    <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">Tidak</span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex justify-end gap-2">
+                                    <button type="button"
+                                            onclick="document.getElementById('edit-admission-wave-{{ $wave->id }}').classList.toggle('hidden')"
+                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue">
+                                        Edit
+                                    </button>
+
+                                    <form action="{{ route('admin.master-data.admission-waves.toggle', $wave) }}"
+                                        method="POST"
+                                        onsubmit="return confirm('Ubah status aktif gelombang ini?')">
+                                        @csrf
+                                        @method('PATCH')
+
+                                        <button type="submit"
+                                                class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700">
+                                            {{ $wave->is_active ? 'Nonaktifkan' : 'Aktifkan' }}
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr id="edit-admission-wave-{{ $wave->id }}" class="hidden bg-slate-50">
+                            <td colspan="8" class="px-6 py-5">
+                                <form action="{{ route('admin.master-data.admission-waves.update', $wave) }}" method="POST">
+                                    @csrf
+                                    @method('PUT')
+
+                                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+                                        <select name="pmb_year_id" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                            @foreach($pmbYears as $year)
+                                                <option value="{{ $year->id }}" @selected($wave->pmb_year_id === $year->id)>
+                                                    {{ $year->name }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+
+                                        <input type="text" name="code" value="{{ $wave->code }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="text" name="name" value="{{ $wave->name }}" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="number" name="registration_fee" value="{{ $wave->registration_fee }}" min="0" required
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <select name="status" required
+                                                class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                            @foreach(['draft', 'open', 'closed'] as $status)
+                                                <option value="{{ $status }}" @selected($wave->status === $status)>
+                                                    {{ ucfirst($status) }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+
+                                        <label class="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+                                            <input type="checkbox" name="is_active" value="1" @checked($wave->is_active)>
+                                            Aktif
+                                        </label>
+
+                                        <input type="date" name="start_date" value="{{ $wave->start_date?->format('Y-m-d') }}"
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <input type="date" name="end_date" value="{{ $wave->end_date?->format('Y-m-d') }}"
+                                            class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                    </div>
+
+                                    <div class="mt-4 flex justify-end gap-3">
+                                        <button type="button"
+                                                onclick="document.getElementById('edit-admission-wave-{{ $wave->id }}').classList.add('hidden')"
+                                                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700">
+                                            Batal
+                                        </button>
+
+                                        <button type="submit"
+                                                class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white">
+                                            Update Gelombang
+                                        </button>
+                                    </div>
+                                </form>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
+                            <td colspan="8" class="px-6 py-10 text-center text-sm font-semibold text-slate-500">
                                 Belum ada data gelombang.
                             </td>
                         </tr>
