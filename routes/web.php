@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MasterDataController;
 use App\Http\Controllers\Auth\CamabaAuthController;
+use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
+use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -25,14 +27,17 @@ Route::post('/register', [CamabaAuthController::class, 'register'])->name('regis
 
 Route::post('/logout', [CamabaAuthController::class, 'logout'])->name('logout');
 
-Route::prefix('camaba')->name('camaba.')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('camaba.dashboard');
-    })->name('dashboard');
+Route::middleware('auth:applicant')
+        ->prefix('camaba')
+        ->name('camaba.')
+        ->group(function () {
+        Route::get('/dashboard', [CamabaDashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/biodata', function () {
-        return view('camaba.biodata.index');
-    })->name('biodata');
+        Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
+        Route::put('/biodata', [CamabaBiodataController::class, 'update'])->name('biodata.update');
+    });
+
+Route::prefix('camaba')->name('camaba.')->group(function () {
 
     Route::get('/berkas', function () {
         return view('camaba.berkas');
