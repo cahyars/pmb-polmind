@@ -76,4 +76,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/reports', function () {
         return view('admin.reports.index');
     })->name('reports.index');
+
+    Route::get('/master-data', function () {
+        return view('admin.master-data.index');
+    })->name('master-data.index');
 });
