@@ -2,535 +2,502 @@
 
 @section('title', 'Detail Camaba')
 @section('page_title', 'Detail Camaba')
-@section('page_subtitle', 'Lihat detail data calon mahasiswa dan lakukan proses verifikasi.')
+@section('page_subtitle', 'Detail data calon mahasiswa baru berdasarkan database PMB.')
 
 @section('content')
+@php
+    $registrationStatusLabels = [
+        'registrasi_awal' => 'Registrasi Awal',
+        'biodata_lengkap' => 'Biodata Lengkap',
+    ];
+
+    $documentStatusLabels = [
+        'belum_upload' => 'Belum Upload',
+        'sebagian_upload' => 'Sebagian Upload',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
+        'valid' => 'Valid',
+        'ditolak' => 'Ditolak',
+    ];
+
+    $paymentStatusLabels = [
+        'belum_bayar' => 'Belum Bayar',
+        'menunggu_verifikasi' => 'Menunggu Verifikasi',
+        'valid' => 'Valid',
+        'ditolak' => 'Ditolak',
+    ];
+
+    $selectionStatusLabels = [
+        'belum_diseleksi' => 'Belum Diseleksi',
+        'diterima' => 'Diterima',
+        'cadangan' => 'Cadangan',
+        'ditolak' => 'Ditolak',
+    ];
+
+    $badgeClass = function ($status) {
+        return match ($status) {
+            'valid', 'diterima', 'paid', 'success' => 'bg-green-100 text-green-700',
+            'menunggu_verifikasi', 'waiting_verification', 'pending', 'sebagian_upload' => 'bg-yellow-100 text-yellow-700',
+            'ditolak', 'rejected', 'failed' => 'bg-red-100 text-red-700',
+            'biodata_lengkap' => 'bg-blue-100 text-polmind-blue',
+            default => 'bg-slate-100 text-slate-600',
+        };
+    };
+@endphp
+
 <div class="space-y-8">
 
-    {{-- Back Button --}}
-    <div>
-        <a href="{{ url('/admin/applicants') }}"
-           class="inline-flex items-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-            ← Kembali ke Data Camaba
-        </a>
-    </div>
+    {{-- Header --}}
+    <div class="rounded-3xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
+        <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+            <div>
+                <a href="{{ url('/admin/applicants') }}"
+                   class="inline-flex items-center rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20">
+                    ← Kembali ke Data Camaba
+                </a>
 
-    {{-- Applicant Header --}}
-    <div class="overflow-hidden rounded-3xl bg-polmind-blue shadow-xl shadow-blue-900/20">
-        <div class="grid gap-6 p-6 text-white lg:grid-cols-3 lg:p-8">
-            <div class="lg:col-span-2">
-                <div class="flex flex-col gap-5 sm:flex-row sm:items-center">
-                    <div class="flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-2xl font-black">
-                        AF
-                    </div>
-
-                    <div>
-                        <p class="text-sm font-bold uppercase tracking-wide text-blue-100">
-                            No. Pendaftaran
-                        </p>
-                        <h2 class="mt-1 text-3xl font-black">
-                            {{ $registration_number ?? 'PMB20260001' }}
-                        </h2>
-                        <p class="mt-2 text-lg font-bold text-white">
-                            Ahmad Fauzi
-                        </p>
-                    </div>
-                </div>
-
-                <p class="mt-6 max-w-2xl text-sm leading-6 text-blue-100">
-                    Calon mahasiswa Program Studi D4 Teknologi Rekayasa Perangkat Lunak.
-                    Data berikut masih bersifat tampilan statis dan nanti akan dihubungkan ke database PMB.
+                <p class="mt-6 text-sm font-bold text-blue-100">
+                    {{ $applicant->registration_number }}
                 </p>
 
-                <div class="mt-6 flex flex-wrap gap-3">
-                    <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-blue-100">
-                        Gelombang 2
-                    </span>
-                    <span class="rounded-full bg-polmind-yellow px-4 py-2 text-xs font-black text-polmind-blue-dark">
-                        Biodata Lengkap
-                    </span>
-                    <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-blue-100">
-                        TRPL
-                    </span>
-                </div>
+                <h1 class="mt-2 text-3xl font-black">
+                    {{ $applicant->full_name }}
+                </h1>
+
+                <p class="mt-2 text-sm text-blue-100">
+                    {{ $applicant->email }} · {{ $applicant->phone ?? '-' }}
+                </p>
             </div>
 
-            <div class="rounded-3xl bg-white/10 p-6">
-                <p class="text-sm font-bold text-blue-100">Progress Pendaftaran</p>
-                <p class="mt-3 text-4xl font-black">65%</p>
-
-                <div class="mt-5 h-3 overflow-hidden rounded-full bg-white/20">
-                    <div class="h-full w-[65%] rounded-full bg-polmind-yellow"></div>
+            <div class="grid gap-3 sm:grid-cols-2 lg:w-[460px]">
+                <div class="rounded-2xl bg-white/10 p-4">
+                    <p class="text-xs font-semibold text-blue-100">Program Studi</p>
+                    <p class="mt-2 text-lg font-black">
+                        {{ $applicant->studyProgram?->code ?? '-' }}
+                    </p>
+                    <p class="text-xs text-blue-100">
+                        {{ $applicant->classType?->name ?? '-' }}
+                    </p>
                 </div>
 
-                <p class="mt-4 text-xs leading-5 text-blue-100">
-                    Status terakhir: menunggu verifikasi berkas dan pembayaran.
-                </p>
+                <div class="rounded-2xl bg-white/10 p-4">
+                    <p class="text-xs font-semibold text-blue-100">Gelombang</p>
+                    <p class="mt-2 text-lg font-black">
+                        {{ $applicant->admissionWave?->name ?? '-' }}
+                    </p>
+                    <p class="text-xs text-blue-100">
+                        {{ $applicant->pmbYear?->name ?? '-' }}
+                    </p>
+                </div>
             </div>
         </div>
     </div>
 
-    {{-- Quick Status --}}
+    {{-- Status Summary --}}
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['label' => 'Biodata', 'value' => 'Lengkap', 'class' => 'bg-green-100 text-green-700'],
-            ['label' => 'Berkas', 'value' => 'Menunggu', 'class' => 'bg-yellow-100 text-yellow-700'],
-            ['label' => 'Pembayaran', 'value' => 'Belum Valid', 'class' => 'bg-red-100 text-red-700'],
-            ['label' => 'Seleksi', 'value' => 'Belum Diproses', 'class' => 'bg-slate-100 text-slate-600'],
+            [
+                'label' => 'Registrasi',
+                'value' => $registrationStatusLabels[$applicant->registration_status] ?? $applicant->registration_status,
+                'status' => $applicant->registration_status,
+            ],
+            [
+                'label' => 'Berkas',
+                'value' => $documentStatusLabels[$applicant->document_status] ?? $applicant->document_status,
+                'status' => $applicant->document_status,
+            ],
+            [
+                'label' => 'Pembayaran',
+                'value' => $paymentStatusLabels[$applicant->payment_status] ?? $applicant->payment_status,
+                'status' => $applicant->payment_status,
+            ],
+            [
+                'label' => 'Seleksi',
+                'value' => $selectionStatusLabels[$applicant->selection_status] ?? $applicant->selection_status,
+                'status' => $applicant->selection_status,
+            ],
         ] as $item)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $item['label'] }}</p>
-                <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $item['class'] }}">
+                <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($item['status']) }}">
                     {{ $item['value'] }}
                 </span>
             </div>
         @endforeach
     </div>
 
-    <div class="grid gap-8 xl:grid-cols-3">
+    <div class="grid gap-8 xl:grid-cols-[1fr_380px]">
 
-        {{-- Main Detail --}}
-        <div class="space-y-8 xl:col-span-2">
+        {{-- Main Content --}}
+        <div class="space-y-8">
 
             {{-- Biodata --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
-                    <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
-                            Biodata Pribadi
-                        </h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Data identitas utama calon mahasiswa.
-                        </p>
-                    </div>
-
-                    <span class="rounded-full bg-green-100 px-4 py-2 text-xs font-black text-green-700">
-                        Lengkap
-                    </span>
-                </div>
+                <h2 class="text-xl font-black text-polmind-blue">Biodata Camaba</h2>
 
                 <div class="mt-6 grid gap-5 md:grid-cols-2">
                     @foreach([
-                        ['label' => 'Nama Lengkap', 'value' => 'Ahmad Fauzi'],
-                        ['label' => 'NIK', 'value' => '3216xxxxxxxx0001'],
-                        ['label' => 'NISN', 'value' => '006xxxxxxx'],
-                        ['label' => 'Tempat, Tanggal Lahir', 'value' => 'Subang, 12 Mei 2007'],
-                        ['label' => 'Jenis Kelamin', 'value' => 'Laki-laki'],
-                        ['label' => 'Agama', 'value' => 'Islam'],
-                        ['label' => 'Email', 'value' => 'ahmad.fauzi@email.com'],
-                        ['label' => 'Nomor WhatsApp', 'value' => '081234567890'],
-                    ] as $data)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">
-                                {{ $data['label'] }}
-                            </p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">
-                                {{ $data['value'] }}
-                            </p>
+                        'Nama Lengkap' => $applicant->full_name,
+                        'NIK' => $applicant->nik ?? '-',
+                        'NISN' => $applicant->nisn ?? '-',
+                        'Jenis Kelamin' => $applicant->gender === 'male' ? 'Laki-laki' : ($applicant->gender === 'female' ? 'Perempuan' : '-'),
+                        'Tempat Lahir' => $applicant->birth_place ?? '-',
+                        'Tanggal Lahir' => $applicant->birth_date?->format('d M Y') ?? '-',
+                        'Agama' => $applicant->religion ?? '-',
+                        'Sumber Informasi' => $applicant->source_information ?? '-',
+                    ] as $label => $value)
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</p>
+                            <p class="mt-2 text-sm font-bold text-slate-800">{{ $value }}</p>
                         </div>
                     @endforeach
                 </div>
             </div>
 
-            {{-- Address --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
-                        Alamat Domisili
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Data wilayah disimpan dengan kode dan nama wilayah.
-                    </p>
-                </div>
+            {{-- Alamat & Pendidikan --}}
+            <div class="grid gap-8 lg:grid-cols-2">
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-xl font-black text-polmind-blue">Alamat Domisili</h2>
 
-                <div class="mt-6 grid gap-5 md:grid-cols-2">
-                    @foreach([
-                        ['label' => 'Provinsi', 'value' => 'Jawa Barat'],
-                        ['label' => 'Kabupaten/Kota', 'value' => 'Kabupaten Bekasi'],
-                        ['label' => 'Kecamatan', 'value' => 'Cikarang Barat'],
-                        ['label' => 'Desa/Kelurahan', 'value' => 'Gandasari'],
-                        ['label' => 'RT/RW', 'value' => '001 / 002'],
-                        ['label' => 'Kode Pos', 'value' => '17530'],
-                    ] as $data)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">
-                                {{ $data['label'] }}
-                            </p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">
-                                {{ $data['value'] }}
+                    <div class="mt-6 space-y-4 text-sm">
+                        <div>
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Alamat</p>
+                            <p class="mt-2 font-semibold text-slate-800">
+                                {{ $applicant->address?->address ?? '-' }}
                             </p>
                         </div>
-                    @endforeach
 
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 md:col-span-2">
-                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">
-                            Alamat Lengkap
-                        </p>
-                        <p class="mt-2 text-sm font-bold leading-6 text-slate-900">
-                            Jl. Industri Raya Blok A No. 12, dekat kawasan MM2100, Cikarang Barat, Kabupaten Bekasi.
-                        </p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Provinsi</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->province_name ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Kab/Kota</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->regency_name ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Kecamatan</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->district_name ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Desa/Kelurahan</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->village_name ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">RT/RW</p>
+                                <p class="mt-1 font-semibold text-slate-800">
+                                    {{ $applicant->address?->rt ?? '-' }}/{{ $applicant->address?->rw ?? '-' }}
+                                </p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Kode Pos</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->postal_code ?? '-' }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </div>
 
-            {{-- School --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
-                        Data Sekolah Asal
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Data sekolah dipilih dari master sekolah berbasis NPSN.
-                    </p>
-                </div>
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-xl font-black text-polmind-blue">Pendidikan</h2>
 
-                <div class="mt-6 rounded-2xl border border-blue-100 bg-blue-50 p-5">
-                    <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                    <div class="mt-6 space-y-4 text-sm">
                         <div>
-                            <p class="text-xs font-black uppercase tracking-wide text-polmind-blue">
-                                Sekolah Terpilih
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Asal Sekolah</p>
+                            <p class="mt-2 font-bold text-slate-800">
+                                {{ $applicant->education?->school_name ?? '-' }}
                             </p>
-                            <h3 class="mt-2 text-xl font-black text-slate-900">
-                                SMKN 1 Subang
-                            </h3>
-                            <p class="mt-1 text-sm text-slate-600">
-                                NPSN: 20233677
+                            <p class="mt-1 text-xs text-slate-500">
+                                NPSN: {{ $applicant->education?->school_npsn ?? '-' }}
                             </p>
                         </div>
 
-                        <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-polmind-blue">
-                            SMK Negeri
-                        </span>
-                    </div>
-
-                    <div class="mt-6 grid gap-5 md:grid-cols-2">
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Jenjang</p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">SMK</p>
-                        </div>
-
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Jurusan Asal</p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">Rekayasa Perangkat Lunak</p>
-                        </div>
-
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Tahun Lulus</p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">2026</p>
-                        </div>
-
-                        <div>
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Wilayah</p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">Subang, Jawa Barat</p>
-                        </div>
-
-                        <div class="md:col-span-2">
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">Alamat Sekolah</p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">
-                                Jl. Arief Rahman Hakim No.35, Subang, Jawa Barat
-                            </p>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Jenis Sekolah</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->school_type ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Status</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->school_status ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Jurusan</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->major ?? '-' }}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Tahun Lulus</p>
+                                <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->graduation_year ?? '-' }}</p>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Parent --}}
+            {{-- Orang Tua --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
-                        Data Orang Tua / Wali
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Data kontak keluarga untuk kebutuhan administrasi.
-                    </p>
-                </div>
+                <h2 class="text-xl font-black text-polmind-blue">Data Orang Tua / Wali</h2>
 
-                <div class="mt-6 grid gap-5 md:grid-cols-2">
-                    @foreach([
-                        ['label' => 'Nama Ayah', 'value' => 'Dadang Hidayat'],
-                        ['label' => 'Pekerjaan Ayah', 'value' => 'Karyawan Swasta'],
-                        ['label' => 'Nama Ibu', 'value' => 'Siti Nurjanah'],
-                        ['label' => 'Pekerjaan Ibu', 'value' => 'Ibu Rumah Tangga'],
-                        ['label' => 'Penghasilan Orang Tua', 'value' => 'Rp 2.000.000 - Rp 5.000.000'],
-                        ['label' => 'Nomor HP Orang Tua/Wali', 'value' => '081298765432'],
-                    ] as $data)
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                            <p class="text-xs font-black uppercase tracking-wide text-slate-500">
-                                {{ $data['label'] }}
-                            </p>
-                            <p class="mt-2 text-sm font-bold text-slate-900">
-                                {{ $data['value'] }}
-                            </p>
-                        </div>
-                    @endforeach
+                <div class="mt-6 grid gap-5 md:grid-cols-3">
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <p class="text-sm font-black text-slate-900">Ayah</p>
+                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->father_name ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->father_job ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->father_phone ?? '-' }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <p class="text-sm font-black text-slate-900">Ibu</p>
+                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->mother_name ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->mother_job ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->mother_phone ?? '-' }}</p>
+                    </div>
+
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <p class="text-sm font-black text-slate-900">Wali</p>
+                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->guardian_name ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->guardian_relation ?? '-' }}</p>
+                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->guardian_phone ?? '-' }}</p>
+                    </div>
                 </div>
             </div>
 
-            {{-- Documents --}}
+            {{-- Dokumen --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
-                    <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
-                            Berkas Pendaftaran
-                        </h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Daftar dokumen yang telah diunggah oleh camaba.
-                        </p>
-                    </div>
+                <h2 class="text-xl font-black text-polmind-blue">Berkas Pendaftaran</h2>
 
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Verifikasi Semua Berkas?',
-                                text: 'Pastikan seluruh dokumen sudah diperiksa.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Verifikasi',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
-                        Verifikasi Berkas
-                    </button>
-                </div>
-
-                @php
-                    $documents = [
-                        ['name' => 'Pas Foto', 'file' => 'pas-foto-ahmad.jpg', 'status' => 'Diterima', 'class' => 'bg-green-100 text-green-700'],
-                        ['name' => 'KTP / Kartu Pelajar', 'file' => 'ktp-ahmad.pdf', 'status' => 'Menunggu', 'class' => 'bg-yellow-100 text-yellow-700'],
-                        ['name' => 'Kartu Keluarga', 'file' => 'kk-ahmad.jpg', 'status' => 'Ditolak', 'class' => 'bg-red-100 text-red-700'],
-                        ['name' => 'Ijazah / SKL', 'file' => '-', 'status' => 'Belum Upload', 'class' => 'bg-slate-100 text-slate-600'],
-                    ];
-                @endphp
-
-                <div class="mt-6 overflow-hidden rounded-2xl border border-slate-200">
-                    <table class="w-full min-w-[700px] text-left text-sm">
+                <div class="mt-6 overflow-x-auto">
+                    <table class="w-full min-w-[760px] text-left text-sm">
                         <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                             <tr>
-                                <th class="px-4 py-3">Dokumen</th>
+                                <th class="px-4 py-3">Jenis Berkas</th>
                                 <th class="px-4 py-3">File</th>
                                 <th class="px-4 py-3">Status</th>
-                                <th class="px-4 py-3 text-right">Aksi</th>
+                                <th class="px-4 py-3">Catatan</th>
+                                <th class="px-4 py-3">Verifikator</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200 bg-white">
-                            @foreach($documents as $document)
+                        <tbody class="divide-y divide-slate-200">
+                            @forelse($applicant->documents as $document)
                                 <tr>
-                                    <td class="px-4 py-4 font-bold text-slate-900">{{ $document['name'] }}</td>
-                                    <td class="px-4 py-4 text-slate-600">{{ $document['file'] }}</td>
+                                    <td class="px-4 py-4 font-bold text-slate-800">
+                                        {{ $document->documentType?->name ?? '-' }}
+                                    </td>
                                     <td class="px-4 py-4">
-                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ $document['class'] }}">
-                                            {{ $document['status'] }}
+                                        <p class="font-semibold text-slate-700">{{ $document->file_name ?? '-' }}</p>
+                                        <p class="mt-1 text-xs text-slate-500">{{ $document->file_size_kb ?? 0 }} KB</p>
+                                    </td>
+                                    <td class="px-4 py-4">
+                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($document->status) }}">
+                                            {{ str_replace('_', ' ', ucfirst($document->status)) }}
                                         </span>
                                     </td>
-                                    <td class="px-4 py-4 text-right">
-                                        <button class="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                                            Lihat
-                                        </button>
+                                    <td class="px-4 py-4 text-slate-600">
+                                        {{ $document->admin_note ?? '-' }}
+                                    </td>
+                                    <td class="px-4 py-4 text-slate-600">
+                                        {{ $document->verified_by_name ?? '-' }}
                                     </td>
                                 </tr>
-                            @endforeach
+                            @empty
+                                <tr>
+                                    <td colspan="5" class="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                                        Belum ada berkas yang diupload.
+                                    </td>
+                                </tr>
+                            @endforelse
                         </tbody>
                     </table>
                 </div>
             </div>
 
-            {{-- Payment --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
-                    <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
-                            Pembayaran
-                        </h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Informasi tagihan dan bukti pembayaran pendaftaran.
-                        </p>
-                    </div>
+            {{-- Invoice --}}
+            <div class="grid gap-8 lg:grid-cols-2">
+                @foreach([
+                    'Invoice Pendaftaran' => $applicant->registrationInvoice,
+                    'Invoice Daftar Ulang' => $applicant->reRegistrationInvoice,
+                ] as $title => $invoice)
+                    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <h2 class="text-xl font-black text-polmind-blue">{{ $title }}</h2>
 
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Validasi Pembayaran?',
-                                text: 'Pembayaran akan ditandai valid.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Validasi',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-700">
-                        Validasi Pembayaran
-                    </button>
-                </div>
+                        @if($invoice)
+                            <div class="mt-5 rounded-2xl bg-slate-50 p-5">
+                                <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
+                                <p class="mt-1 font-black text-slate-900">{{ $invoice->invoice_number }}</p>
 
-                <div class="mt-6 grid gap-5 md:grid-cols-3">
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Invoice</p>
-                        <p class="mt-2 text-sm font-bold text-polmind-blue">INV/PMB/2026/0001</p>
-                    </div>
+                                <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-500">Total</p>
+                                        <p class="mt-1 font-black text-polmind-blue">
+                                            Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p class="text-xs font-bold text-slate-500">Status</p>
+                                        <span class="mt-1 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($invoice->status) }}">
+                                            {{ str_replace('_', ' ', ucfirst($invoice->status)) }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">Nominal</p>
-                        <p class="mt-2 text-sm font-bold text-slate-900">Rp350.000</p>
+                            <div class="mt-5 space-y-3">
+                                @foreach($invoice->items as $item)
+                                    <div class="flex justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                                        <span class="font-semibold text-slate-700">{{ $item->name }}</span>
+                                        <span class="font-black text-slate-900">
+                                            Rp{{ number_format($item->subtotal, 0, ',', '.') }}
+                                        </span>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @else
+                            <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                                Invoice belum tersedia.
+                            </p>
+                        @endif
                     </div>
-
-                    <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
-                        <p class="text-xs font-black uppercase tracking-wide text-yellow-700">Status</p>
-                        <p class="mt-2 text-sm font-bold text-yellow-800">Menunggu Verifikasi</p>
-                    </div>
-                </div>
-
-                <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                    <p class="text-xs font-black uppercase tracking-wide text-slate-500">Bukti Pembayaran</p>
-                    <div class="mt-3 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                        <p class="text-sm font-bold text-slate-900">bukti-transfer-ahmad.jpg</p>
-                        <button class="rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50">
-                            Lihat Bukti
-                        </button>
-                    </div>
-                </div>
+                @endforeach
             </div>
+
         </div>
 
-        {{-- Sidebar Actions --}}
+        {{-- Sidebar --}}
         <aside class="space-y-6">
 
-            {{-- Action Panel --}}
+            {{-- Action --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Aksi Admin
-                </h2>
-                <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Gunakan panel ini untuk mengubah status camaba.
-                </p>
+                <h2 class="text-lg font-black text-polmind-blue">Aksi Admin</h2>
 
-                <div class="mt-6 space-y-3">
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Set Camaba Diterima?',
-                                text: 'Status seleksi akan berubah menjadi diterima.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Diterima',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#16A34A'
-                            })"
-                            class="w-full rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-700">
-                        Set Diterima
-                    </button>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Set Camaba Cadangan?',
-                                text: 'Status seleksi akan berubah menjadi cadangan.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Cadangan',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#F59E0B'
-                            })"
-                            class="w-full rounded-xl bg-yellow-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-yellow-600">
-                        Set Cadangan
-                    </button>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Set Camaba Ditolak?',
-                                text: 'Status seleksi akan berubah menjadi tidak diterima.',
-                                icon: 'warning',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Tolak',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#DC2626'
-                            })"
-                            class="w-full rounded-xl bg-red-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-red-700">
-                        Set Ditolak
-                    </button>
-
-                    <button type="button"
-                            onclick="Swal.fire({
-                                title: 'Tandai Daftar Ulang Valid?',
-                                text: 'Camaba akan ditandai siap sinkron ke SIAKAD.',
-                                icon: 'question',
-                                showCancelButton: true,
-                                confirmButtonText: 'Ya, Valid',
-                                cancelButtonText: 'Batal',
-                                confirmButtonColor: '#003B82'
-                            })"
-                            class="w-full rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
-                        Daftar Ulang Valid
-                    </button>
+                <div class="mt-5 space-y-3">
+                    @foreach([
+                        ['label' => 'Validasi Berkas', 'color' => 'bg-polmind-blue text-white'],
+                        ['label' => 'Validasi Pembayaran', 'color' => 'bg-green-600 text-white'],
+                        ['label' => 'Set Diterima', 'color' => 'bg-purple-600 text-white'],
+                        ['label' => 'Tandai Follow Up', 'color' => 'bg-polmind-yellow text-polmind-blue-dark'],
+                    ] as $action)
+                        <button type="button"
+                                onclick="Swal.fire({
+                                    title: '{{ $action['label'] }}',
+                                    text: 'Aksi ini akan kita sambungkan ke controller update di tahap berikutnya.',
+                                    icon: 'info',
+                                    confirmButtonColor: '#003B82'
+                                })"
+                                class="w-full rounded-xl px-4 py-3 text-sm font-black transition hover:brightness-95 {{ $action['color'] }}">
+                            {{ $action['label'] }}
+                        </button>
+                    @endforeach
                 </div>
+            </div>
+
+            {{-- Seleksi --}}
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-black text-polmind-blue">Status Seleksi</h2>
+
+                @if($applicant->selection)
+                    <div class="mt-5 space-y-4 text-sm">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Status</p>
+                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($applicant->selection->status) }}">
+                                {{ $selectionStatusLabels[$applicant->selection->status] ?? $applicant->selection->status }}
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                                <p class="text-xs text-slate-500">Tes</p>
+                                <p class="mt-1 font-black">{{ $applicant->selection->test_score ?? '-' }}</p>
+                            </div>
+                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                                <p class="text-xs text-slate-500">Interview</p>
+                                <p class="mt-1 font-black">{{ $applicant->selection->interview_score ?? '-' }}</p>
+                            </div>
+                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                                <p class="text-xs text-slate-500">Final</p>
+                                <p class="mt-1 font-black">{{ $applicant->selection->final_score ?? '-' }}</p>
+                            </div>
+                        </div>
+
+                        <p class="rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">
+                            {{ $applicant->selection->note ?? 'Belum ada catatan seleksi.' }}
+                        </p>
+                    </div>
+                @else
+                    <p class="mt-5 text-sm font-semibold text-slate-500">
+                        Data seleksi belum dibuat.
+                    </p>
+                @endif
             </div>
 
             {{-- Follow Up --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Catatan Follow Up
-                </h2>
+                <h2 class="text-lg font-black text-polmind-blue">Follow Up Terakhir</h2>
 
-                <form action="#" method="POST" class="mt-5 space-y-4">
-                    @csrf
+                @if($applicant->latestFollowUp)
+                    <div class="mt-5 rounded-2xl bg-slate-50 p-5">
+                        <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-yellow-700">
+                            {{ str_replace('_', ' ', ucfirst($applicant->latestFollowUp->status)) }}
+                        </span>
 
-                    <div>
-                        <label class="text-sm font-bold text-slate-700">Status Follow Up</label>
-                        <select name="follow_up_status"
-                                class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                            <option>Belum Dihubungi</option>
-                            <option>Sudah Dihubungi</option>
-                            <option>Tertarik</option>
-                            <option>Menunggu Orang Tua</option>
-                            <option>Akan Daftar Ulang</option>
-                            <option>Tidak Jadi</option>
-                        </select>
+                        <p class="mt-4 text-sm leading-6 text-slate-700">
+                            {{ $applicant->latestFollowUp->note }}
+                        </p>
+
+                        <p class="mt-4 text-xs font-semibold text-slate-500">
+                            Petugas: {{ $applicant->latestFollowUp->officer_name ?? '-' }}
+                        </p>
+
+                        <p class="mt-1 text-xs font-semibold text-slate-500">
+                            Follow up berikutnya:
+                            {{ $applicant->latestFollowUp->next_follow_up_date?->format('d M Y') ?? '-' }}
+                        </p>
                     </div>
-
-                    <div>
-                        <label class="text-sm font-bold text-slate-700">Catatan</label>
-                        <textarea name="note"
-                                  rows="4"
-                                  placeholder="Tulis hasil follow up..."
-                                  class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
-                    </div>
-
-                    <button type="button"
-                            class="w-full rounded-xl border border-polmind-blue bg-white px-5 py-3 text-sm font-bold text-polmind-blue transition hover:bg-blue-50">
-                        Simpan Catatan
-                    </button>
-                </form>
+                @else
+                    <p class="mt-5 text-sm font-semibold text-slate-500">
+                        Belum ada riwayat follow up.
+                    </p>
+                @endif
             </div>
 
-            {{-- Status Timeline --}}
+            {{-- Integrasi --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
-                    Timeline Status
-                </h2>
+                <h2 class="text-lg font-black text-polmind-blue">Integrasi SIAKAD</h2>
 
-                <div class="mt-6 space-y-5">
-                    @foreach([
-                        ['title' => 'Registrasi Akun', 'date' => '20 Juni 2026', 'status' => 'Selesai'],
-                        ['title' => 'Biodata Lengkap', 'date' => '21 Juni 2026', 'status' => 'Selesai'],
-                        ['title' => 'Upload Berkas', 'date' => '22 Juni 2026', 'status' => 'Menunggu'],
-                        ['title' => 'Pembayaran', 'date' => '23 Juni 2026', 'status' => 'Menunggu'],
-                    ] as $timeline)
-                        <div class="flex gap-3">
-                            <div class="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">
-                                ✓
-                            </div>
+                <div class="mt-5 rounded-2xl bg-slate-50 p-5">
+                    <p class="text-xs font-bold text-slate-500">Sync Status</p>
+                    <p class="mt-2 font-black text-polmind-blue">
+                        {{ str_replace('_', ' ', ucfirst($applicant->sync_status)) }}
+                    </p>
 
-                            <div>
-                                <p class="text-sm font-black text-slate-900">
-                                    {{ $timeline['title'] }}
+                    <p class="mt-4 text-xs font-bold text-slate-500">NIM</p>
+                    <p class="mt-2 font-black text-slate-900">
+                        {{ $applicant->nim ?? 'Belum tersedia' }}
+                    </p>
+                </div>
+
+                <div class="mt-5 space-y-3">
+                    @forelse($applicant->integrationLogs->take(3) as $log)
+                        <div class="rounded-xl border border-slate-200 p-4">
+                            <div class="flex items-center justify-between gap-3">
+                                <p class="text-xs font-black text-slate-700">
+                                    {{ $log->system_name }}
                                 </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $timeline['date'] }} · {{ $timeline['status'] }}
-                                </p>
+                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($log->status) }}">
+                                    {{ $log->status }}
+                                </span>
                             </div>
+                            <p class="mt-2 text-xs text-slate-500">
+                                {{ $log->endpoint ?? '-' }}
+                            </p>
                         </div>
-                    @endforeach
+                    @empty
+                        <p class="text-sm font-semibold text-slate-500">
+                            Belum ada log integrasi.
+                        </p>
+                    @endforelse
                 </div>
             </div>
 
         </aside>
     </div>
-
 </div>
 @endsection

@@ -74,4 +74,33 @@ class ApplicantController extends Controller
             'applicants'
         ));
     }
+
+    public function show(string $registration_number)
+    {
+        $applicant = Applicant::query()
+            ->with([
+                'pmbYear',
+                'admissionWave',
+                'studyProgram',
+                'secondStudyProgram',
+                'classType',
+                'address',
+                'education',
+                'parentData',
+                'documents.documentType',
+                'registrationInvoice.items.feeComponent',
+                'registrationInvoice.payments',
+                'reRegistrationInvoice.items.feeComponent',
+                'reRegistrationInvoice.payments',
+                'selection',
+                'reRegistration.invoice',
+                'followUps',
+                'latestFollowUp',
+                'integrationLogs',
+            ])
+            ->where('registration_number', $registration_number)
+            ->firstOrFail();
+
+        return view('admin.applicants.show', compact('applicant'));
+    }
 }
