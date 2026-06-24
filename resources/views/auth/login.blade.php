@@ -1,57 +1,72 @@
 @extends('layouts.auth')
 
-@section('title', 'Masuk Akun PMB Polmind')
+@section('title', 'Login Camaba')
 
 @section('content')
-<div class="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200 md:grid-cols-2">
-    <div class="hidden bg-polmind-blue p-10 text-white md:block">
-        <h2 class="text-2xl font-bold">Wujudkan Karir Impian di Bidang Industri.</h2>
-        <p class="mt-4 leading-7 text-blue-100">
-            Bergabunglah dengan Politeknik Mitra Industri untuk masa depan yang lebih cerah.
-        </p>
+<div class="mx-auto w-full max-w-md">
+    <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
 
-        <div class="mt-14 space-y-4">
-            <div class="rounded-2xl border border-white/20 bg-white/10 p-5">
-                <h3 class="font-bold">Akreditasi Unggul</h3>
-                <p class="mt-1 text-sm text-blue-100">Kurikulum berbasis industri terkini.</p>
-            </div>
-            <div class="rounded-2xl border border-white/20 bg-white/10 p-5">
-                <h3 class="font-bold">Link and Match</h3>
-                <p class="mt-1 text-sm text-blue-100">Kerja sama dengan perusahaan mitra.</p>
-            </div>
+        <div class="text-center">
+            <p class="text-sm font-black uppercase tracking-[0.25em] text-polmind-blue">
+                PMB Polmind
+            </p>
+            <h1 class="mt-3 text-3xl font-black text-slate-900">
+                Login Camaba
+            </h1>
+            <p class="mt-3 text-sm leading-6 text-slate-600">
+                Masuk menggunakan email dan password yang sudah didaftarkan.
+            </p>
         </div>
-    </div>
 
-    <div class="p-8 sm:p-12">
-        <h1 class="text-2xl font-black text-polmind-blue">Selamat Datang</h1>
-        <p class="mt-2 text-slate-600">Silakan masuk ke akun pendaftaran Anda.</p>
+        @if($errors->any())
+            <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+                {{ $errors->first() }}
+            </div>
+        @endif
 
-        <form action="#" method="POST" class="mt-8 space-y-5">
+        @if(session('success'))
+            <div class="mt-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <form action="{{ route('login.store') }}" method="POST" class="mt-8 space-y-5">
             @csrf
 
             <div>
-                <label class="text-sm font-semibold text-slate-700">Email</label>
-                <input type="email" name="email" placeholder="nama@email.com"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                <label class="text-sm font-bold text-slate-700">Email</label>
+                <input type="email"
+                       name="email"
+                       value="{{ old('email') }}"
+                       required
+                       placeholder="email@example.com"
+                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-semibold text-slate-700">Password</label>
-                <input type="password" name="password" placeholder="••••••••"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                <label class="text-sm font-bold text-slate-700">Password</label>
+                <input type="password"
+                       name="password"
+                       required
+                       placeholder="Masukkan password"
+                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
-            <button type="submit" class="w-full rounded-xl bg-polmind-blue px-5 py-3 font-bold text-white shadow-lg shadow-blue-900/20 hover:bg-polmind-blue-dark">
-                Masuk Sekarang
+            <label class="flex items-center gap-2 text-sm font-semibold text-slate-600">
+                <input type="checkbox" name="remember" value="1" class="rounded border-slate-300">
+                Ingat saya
+            </label>
+
+            <button type="submit"
+                    class="w-full rounded-xl bg-polmind-blue px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                Login
             </button>
         </form>
 
-        <div class="my-8 border-t border-slate-200"></div>
-
-        <p class="text-center text-slate-600">
+        <p class="mt-6 text-center text-sm text-slate-600">
             Belum punya akun?
-            <a href="{{ url('/register') }}" class="font-bold text-polmind-blue hover:underline">
-                Daftar Akun Baru
+            <a href="{{ route('register') }}" class="font-black text-polmind-blue hover:underline">
+                Registrasi di sini
             </a>
         </p>
     </div>

@@ -1,69 +1,155 @@
 @extends('layouts.auth')
 
-@section('title', 'Daftar Akun PMB Polmind')
+@section('title', 'Registrasi Camaba')
 
 @section('content')
-<div class="grid w-full max-w-6xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl shadow-slate-200 md:grid-cols-2">
-    <div class="hidden bg-polmind-blue p-10 text-white md:block">
-        <h2 class="text-2xl font-bold">Mulai Pendaftaran Anda</h2>
-        <p class="mt-4 leading-7 text-blue-100">
-            Buat akun PMB untuk mengisi biodata, upload berkas, melihat tagihan, dan memantau status seleksi.
-        </p>
+<div class="mx-auto w-full max-w-2xl">
+    <div class="rounded-3xl border border-slate-200 bg-white p-8 shadow-xl shadow-slate-200/70">
 
-        <div class="mt-14 space-y-4">
-            <div class="rounded-2xl border border-white/20 bg-white/10 p-5">
-                <h3 class="font-bold">Proses Mudah</h3>
-                <p class="mt-1 text-sm text-blue-100">Pendaftaran dapat dilakukan secara online.</p>
-            </div>
-            <div class="rounded-2xl border border-white/20 bg-white/10 p-5">
-                <h3 class="font-bold">Pantau Status</h3>
-                <p class="mt-1 text-sm text-blue-100">Cek progres pendaftaran langsung dari dashboard.</p>
-            </div>
+        <div class="text-center">
+            <p class="text-sm font-black uppercase tracking-[0.25em] text-polmind-blue">
+                PMB Polmind
+            </p>
+            <h1 class="mt-3 text-3xl font-black text-slate-900">
+                Registrasi Camaba
+            </h1>
+            <p class="mt-3 text-sm leading-6 text-slate-600">
+                Isi data awal untuk membuat akun pendaftaran mahasiswa baru.
+            </p>
         </div>
-    </div>
 
-    <div class="p-8 sm:p-12">
-        <h1 class="text-2xl font-black text-polmind-blue">Daftar Akun Baru</h1>
-        <p class="mt-2 text-slate-600">Silakan lengkapi data awal untuk membuat akun PMB.</p>
+        @if($errors->any())
+            <div class="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+                {{ $errors->first() }}
+            </div>
+        @endif
 
-        <form action="#" method="POST" class="mt-8 space-y-5">
+        @if(session('success'))
+            <div class="mt-6 rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+                {{ session('success') }}
+            </div>
+        @endif
+
+        <div class="mt-6 rounded-2xl bg-blue-50 p-5">
+            <p class="text-sm font-black text-polmind-blue">
+                {{ $activePmbYear?->name ?? 'Tahun PMB belum aktif' }}
+            </p>
+            <p class="mt-1 text-xs font-semibold text-slate-600">
+                Gelombang aktif:
+                <span class="font-black">
+                    {{ $activeWave?->name ?? 'Belum tersedia' }}
+                </span>
+            </p>
+        </div>
+
+        <form action="{{ route('register.store') }}" method="POST" class="mt-8 space-y-5">
             @csrf
 
             <div>
-                <label class="text-sm font-semibold text-slate-700">Nama Lengkap</label>
-                <input type="text" name="name" placeholder="Nama sesuai ijazah"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                <label class="text-sm font-bold text-slate-700">Nama Lengkap</label>
+                <input type="text"
+                       name="full_name"
+                       value="{{ old('full_name') }}"
+                       required
+                       placeholder="Masukkan nama lengkap"
+                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+            </div>
+
+            <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Email</label>
+                    <input type="email"
+                           name="email"
+                           value="{{ old('email') }}"
+                           required
+                           placeholder="email@example.com"
+                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                </div>
+
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Nomor WhatsApp</label>
+                    <input type="text"
+                           name="phone"
+                           value="{{ old('phone') }}"
+                           required
+                           placeholder="08xxxxxxxxxx"
+                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                </div>
+            </div>
+
+            <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Pilihan Program Studi</label>
+                    <select name="study_program_id"
+                            required
+                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        <option value="">Pilih Program Studi</option>
+                        @foreach($studyPrograms as $program)
+                            <option value="{{ $program->id }}" @selected(old('study_program_id') == $program->id)>
+                                {{ $program->code }} - {{ $program->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Jenis Kelas</label>
+                    <select name="class_type_id"
+                            required
+                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        <option value="">Pilih Kelas</option>
+                        @foreach($classTypes as $classType)
+                            <option value="{{ $classType->id }}" @selected(old('class_type_id') == $classType->id)>
+                                {{ $classType->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
             </div>
 
             <div>
-                <label class="text-sm font-semibold text-slate-700">Email</label>
-                <input type="email" name="email" placeholder="nama@email.com"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                <label class="text-sm font-bold text-slate-700">Sumber Informasi</label>
+                <select name="source_information"
+                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Pilih sumber informasi</option>
+                    @foreach(['Instagram', 'TikTok', 'Website', 'Roadshow Sekolah', 'Teman/Keluarga', 'WhatsApp', 'Lainnya'] as $source)
+                        <option value="{{ $source }}" @selected(old('source_information') === $source)>
+                            {{ $source }}
+                        </option>
+                    @endforeach
+                </select>
             </div>
 
-            <div>
-                <label class="text-sm font-semibold text-slate-700">Nomor WhatsApp</label>
-                <input type="text" name="phone" placeholder="+62 812xxxxxxx"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+            <div class="grid gap-5 md:grid-cols-2">
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Password</label>
+                    <input type="password"
+                           name="password"
+                           required
+                           placeholder="Minimal 8 karakter"
+                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                </div>
+
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Konfirmasi Password</label>
+                    <input type="password"
+                           name="password_confirmation"
+                           required
+                           placeholder="Ulangi password"
+                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                </div>
             </div>
 
-            <div>
-                <label class="text-sm font-semibold text-slate-700">Password</label>
-                <input type="password" name="password" placeholder="Minimal 8 karakter"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-            </div>
-
-            <button type="submit" class="w-full rounded-xl bg-polmind-yellow px-5 py-3 font-bold text-polmind-blue-dark shadow-lg shadow-yellow-900/10 hover:brightness-95">
+            <button type="submit"
+                    class="w-full rounded-xl bg-polmind-blue px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                 Daftar Sekarang
             </button>
         </form>
 
-        <div class="my-8 border-t border-slate-200"></div>
-
-        <p class="text-center text-slate-600">
+        <p class="mt-6 text-center text-sm text-slate-600">
             Sudah punya akun?
-            <a href="{{ url('/login') }}" class="font-bold text-polmind-blue hover:underline">
-                Masuk
+            <a href="{{ route('login') }}" class="font-black text-polmind-blue hover:underline">
+                Login di sini
             </a>
         </p>
     </div>

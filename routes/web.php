@@ -11,18 +11,19 @@ use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MasterDataController;
+use App\Http\Controllers\Auth\CamabaAuthController;
 
 Route::get('/', function () {
     return view('public.home');
 });
 
-Route::get('/login', function () {
-    return view('auth.login');
-});
+Route::get('/login', [CamabaAuthController::class, 'showLogin'])->name('login');
+Route::post('/login', [CamabaAuthController::class, 'login'])->name('login.store');
 
-Route::get('/register', function () {
-    return view('auth.register');
-});
+Route::get('/register', [CamabaAuthController::class, 'showRegister'])->name('register');
+Route::post('/register', [CamabaAuthController::class, 'register'])->name('register.store');
+
+Route::post('/logout', [CamabaAuthController::class, 'logout'])->name('logout');
 
 Route::prefix('camaba')->name('camaba.')->group(function () {
     Route::get('/dashboard', function () {

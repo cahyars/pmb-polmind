@@ -152,7 +152,16 @@
                    class="flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                     ← Kembali ke Landing
                 </a>
+                <form action="{{ route('logout') }}" method="POST" class="mt-3">
+                    @csrf
+
+                    <button type="submit"
+                            class="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-700 transition hover:bg-red-100">
+                        Logout
+                    </button>
+                </form>
             </div>
+            
         </aside>
 
         {{-- Main Area --}}
