@@ -52,4 +52,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/applicants/{registration_number}', function ($registration_number) {
         return view('admin.applicants.show', compact('registration_number'));
     })->name('applicants.show');
+
+    Route::get('/documents', function () {
+        return view('admin.documents.index');
+    })->name('documents.index');
 });
