@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
+use App\Http\Controllers\Admin\MasterDataController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -79,9 +80,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
-    Route::get('/master-data', function () {
-        return view('admin.master-data.index');
-    })->name('master-data.index');
+    Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
 
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
