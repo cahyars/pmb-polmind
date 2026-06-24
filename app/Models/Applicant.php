@@ -94,4 +94,54 @@ class Applicant extends Authenticatable
     {
         return $this->hasOne(ApplicantParent::class);
     }
+
+    public function documents()
+    {
+        return $this->hasMany(ApplicantDocument::class);
+    }
+
+    public function invoices()
+    {
+        return $this->hasMany(Invoice::class);
+    }
+
+    public function registrationInvoice()
+    {
+        return $this->hasOne(Invoice::class)->where('type', 'registration');
+    }
+
+    public function reRegistrationInvoice()
+    {
+        return $this->hasOne(Invoice::class)->where('type', 're_registration');
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
+
+    public function selection()
+    {
+        return $this->hasOne(Selection::class);
+    }
+
+    public function reRegistration()
+    {
+        return $this->hasOne(ReRegistration::class);
+    }
+
+    public function followUps()
+    {
+        return $this->hasMany(FollowUp::class);
+    }
+
+    public function latestFollowUp()
+    {
+        return $this->hasOne(FollowUp::class)->latestOfMany();
+    }
+
+    public function integrationLogs()
+    {
+        return $this->hasMany(IntegrationLog::class);
+    }
 }

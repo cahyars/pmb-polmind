@@ -23,4 +23,9 @@ class FeeComponent extends Model
         'sort_order' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function invoiceItems()
+    {
+        return $this->hasMany(InvoiceItem::class);
+    }
 }

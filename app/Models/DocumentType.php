@@ -26,4 +26,9 @@ class DocumentType extends Model
         'sort_order' => 'integer',
         'is_active' => 'boolean',
     ];
+
+    public function applicantDocuments()
+    {
+        return $this->hasMany(ApplicantDocument::class);
+    }
 }
