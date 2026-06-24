@@ -4,6 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
+use App\Http\Controllers\Admin\PaymentVerificationController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -54,9 +55,9 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::patch('/documents/{document}/accept', [DocumentVerificationController::class, 'accept'])->name('documents.accept');
     Route::patch('/documents/{document}/reject', [DocumentVerificationController::class, 'reject'])->name('documents.reject');
 
-    Route::get('/payments', function () {
-        return view('admin.payments.index');
-    })->name('payments.index');
+    Route::get('/payments', [PaymentVerificationController::class, 'index'])->name('payments.index');
+    Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');
+    Route::patch('/payments/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payments.reject');
 
     Route::get('/selections', function () {
         return view('admin.selections.index');
