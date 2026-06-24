@@ -14,3 +14,7 @@
     --color-polmind-bg: #F3F6FA;
     --color-polmind-border: #D6DEE9;
 }
+
+[x-cloak] {
+    display: none !important;
+}
