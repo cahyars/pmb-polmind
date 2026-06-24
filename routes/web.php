@@ -64,4 +64,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/selections', function () {
         return view('admin.selections.index');
     })->name('selections.index');
+
+    Route::get('/re-registrations', function () {
+        return view('admin.re-registrations.index');
+    })->name('re-registrations.index');
 });
