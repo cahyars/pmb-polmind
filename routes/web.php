@@ -60,4 +60,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/payments', function () {
         return view('admin.payments.index');
     })->name('payments.index');
+
+    Route::get('/selections', function () {
+        return view('admin.selections.index');
+    })->name('selections.index');
 });
