@@ -11,7 +11,7 @@
 
 <div x-data="{ sidebarOpen: false }" class="min-h-screen lg:flex">
 
-    <aside class="fixed inset-y-0 left-0 z-50 w-72 -translate-x-full border-r border-slate-200 bg-polmind-blue-dark text-white transition-transform duration-300 lg:static lg:translate-x-0"
+    <aside class="fixed inset-y-0 left-0 z-50 w-72 flex-col -translate-x-full border-r border-slate-200 bg-polmind-blue-dark text-white transition-transform duration-300 lg:static lg:translate-x-0"
            :class="{ 'translate-x-0': sidebarOpen }">
 
         <div class="flex h-full flex-col">
@@ -24,28 +24,83 @@
 
             <nav class="flex-1 space-y-1 px-4">
                 @php
-                    $adminMenus = [
-                        ['label' => 'Dashboard', 'url' => '/admin/dashboard'],
-                        ['label' => 'Data Camaba', 'url' => '/admin/applicants'],
-                        ['label' => 'Verifikasi Berkas', 'url' => '/admin/documents'],
-                        ['label' => 'Verifikasi Pembayaran', 'url' => '/admin/payments'],
-                        ['label' => 'Seleksi', 'url' => '/admin/selections'],
-                        ['label' => 'Daftar Ulang', 'url' => '/admin/re-registrations'],
-                        ['label' => 'Follow Up', 'url' => '/admin/follow-ups'],
-                        ['label' => 'Laporan', 'url' => '/admin/reports'],
-                        ['label' => 'Master Data', 'url' => '/admin/master-data'],
+                    $menus = [
+                        [
+                            'label' => 'Dashboard',
+                            'url' => '/admin/dashboard',
+                            'icon' => '▦',
+                            'active' => request()->is('admin/dashboard'),
+                        ],
+                        [
+                            'label' => 'Data Camaba',
+                            'url' => '/admin/applicants',
+                            'icon' => '👤',
+                            'active' => request()->is('admin/applicants*'),
+                        ],
+                        [
+                            'label' => 'Verifikasi Berkas',
+                            'url' => '/admin/documents',
+                            'icon' => '📄',
+                            'active' => request()->is('admin/documents*'),
+                        ],
+                        [
+                            'label' => 'Verifikasi Pembayaran',
+                            'url' => '/admin/payments',
+                            'icon' => '💳',
+                            'active' => request()->is('admin/payments*'),
+                        ],
+                        [
+                            'label' => 'Seleksi',
+                            'url' => '/admin/selections',
+                            'icon' => '✅',
+                            'active' => request()->is('admin/selections*'),
+                        ],
+                        [
+                            'label' => 'Daftar Ulang',
+                            'url' => '/admin/re-registrations',
+                            'icon' => '🎓',
+                            'active' => request()->is('admin/re-registrations*'),
+                        ],
+                        [
+                            'label' => 'Follow Up',
+                            'url' => '/admin/follow-ups',
+                            'icon' => '💬',
+                            'active' => request()->is('admin/follow-ups*'),
+                        ],
+                        [
+                            'label' => 'Laporan',
+                            'url' => '/admin/reports',
+                            'icon' => '📊',
+                            'active' => request()->is('admin/reports*'),
+                        ],
+                        [
+                            'label' => 'Master Data',
+                            'url' => '/admin/master-data',
+                            'icon' => '⚙️',
+                            'active' => request()->is('admin/master-data*'),
+                        ],
+                        [
+                            'label' => 'Integrasi SIAKAD',
+                            'url' => '/admin/integrations',
+                            'icon' => '🔄',
+                            'active' => request()->is('admin/integrations*'),
+                        ],
                     ];
                 @endphp
 
-                @foreach ($adminMenus as $menu)
-                    @php
-                        $active = request()->is(ltrim($menu['url'], '/') . '*');
-                    @endphp
-
+                @foreach($menus as $menu)
                     <a href="{{ url($menu['url']) }}"
-                       class="flex items-center rounded-xl px-4 py-3 text-sm font-semibold transition
-                       {{ $active ? 'bg-white text-polmind-blue shadow-sm' : 'text-blue-100 hover:bg-white/10 hover:text-white' }}">
-                        {{ $menu['label'] }}
+                    class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition
+                    {{ $menu['active']
+                            ? 'bg-polmind-yellow text-polmind-blue-dark shadow-sm'
+                            : 'text-blue-100 hover:bg-white/10 hover:text-white'
+                    }}">
+                        <span class="flex h-8 w-8 items-center justify-center rounded-lg
+                            {{ $menu['active'] ? 'bg-white/60' : 'bg-white/10' }}">
+                            {{ $menu['icon'] }}
+                        </span>
+
+                        <span>{{ $menu['label'] }}</span>
                     </a>
                 @endforeach
             </nav>
@@ -58,6 +113,7 @@
             </div>
         </div>
     </aside>
+    
 
     <div x-show="sidebarOpen"
          x-transition.opacity
@@ -106,6 +162,7 @@
             @yield('content')
         </main>
     </div>
+    
 </div>
 
 </body>
