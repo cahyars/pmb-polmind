@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\ApplicantController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -44,9 +45,7 @@ Route::prefix('camaba')->name('camaba.')->group(function () {
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    Route::get('/applicants', function () {
-        return view('admin.applicants.index');
-    })->name('applicants.index');
+    Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
 
     Route::get('/applicants/{registration_number}', function ($registration_number) {
         return view('admin.applicants.show', compact('registration_number'));
