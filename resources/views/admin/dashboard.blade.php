@@ -36,14 +36,14 @@
 
             <div class="rounded-3xl bg-white/10 p-6">
                 <p class="text-sm font-bold text-blue-100">Total Pendaftar</p>
-                <p class="mt-3 text-5xl font-black">128</p>
+                <p class="mt-3 text-5xl font-black">{{ $totalApplicants }}</p>
 
                 <div class="mt-5 h-3 overflow-hidden rounded-full bg-white/20">
-                    <div class="h-full w-[72%] rounded-full bg-polmind-yellow"></div>
+                    <div class="h-full rounded-full bg-polmind-yellow" style="width: {{ min($targetProgress, 100) }}%"></div>
                 </div>
 
                 <p class="mt-4 text-xs leading-5 text-blue-100">
-                    Target sementara 180 pendaftar. Progress sekitar 72%.
+                    Target sementara {{ $targetApplicants }} pendaftar. Progress sekitar {{ $targetProgress }}%.
                 </p>
             </div>
         </div>
@@ -52,10 +52,34 @@
     {{-- Main Stats --}}
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['label' => 'Total Camaba', 'value' => '128', 'desc' => 'Semua pendaftar', 'url' => '/admin/applicants', 'class' => 'bg-blue-100 text-polmind-blue'],
-            ['label' => 'Berkas Menunggu', 'value' => '34', 'desc' => 'Perlu diverifikasi', 'url' => '/admin/documents', 'class' => 'bg-yellow-100 text-yellow-700'],
-            ['label' => 'Pembayaran Masuk', 'value' => '18', 'desc' => 'Menunggu validasi', 'url' => '/admin/payments', 'class' => 'bg-purple-100 text-purple-700'],
-            ['label' => 'Daftar Ulang Valid', 'value' => '12', 'desc' => 'Siap sinkron SIAKAD', 'url' => '/admin/re-registrations', 'class' => 'bg-green-100 text-green-700'],
+            [
+                'label' => 'Total Camaba',
+                'value' => $totalApplicants,
+                'desc' => 'Semua pendaftar',
+                'url' => '/admin/applicants',
+                'class' => 'bg-blue-100 text-polmind-blue',
+            ],
+            [
+                'label' => 'Berkas Menunggu',
+                'value' => $pendingDocuments,
+                'desc' => 'Perlu diverifikasi',
+                'url' => '/admin/documents',
+                'class' => 'bg-yellow-100 text-yellow-700',
+            ],
+            [
+                'label' => 'Pembayaran Masuk',
+                'value' => $pendingPayments,
+                'desc' => 'Menunggu validasi',
+                'url' => '/admin/payments',
+                'class' => 'bg-purple-100 text-purple-700',
+            ],
+            [
+                'label' => 'Daftar Ulang Valid',
+                'value' => $validReRegistrations,
+                'desc' => 'Siap sinkron SIAKAD',
+                'url' => '/admin/re-registrations',
+                'class' => 'bg-green-100 text-green-700',
+            ],
         ] as $card)
             <a href="{{ url($card['url']) }}"
                class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
@@ -139,19 +163,8 @@
                     </p>
                 </div>
 
-                @php
-                    $funnels = [
-                        ['label' => 'Registrasi Awal', 'value' => 128, 'percent' => 100],
-                        ['label' => 'Biodata Lengkap', 'value' => 86, 'percent' => 67],
-                        ['label' => 'Berkas Valid', 'value' => 64, 'percent' => 50],
-                        ['label' => 'Pembayaran Valid', 'value' => 52, 'percent' => 41],
-                        ['label' => 'Diterima', 'value' => 28, 'percent' => 22],
-                        ['label' => 'Daftar Ulang Valid', 'value' => 12, 'percent' => 9],
-                    ];
-                @endphp
-
                 <div class="mt-6 space-y-5">
-                    @foreach($funnels as $item)
+                    @foreach($funnel as $item)
                         <div>
                             <div class="flex items-center justify-between gap-4">
                                 <div>
@@ -194,44 +207,37 @@
                     </a>
                 </div>
 
-                @php
-                    $programs = [
-                        ['name' => 'TRPL', 'full' => 'Teknologi Rekayasa Perangkat Lunak', 'registrants' => 46, 'du' => 5, 'target' => 40],
-                        ['name' => 'TRM', 'full' => 'Teknologi Rekayasa Manufaktur', 'registrants' => 52, 'du' => 4, 'target' => 40],
-                        ['name' => 'BD', 'full' => 'Bisnis Digital', 'registrants' => 30, 'du' => 3, 'target' => 40],
-                    ];
-                @endphp
-
                 <div class="mt-6 grid gap-5 md:grid-cols-3">
                     @foreach($programs as $program)
                         @php
-                            $percent = round(($program['du'] / $program['target']) * 100);
+                            $target = max($program->quota, 1);
+                            $percent = round(($program->re_registered_count / $target) * 100);
                         @endphp
 
                         <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
                                     <h3 class="text-xl font-black text-polmind-blue">
-                                        {{ $program['name'] }}
+                                        {{ $program->code }}
                                     </h3>
                                     <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        {{ $program['full'] }}
+                                        {{ $program->name }}
                                     </p>
                                 </div>
 
                                 <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
-                                    {{ $program['du'] }}/{{ $program['target'] }}
+                                    {{ $program->re_registered_count }}/{{ $program->quota }}
                                 </span>
                             </div>
 
                             <div class="mt-5">
                                 <div class="flex justify-between text-xs font-bold text-slate-600">
-                                    <span>Pendaftar: {{ $program['registrants'] }}</span>
+                                    <span>Pendaftar: {{ $program->registrants_count }}</span>
                                     <span>{{ $percent }}%</span>
                                 </div>
 
                                 <div class="mt-2 h-3 overflow-hidden rounded-full bg-white">
-                                    <div class="h-full rounded-full bg-polmind-blue" style="width: {{ $percent }}%"></div>
+                                    <div class="h-full rounded-full bg-polmind-blue" style="width: {{ min($percent, 100) }}%"></div>
                                 </div>
                             </div>
                         </div>
@@ -310,9 +316,9 @@
 
                 <div class="mt-5 space-y-3">
                     @foreach([
-                        ['label' => 'Berkas menunggu', 'value' => '34', 'url' => '/admin/documents'],
-                        ['label' => 'Pembayaran menunggu', 'value' => '18', 'url' => '/admin/payments'],
-                        ['label' => 'Belum di-follow up', 'value' => '24', 'url' => '/admin/follow-ups'],
+                        ['label' => 'Berkas menunggu', 'value' => $pendingDocuments, 'url' => '/admin/documents'],
+                        ['label' => 'Pembayaran menunggu', 'value' => $pendingPayments, 'url' => '/admin/payments'],
+                        ['label' => 'Siap sinkron SIAKAD', 'value' => $readySyncApplicants, 'url' => '/admin/integrations'],
                     ] as $item)
                         <a href="{{ url($item['url']) }}"
                            class="flex items-center justify-between rounded-2xl bg-white/70 p-4 transition hover:bg-white">
@@ -344,7 +350,7 @@
                         Siap Sinkron
                     </p>
                     <p class="mt-2 text-3xl font-black text-polmind-blue">
-                        12 Data
+                        {{ $readySyncApplicants }} Data
                     </p>
                 </div>
 
@@ -366,9 +372,9 @@
 
                 <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <p class="text-sm leading-6 text-slate-700">
-                        Total pendaftar sementara <span class="font-black text-polmind-blue">128 camaba</span>,
-                        dengan <span class="font-black text-green-700">28 diterima</span> dan
-                        <span class="font-black text-polmind-blue">12 sudah daftar ulang valid</span>.
+                        Total pendaftar sementara <span class="font-black text-polmind-blue">{{ $totalApplicants }} camaba</span>,
+                        dengan <span class="font-black text-green-700">{{ $acceptedApplicants }} diterima</span> dan
+                        <span class="font-black text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>.
                     </p>
                 </div>
 
