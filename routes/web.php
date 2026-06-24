@@ -9,6 +9,7 @@ use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
+use App\Http\Controllers\Admin\ReportController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -76,9 +77,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('follow-ups.index');
     Route::post('/follow-ups/{applicant}', [FollowUpController::class, 'store'])->name('follow-ups.store');
 
-    Route::get('/reports', function () {
-        return view('admin.reports.index');
-    })->name('reports.index');
+    Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
 
     Route::get('/master-data', function () {
         return view('admin.master-data.index');
