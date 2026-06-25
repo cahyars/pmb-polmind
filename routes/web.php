@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
+use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -40,6 +41,9 @@ Route::middleware('auth:applicant')
         Route::get('/upload-berkas', [CamabaDocumentController::class, 'index'])->name('documents.index');
         Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])->name('documents.store');
         Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
+
+        Route::get('/pembayaran', [CamabaPaymentController::class, 'index'])->name('payments.index');
+        Route::post('/pembayaran/{invoice}/upload-proof', [CamabaPaymentController::class, 'uploadProof'])->name('payments.upload-proof');
     });
 
 Route::prefix('camaba')->name('camaba.')->group(function () {

@@ -27,8 +27,8 @@ class Payment extends Model
 
     protected $casts = [
         'transfer_date' => 'date',
-        'amount' => 'decimal:2',
         'verified_at' => 'datetime',
+        'amount' => 'decimal:2',
     ];
 
     public function applicant()
@@ -39,20 +39,5 @@ class Payment extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
-    }
-
-    public function isValid(): bool
-    {
-        return $this->status === 'valid';
-    }
-
-    public function isRejected(): bool
-    {
-        return $this->status === 'rejected';
-    }
-
-    public function isWaitingVerification(): bool
-    {
-        return $this->status === 'waiting_verification';
     }
 }
