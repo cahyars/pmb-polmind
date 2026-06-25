@@ -102,8 +102,8 @@ class DocumentController extends Controller
                 'document_type_id' => $documentType->id,
             ],
             [
+                'file_name' => $file->getClientOriginalName(),
                 'file_path' => $filePath,
-                'original_filename' => $file->getClientOriginalName(),
                 'mime_type' => $file->getMimeType(),
                 'file_size_kb' => ceil($file->getSize() / 1024),
                 'status' => 'menunggu_verifikasi',
@@ -129,8 +129,8 @@ class DocumentController extends Controller
         }
 
         $document->update([
+            'file_name' => null,
             'file_path' => null,
-            'original_filename' => null,
             'mime_type' => null,
             'file_size_kb' => null,
             'status' => 'belum_upload',

@@ -13,7 +13,6 @@ class ApplicantDocument extends Model
         'applicant_id',
         'document_type_id',
         'file_name',
-        'original_filename',
         'file_path',
         'mime_type',
         'file_extension',
