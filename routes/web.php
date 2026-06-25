@@ -45,22 +45,10 @@ Route::middleware('auth:applicant')
 
         Route::get('/pembayaran', [CamabaPaymentController::class, 'index'])->name('payments.index');
         Route::post('/pembayaran/{invoice}/upload-proof', [CamabaPaymentController::class, 'uploadProof'])->name('payments.upload-proof');
+
+        Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
+        Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
     });
-
-Route::prefix('camaba')->name('camaba.')->group(function () {
-
-    // Route::get('/berkas', function () {
-    //     return view('camaba.berkas');
-    // })->name('berkas');
-
-    Route::get('/status-seleksi', function () {
-        return view('camaba.status-seleksi');
-    })->name('status-seleksi');
-
-    Route::get('/pengumuman', function () {
-        return view('camaba.pengumuman');
-    })->name('pengumuman');
-});
 
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

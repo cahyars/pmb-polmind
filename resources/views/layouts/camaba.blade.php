@@ -10,6 +10,32 @@
 
 <body class="bg-polmind-bg text-slate-900 antialiased">
     <div x-data="{ sidebarOpen: false }" class="min-h-screen">
+    @php
+        $authApplicant = auth('applicant')->user();
+
+        $displayName = $authApplicant?->full_name ?? 'Camaba';
+        $registrationNumber = $authApplicant?->registration_number ?? '-';
+
+        $nameParts = collect(explode(' ', trim($displayName)))->filter()->values();
+
+        $initials = $nameParts->take(2)
+            ->map(fn ($part) => mb_substr($part, 0, 1))
+            ->implode('');
+
+        $initials = $initials ?: 'C';
+
+        $progressItems = [
+            $authApplicant?->registration_status === 'biodata_lengkap',
+            $authApplicant?->document_status === 'valid',
+            $authApplicant?->payment_status === 'valid',
+            in_array($authApplicant?->selection_status, ['diterima', 'cadangan', 'ditolak']),
+            $authApplicant?->re_registration_status === 'daftar_ulang_valid',
+        ];
+
+        $progressPercent = $authApplicant
+            ? round((collect($progressItems)->filter()->count() / count($progressItems)) * 100)
+            : 0;
+    @endphp
 
         @php
             $menus = [
@@ -93,15 +119,15 @@
                 <div class="rounded-3xl bg-polmind-blue p-5 text-white shadow-lg shadow-blue-900/10">
                     <div class="flex items-center gap-3">
                         <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-black">
-                            AF
+                            {{ $initials }}
                         </div>
 
                         <div class="min-w-0">
                             <p class="truncate text-sm font-black">
-                                Ahmad Fauzi
+                                {{ $displayName }}
                             </p>
                             <p class="mt-1 truncate text-xs text-blue-100">
-                                PMB20240982
+                                {{ $registrationNumber }}
                             </p>
                         </div>
                     </div>
@@ -109,11 +135,11 @@
                     <div class="mt-5">
                         <div class="flex justify-between gap-3 text-xs font-bold text-blue-100">
                             <span>Progress</span>
-                            <span>60%</span>
+                            <span>{{ $progressPercent }}%</span>
                         </div>
 
                         <div class="mt-2 h-2 overflow-hidden rounded-full bg-white/20">
-                            <div class="h-full w-[60%] rounded-full bg-polmind-yellow"></div>
+                            <div class="h-full rounded-full bg-polmind-yellow" style="width: {{ $progressPercent }}%"></div>
                         </div>
                     </div>
 
@@ -191,7 +217,7 @@
                     <div class="hidden items-center gap-3 sm:flex">
                         <div class="text-right">
                             <p class="text-sm font-black text-slate-900">
-                                Ahmad Fauzi
+                                {{ $displayName }}
                             </p>
                             <p class="text-xs text-slate-500">
                                 Calon Mahasiswa
@@ -199,7 +225,7 @@
                         </div>
 
                         <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-polmind-blue text-sm font-black text-white">
-                            AF
+                            {{ $initials }}
                         </div>
                     </div>
                 </div>

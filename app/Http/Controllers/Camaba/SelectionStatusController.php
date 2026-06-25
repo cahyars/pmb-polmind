@@ -35,12 +35,14 @@ class SelectionStatusController extends Controller
             'pmbYear',
             'admissionWave',
             'studyProgram',
+            'secondStudyProgram',
             'classType',
             'selection',
             'reRegistrationInvoice.items',
+            'reRegistrationInvoice.latestPayment',
             'reRegistration',
         ]);
 
-        return view('camaba.pengumuman-seleksi', compact('applicant'));
+        return view('camaba.pengumuman', compact('applicant'));
     }
 }
