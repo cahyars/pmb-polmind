@@ -15,6 +15,7 @@ use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
+use App\Http\Controllers\Camaba\PaymentController as CamabaPaymentController;
 use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
 
 Route::get('/', function () {
@@ -48,13 +49,9 @@ Route::middleware('auth:applicant')
 
 Route::prefix('camaba')->name('camaba.')->group(function () {
 
-    Route::get('/berkas', function () {
-        return view('camaba.berkas');
-    })->name('berkas');
-
-    Route::get('/pembayaran', function () {
-        return view('camaba.pembayaran');
-    })->name('pembayaran');
+    // Route::get('/berkas', function () {
+    //     return view('camaba.berkas');
+    // })->name('berkas');
 
     Route::get('/status-seleksi', function () {
         return view('camaba.status-seleksi');

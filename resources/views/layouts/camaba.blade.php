@@ -27,9 +27,9 @@
                 ],
                 [
                     'label' => 'Berkas',
-                    'url' => '/camaba/berkas',
+                    'url' => '/camaba/upload-berkas',
                     'icon' => '📄',
-                    'active' => request()->is('camaba/berkas*'),
+                    'active' => request()->is('camaba/upload-berkas*'),
                 ],
                 [
                     'label' => 'Pembayaran',
