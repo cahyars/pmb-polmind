@@ -9,6 +9,7 @@
     $statusLabels = [
         'unpaid' => 'Belum Bayar',
         'waiting_verification' => 'Menunggu Verifikasi',
+        'partial' => 'Belum Lunas',
         'paid' => 'Lunas',
         'rejected' => 'Ditolak',
         'cancelled' => 'Dibatalkan',
@@ -17,6 +18,7 @@
     $statusClasses = [
         'unpaid' => 'bg-slate-100 text-slate-600',
         'waiting_verification' => 'bg-yellow-100 text-yellow-700',
+        'partial' => 'bg-blue-100 text-polmind-blue',
         'paid' => 'bg-green-100 text-green-700',
         'rejected' => 'bg-red-100 text-red-700',
         'cancelled' => 'bg-red-100 text-red-700',
@@ -107,6 +109,18 @@
                 $proofUrl = $proofPath ? asset('storage/' . $proofPath) : null;
 
                 $invoiceStatus = $invoice->status ?? 'unpaid';
+
+                $validPaidAmount = $invoice->payments
+                    ->where('status', 'valid')
+                    ->sum('amount');
+
+                $waitingPaidAmount = $invoice->payments
+                    ->where('status', 'waiting_verification')
+                    ->sum('amount');
+
+                $remainingAmount = max(0, (float) $invoice->total_amount - (float) $validPaidAmount);
+
+                $hasWaitingPayment = $waitingPaidAmount > 0;
             @endphp
 
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -124,7 +138,7 @@
                             </span>
                         </div>
 
-                        <div class="mt-5 grid gap-5 md:grid-cols-3">
+                        <div class="mt-5 grid gap-5 md:grid-cols-4">
                             <div>
                                 <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
                                 <p class="mt-1 font-black text-polmind-blue">
@@ -136,6 +150,20 @@
                                 <p class="text-xs font-bold text-slate-500">Total Tagihan</p>
                                 <p class="mt-1 text-2xl font-black text-green-700">
                                     Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Sudah Dibayar</p>
+                                <p class="mt-1 text-2xl font-black text-polmind-blue">
+                                    Rp{{ number_format($validPaidAmount, 0, ',', '.') }}
+                                </p>
+                            </div>
+
+                            <div>
+                                <p class="text-xs font-bold text-slate-500">Sisa Tagihan</p>
+                                <p class="mt-1 text-2xl font-black text-red-600">
+                                    Rp{{ number_format($remainingAmount, 0, ',', '.') }}
                                 </p>
                             </div>
 
@@ -239,6 +267,10 @@
                             <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">
                                 Tagihan ini sudah dibatalkan.
                             </div>
+                        @elseif($hasWaitingPayment)
+                            <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-5 text-sm font-bold text-yellow-700">
+                                Masih ada pembayaran yang menunggu verifikasi admin. Silakan tunggu validasi terlebih dahulu.
+                            </div>
                         @else
                             <form action="{{ route('camaba.payments.upload-proof', $invoice) }}"
                                   method="POST"
@@ -283,11 +315,16 @@
                                     <div>
                                         <label class="text-xs font-bold text-slate-600">Nominal Bayar</label>
                                         <input type="number"
-                                               name="amount"
-                                               required
-                                               min="1"
-                                               value="{{ old('amount', $latestPayment?->amount ?? $invoice->total_amount) }}"
-                                               class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                            name="amount"
+                                            required
+                                            min="1"
+                                            max="{{ $remainingAmount }}"
+                                            value="{{ old('amount', $remainingAmount) }}"
+                                            class="mt-1 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                        <p class="mt-2 text-xs leading-5 text-slate-500">
+                                            Sisa tagihan saat ini Rp{{ number_format($remainingAmount, 0, ',', '.') }}. Anda boleh membayar sebagian atau langsung melunasi.
+                                        </p>
                                     </div>
 
                                     <div>

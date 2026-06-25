@@ -162,7 +162,7 @@
                     Silakan lanjutkan proses daftar ulang melalui pembayaran tagihan daftar ulang.
                 </p>
 
-                <a href="{{ route('camaba.payments.index') }}"
+                <a href="{{ route('camaba.re-registration.index') }}"
                    class="mt-5 inline-flex w-full justify-center rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
                     Lanjut Daftar Ulang
                 </a>

@@ -52,13 +52,39 @@ class PaymentController extends Controller
             'proof_file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ]);
 
-        $file = $request->file('proof_file');
+        $totalValidPaid = Payment::where('invoice_id', $invoice->id)
+            ->where('status', 'valid')
+            ->sum('amount');
+
+        $remainingAmount = (float) $invoice->total_amount - (float) $totalValidPaid;
+        $paidAmount = (float) $validated['amount'];
+
+        if ($remainingAmount <= 0) {
+            return back()->withErrors('Tagihan ini sudah lunas.')->withInput();
+        }
+
+        if ($paidAmount > $remainingAmount) {
+            return back()
+                ->withErrors(
+                    'Nominal pembayaran melebihi sisa tagihan. Sisa tagihan saat ini: Rp' .
+                    number_format($remainingAmount, 0, ',', '.')
+                )
+                ->withInput();
+        }
 
         $existingPayment = Payment::where('applicant_id', $applicant->id)
             ->where('invoice_id', $invoice->id)
-            ->whereIn('status', ['waiting_verification', 'rejected'])
+            ->where('status', 'waiting_verification')
             ->latest()
             ->first();
+
+        if ($existingPayment) {
+            return back()
+                ->withErrors('Masih ada pembayaran yang menunggu verifikasi admin. Silakan tunggu validasi terlebih dahulu.')
+                ->withInput();
+        }
+
+        $file = $request->file('proof_file');
 
         if ($existingPayment?->proof_file_path && Storage::disk('public')->exists($existingPayment->proof_file_path)) {
             Storage::disk('public')->delete($existingPayment->proof_file_path);
@@ -88,11 +114,7 @@ class PaymentController extends Controller
             'verified_by_name' => null,
         ];
 
-        if ($existingPayment) {
-            $existingPayment->update($paymentData);
-        } else {
-            Payment::create($paymentData);
-        }
+        Payment::create($paymentData);
 
         $invoice->update([
             'status' => 'waiting_verification',

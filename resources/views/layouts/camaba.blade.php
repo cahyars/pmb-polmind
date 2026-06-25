@@ -75,6 +75,12 @@
                     'icon' => '🎓',
                     'active' => request()->is('camaba/pengumuman*'),
                 ],
+                [
+                    'label' => 'Daftar Ulang',
+                    'url' => '/camaba/daftar-ulang',
+                    'icon' => '📝',
+                    'active' => request()->is('camaba/daftar-ulang*'),
+                ],
             ];
         @endphp
 

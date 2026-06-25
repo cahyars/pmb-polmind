@@ -17,6 +17,7 @@ use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
 use App\Http\Controllers\Camaba\PaymentController as CamabaPaymentController;
 use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
+use App\Http\Controllers\Camaba\ReRegistrationController as CamabaReRegistrationController;
 
 Route::get('/', function () {
     return view('public.home');
@@ -48,6 +49,8 @@ Route::middleware('auth:applicant')
 
         Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
         Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
+
+        Route::get('/daftar-ulang', [CamabaReRegistrationController::class, 'index'])->name('re-registration.index');
     });
 
 Route::prefix('admin')->name('admin.')->group(function () {

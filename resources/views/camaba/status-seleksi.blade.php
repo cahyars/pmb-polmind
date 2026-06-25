@@ -86,9 +86,9 @@
             </a>
 
             @if($selectionStatus === 'diterima')
-                <a href="{{ route('camaba.payments.index') }}"
-                   class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                    Lanjut Pembayaran Daftar Ulang
+                <a href="{{ route('camaba.re-registration.index') }}"
+                class="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                    Lanjut Daftar Ulang
                 </a>
             @endif
         </div>

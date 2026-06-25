@@ -83,13 +83,19 @@ class PaymentVerificationController extends Controller
             'verified_by_name' => 'Admin PMB',
         ]);
 
+        $totalValidPaid = Payment::where('invoice_id', $payment->invoice_id)
+            ->where('status', 'valid')
+            ->sum('amount');
+
+        $isFullyPaid = (float) $totalValidPaid >= (float) $payment->invoice->total_amount;
+
         $payment->invoice->update([
-            'status' => 'paid',
+            'status' => $isFullyPaid ? 'paid' : 'partial',
         ]);
 
         if ($payment->invoice->type === 'registration') {
             $payment->applicant->update([
-                'payment_status' => 'valid',
+                'payment_status' => $isFullyPaid ? 'valid' : 'belum_bayar',
             ]);
         }
 
@@ -98,21 +104,26 @@ class PaymentVerificationController extends Controller
                 ['applicant_id' => $payment->applicant_id],
                 [
                     'invoice_id' => $payment->invoice_id,
-                    'status' => 'valid',
-                    'validated_at' => now(),
-                    'validated_by_name' => 'Admin PMB',
-                    'ready_sync_at' => now(),
-                    'admin_note' => null,
+                    'status' => $isFullyPaid ? 'valid' : 'belum_daftar_ulang',
+                    'validated_at' => $isFullyPaid ? now() : null,
+                    'validated_by_name' => $isFullyPaid ? 'Admin PMB' : null,
+                    'ready_sync_at' => $isFullyPaid ? now() : null,
+                    'admin_note' => $isFullyPaid ? null : 'Pembayaran sudah masuk sebagian. Menunggu pelunasan sisa tagihan.',
                 ]
             );
 
             $payment->applicant->update([
-                're_registration_status' => 'daftar_ulang_valid',
-                'sync_status' => 'siap_sinkron',
+                're_registration_status' => $isFullyPaid ? 'daftar_ulang_valid' : 'belum_daftar_ulang',
+                'sync_status' => $isFullyPaid ? 'siap_sinkron' : 'belum_siap',
             ]);
         }
 
-        return back()->with('success', 'Pembayaran berhasil divalidasi.');
+        return back()->with(
+            'success',
+            $isFullyPaid
+                ? 'Pembayaran berhasil divalidasi dan tagihan sudah lunas.'
+                : 'Pembayaran berhasil divalidasi sebagai pembayaran sebagian. Tagihan belum lunas.'
+        );
     }
 
     public function reject(Request $request, Payment $payment)
@@ -130,13 +141,20 @@ class PaymentVerificationController extends Controller
             'verified_by_name' => 'Admin PMB',
         ]);
 
+        $totalValidPaid = Payment::where('invoice_id', $payment->invoice_id)
+            ->where('status', 'valid')
+            ->sum('amount');
+
+        $isFullyPaid = (float) $totalValidPaid >= (float) $payment->invoice->total_amount;
+        $hasPartialPaid = (float) $totalValidPaid > 0;
+
         $payment->invoice->update([
-            'status' => 'rejected',
+            'status' => $isFullyPaid ? 'paid' : ($hasPartialPaid ? 'partial' : 'rejected'),
         ]);
 
         if ($payment->invoice->type === 'registration') {
             $payment->applicant->update([
-                'payment_status' => 'ditolak',
+                'payment_status' => $isFullyPaid ? 'valid' : 'ditolak',
             ]);
         }
 
@@ -145,16 +163,17 @@ class PaymentVerificationController extends Controller
                 ['applicant_id' => $payment->applicant_id],
                 [
                     'invoice_id' => $payment->invoice_id,
-                    'status' => 'ditolak',
-                    'validated_at' => now(),
-                    'validated_by_name' => 'Admin PMB',
+                    'status' => $isFullyPaid ? 'valid' : 'belum_daftar_ulang',
+                    'validated_at' => $isFullyPaid ? now() : null,
+                    'validated_by_name' => $isFullyPaid ? 'Admin PMB' : null,
+                    'ready_sync_at' => $isFullyPaid ? now() : null,
                     'admin_note' => $validated['admin_note'],
                 ]
             );
 
             $payment->applicant->update([
-                're_registration_status' => 'ditolak',
-                'sync_status' => 'belum_siap',
+                're_registration_status' => $isFullyPaid ? 'daftar_ulang_valid' : 'belum_daftar_ulang',
+                'sync_status' => $isFullyPaid ? 'siap_sinkron' : 'belum_siap',
             ]);
         }
 
