@@ -92,7 +92,9 @@ class DocumentController extends Controller
 
         $folder = 'applicant-documents/' . $applicant->registration_number;
 
-        $filename = $documentType->code . '_' . now()->format('YmdHis') . '.' . $file->getClientOriginalExtension();
+        $extension = $file->getClientOriginalExtension();
+
+        $filename = $documentType->code . '_' . now()->format('YmdHis') . '.' . $extension;
 
         $filePath = $file->storeAs($folder, $filename, 'public');
 
@@ -104,10 +106,11 @@ class DocumentController extends Controller
             [
                 'file_name' => $file->getClientOriginalName(),
                 'file_path' => $filePath,
-                'mime_type' => $file->getMimeType(),
+                'file_extension' => $extension,
                 'file_size_kb' => ceil($file->getSize() / 1024),
                 'status' => 'menunggu_verifikasi',
                 'admin_note' => null,
+                'uploaded_at' => now(),
                 'verified_at' => null,
                 'verified_by_name' => null,
             ]
@@ -131,10 +134,11 @@ class DocumentController extends Controller
         $document->update([
             'file_name' => null,
             'file_path' => null,
-            'mime_type' => null,
+            'file_extension' => null,
             'file_size_kb' => null,
             'status' => 'belum_upload',
             'admin_note' => null,
+            'uploaded_at' => null,
             'verified_at' => null,
             'verified_by_name' => null,
         ]);

@@ -121,6 +121,10 @@
                 $remainingAmount = max(0, (float) $invoice->total_amount - (float) $validPaidAmount);
 
                 $hasWaitingPayment = $waitingPaidAmount > 0;
+
+                $paymentHistories = $invoice->payments
+                    ->sortByDesc('created_at')
+                    ->values();
             @endphp
 
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -197,71 +201,124 @@
                             </div>
                         </div>
 
-                        {{-- Bukti Pembayaran Terakhir --}}
-                        @if($latestPayment)
-                            <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
-                                    <div>
-                                        <p class="text-sm font-black text-slate-800">
-                                            Bukti Pembayaran Terakhir
-                                        </p>
-
-                                        <p class="mt-2 text-sm text-slate-600">
-                                            {{ $latestPayment->payment_number }}
-                                        </p>
-
-                                        <p class="mt-1 text-sm text-slate-600">
-                                            {{ $latestPayment->sender_name ?? '-' }} · {{ $latestPayment->sender_bank ?? '-' }}
-                                        </p>
-
-                                        <p class="mt-1 text-sm text-slate-600">
-                                            Tanggal Transfer:
-                                            <span class="font-bold">
-                                                {{ $latestPayment->transfer_date?->format('d M Y') ?? '-' }}
-                                            </span>
-                                        </p>
-
-                                        @if($latestPayment->proof_file_name)
-                                            <p class="mt-1 text-xs text-slate-500">
-                                                File: {{ $latestPayment->proof_file_name }}
-                                            </p>
-                                        @endif
-
-                                        <p class="mt-2 font-black text-polmind-blue">
-                                            Rp{{ number_format($latestPayment->amount, 0, ',', '.') }}
-                                        </p>
-                                    </div>
-
-                                    <div class="flex flex-wrap gap-2">
-                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ $paymentStatusClasses[$latestPayment->status] ?? 'bg-slate-100 text-slate-600' }}">
-                                            {{ str_replace('_', ' ', ucfirst($latestPayment->status)) }}
-                                        </span>
-
-                                        @if($proofUrl)
-                                            <a href="{{ $proofUrl }}"
-                                               target="_blank"
-                                               class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
-                                                Lihat Bukti
-                                            </a>
-                                        @endif
-                                    </div>
+                        {{-- Riwayat Pembayaran --}}
+                        <div class="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                            <div class="flex flex-col justify-between gap-2 border-b border-slate-200 pb-4 md:flex-row md:items-center">
+                                <div>
+                                    <p class="text-sm font-black text-slate-800">
+                                        Riwayat Pembayaran
+                                    </p>
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Menampilkan seluruh pembayaran untuk invoice ini.
+                                    </p>
                                 </div>
 
-                                @if($latestPayment->admin_note)
-                                    <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
-                                        <p class="font-black">Catatan Admin</p>
-                                        <p class="mt-1">{{ $latestPayment->admin_note }}</p>
-                                    </div>
-                                @endif
+                                <span class="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-600">
+                                    {{ $paymentHistories->count() }} transaksi
+                                </span>
                             </div>
-                        @endif
-                    </div>
+
+                            @if($paymentHistories->count())
+                                <div class="mt-4 space-y-3">
+                                    @foreach($paymentHistories as $payment)
+                                        @php
+                                            $historyProofUrl = $payment->proof_file_path
+                                                ? asset('storage/' . $payment->proof_file_path)
+                                                : null;
+
+                                            $historyStatusClass = match ($payment->status) {
+                                                'valid' => 'bg-green-100 text-green-700',
+                                                'waiting_verification' => 'bg-yellow-100 text-yellow-700',
+                                                'rejected' => 'bg-red-100 text-red-700',
+                                                default => 'bg-slate-100 text-slate-600',
+                                            };
+
+                                            $historyStatusLabel = match ($payment->status) {
+                                                'valid' => 'Valid',
+                                                'waiting_verification' => 'Menunggu Verifikasi',
+                                                'rejected' => 'Ditolak',
+                                                default => str_replace('_', ' ', ucfirst($payment->status)),
+                                            };
+                                        @endphp
+
+                                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                                            <div class="flex flex-col justify-between gap-4 md:flex-row md:items-start">
+                                                <div>
+                                                    <p class="text-sm font-black text-polmind-blue">
+                                                        {{ $payment->payment_number }}
+                                                    </p>
+
+                                                    <p class="mt-2 text-sm text-slate-600">
+                                                        {{ $payment->sender_name ?? '-' }} · {{ $payment->sender_bank ?? '-' }}
+                                                    </p>
+
+                                                    <p class="mt-1 text-sm text-slate-600">
+                                                        Tanggal Transfer:
+                                                        <span class="font-bold">
+                                                            {{ $payment->transfer_date?->format('d M Y') ?? '-' }}
+                                                        </span>
+                                                    </p>
+
+                                                    @if($payment->proof_file_name)
+                                                        <p class="mt-1 text-xs text-slate-500">
+                                                            File: {{ $payment->proof_file_name }}
+                                                        </p>
+                                                    @endif
+
+                                                    <p class="mt-3 text-xl font-black text-polmind-blue">
+                                                        Rp{{ number_format($payment->amount, 0, ',', '.') }}
+                                                    </p>
+                                                </div>
+
+                                                <div class="flex flex-wrap gap-2">
+                                                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $historyStatusClass }}">
+                                                        {{ $historyStatusLabel }}
+                                                    </span>
+
+                                                    @if($historyProofUrl)
+                                                        <a href="{{ $historyProofUrl }}"
+                                                        target="_blank"
+                                                        class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+                                                            Lihat Bukti
+                                                        </a>
+                                                    @endif
+                                                </div>
+                                            </div>
+
+                                            @if($payment->admin_note)
+                                                <div class="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                                                    <p class="font-black">Catatan Admin</p>
+                                                    <p class="mt-1">{{ $payment->admin_note }}</p>
+                                                </div>
+                                            @endif
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="mt-4 rounded-xl bg-white p-4 text-sm text-slate-500">
+                                    Belum ada pembayaran untuk invoice ini.
+                                </p>
+                            @endif
+                        </div>
 
                     {{-- Upload Form --}}
                     <div class="w-full lg:w-96">
                         @if($invoice->status === 'paid')
-                            <div class="rounded-2xl border border-green-200 bg-green-50 p-5 text-sm font-bold text-green-700">
-                                Tagihan ini sudah lunas.
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-black text-green-700">
+                                        ✓
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-black text-slate-800">
+                                            Tagihan Lunas
+                                        </p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                                            Pembayaran sudah tervalidasi oleh admin PMB.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         @elseif($invoice->status === 'cancelled')
                             <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">

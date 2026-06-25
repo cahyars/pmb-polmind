@@ -166,8 +166,21 @@
 
                     <div class="w-full lg:w-96">
                         @if($status === 'diterima')
-                            <div class="rounded-2xl border border-green-200 bg-green-50 p-5 text-sm font-bold text-green-700">
-                                Berkas sudah diterima admin. Upload ulang tidak diperlukan.
+                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                <div class="flex items-start gap-3">
+                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-black text-green-700">
+                                        ✓
+                                    </div>
+
+                                    <div>
+                                        <p class="text-sm font-black text-slate-800">
+                                            Berkas Diterima
+                                        </p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                                            Dokumen sudah valid. Upload ulang tidak diperlukan.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         @else
                             <form action="{{ route('camaba.documents.store') }}"

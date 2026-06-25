@@ -14,7 +14,6 @@ class ApplicantDocument extends Model
         'document_type_id',
         'file_name',
         'file_path',
-        'mime_type',
         'file_extension',
         'file_size_kb',
         'status',

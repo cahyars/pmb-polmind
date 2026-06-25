@@ -28,27 +28,45 @@
         'cancelled' => 'Dibatalkan',
     ];
 
+    $paymentLabels = [
+        'waiting_verification' => 'Menunggu Verifikasi',
+        'valid' => 'Valid',
+        'rejected' => 'Ditolak',
+    ];
+
     $badgeClass = function ($status) {
         return match ($status) {
             'valid', 'daftar_ulang_valid', 'paid', 'siap_sinkron', 'sudah_sinkron' => 'bg-green-100 text-green-700',
             'menunggu_verifikasi', 'waiting_verification', 'belum_daftar_ulang', 'unpaid' => 'bg-yellow-100 text-yellow-700',
+            'partial' => 'bg-blue-100 text-polmind-blue',
             'ditolak', 'rejected', 'cancelled', 'lewat_batas' => 'bg-red-100 text-red-700',
             default => 'bg-slate-100 text-slate-600',
-            'partial' => 'bg-blue-100 text-polmind-blue',
         };
     };
 
     $deadline = $reRegistration?->deadline_date ?? $invoice?->due_date;
 
-    $proofPath = $latestPayment?->proof_file_path;
-    $proofUrl = $proofPath ? asset('storage/' . $proofPath) : null;
+    $paymentHistories = $invoice
+        ? $invoice->payments->sortByDesc('created_at')->values()
+        : collect();
 
-    $validPaidAmount = $invoice?->payments?->where('status', 'valid')->sum('amount') ?? 0;
-    $waitingPaidAmount = $invoice?->payments?->where('status', 'waiting_verification')->sum('amount') ?? 0;
-    $remainingAmount = $invoice ? max(0, (float) $invoice->total_amount - (float) $validPaidAmount) : 0;
+    $validPaidAmount = $invoice
+        ? (float) $invoice->payments->where('status', 'valid')->sum('amount')
+        : 0;
+
+    $waitingPaidAmount = $invoice
+        ? (float) $invoice->payments->where('status', 'waiting_verification')->sum('amount')
+        : 0;
+
+    $totalAmount = $invoice ? (float) $invoice->total_amount : 0;
+
+    $remainingAmount = $invoice
+        ? max(0, $totalAmount - $validPaidAmount)
+        : 0;
 
     $canReRegister = $selectionStatus === 'diterima';
     $hasInvoice = (bool) $invoice;
+    $isFullyPaid = $hasInvoice && $remainingAmount <= 0 && $invoiceStatus === 'paid';
 
     $steps = [
         [
@@ -64,12 +82,17 @@
         [
             'title' => 'Upload Bukti Pembayaran',
             'desc' => 'Camaba mengupload bukti pembayaran daftar ulang.',
-            'done' => in_array($invoiceStatus, ['waiting_verification', 'paid']) || in_array($reRegistrationStatus, ['menunggu_verifikasi', 'daftar_ulang_valid']),
+            'done' => $paymentHistories->count() > 0,
         ],
         [
-            'title' => 'Verifikasi Admin',
-            'desc' => 'Admin PMB memvalidasi pembayaran daftar ulang.',
-            'done' => in_array($reRegistrationStatus, ['daftar_ulang_valid', 'valid']) || $invoiceStatus === 'paid',
+            'title' => 'Verifikasi Pembayaran',
+            'desc' => 'Admin PMB memverifikasi bukti pembayaran yang masuk.',
+            'done' => $validPaidAmount > 0 || in_array($reRegistrationStatus, ['daftar_ulang_valid', 'valid']),
+        ],
+        [
+            'title' => 'Pelunasan Tagihan',
+            'desc' => 'Total pembayaran valid sudah memenuhi total tagihan daftar ulang.',
+            'done' => $isFullyPaid || in_array($reRegistrationStatus, ['daftar_ulang_valid', 'valid']),
         ],
         [
             'title' => 'Siap Sinkron SIAKAD',
@@ -123,6 +146,7 @@
             </a>
         </div>
     @else
+
         {{-- Summary Cards --}}
         <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
             <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -190,7 +214,7 @@
 
                     @if($invoice)
                         <div class="mt-6 rounded-2xl bg-slate-50 p-5">
-                            <div class="grid gap-5 md:grid-cols-4">
+                            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
                                 <div>
                                     <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
                                     <p class="mt-1 font-black text-polmind-blue">
@@ -226,6 +250,14 @@
                                     </p>
                                 </div>
                             </div>
+
+                            @if($waitingPaidAmount > 0)
+                                <div class="mt-5 rounded-xl border border-yellow-200 bg-yellow-50 p-4 text-sm leading-6 text-yellow-800">
+                                    Terdapat pembayaran sebesar
+                                    <span class="font-black">Rp{{ number_format($waitingPaidAmount, 0, ',', '.') }}</span>
+                                    yang masih menunggu verifikasi admin.
+                                </div>
+                            @endif
                         </div>
 
                         <div class="mt-5 space-y-3">
@@ -253,7 +285,7 @@
                             @if($invoice->status !== 'paid')
                                 <a href="{{ route('camaba.payments.index') }}"
                                    class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
-                                    Upload Bukti Pembayaran
+                                    Lanjut Pembayaran
                                 </a>
                             @endif
 
@@ -269,70 +301,97 @@
                     @endif
                 </div>
 
-                {{-- Payment Proof --}}
+                {{-- Payment History --}}
                 <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <div class="border-b border-slate-200 pb-5">
-                        <h2 class="text-xl font-black text-polmind-blue">Bukti Pembayaran Terakhir</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Bukti pembayaran terakhir yang diupload untuk tagihan daftar ulang.
-                        </p>
+                    <div class="flex flex-col justify-between gap-3 border-b border-slate-200 pb-5 md:flex-row md:items-center">
+                        <div>
+                            <h2 class="text-xl font-black text-polmind-blue">Riwayat Pembayaran Daftar Ulang</h2>
+                            <p class="mt-2 text-sm leading-6 text-slate-600">
+                                Seluruh pembayaran yang diupload untuk tagihan daftar ulang.
+                            </p>
+                        </div>
+
+                        <span class="w-fit rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                            {{ $paymentHistories->count() }} transaksi
+                        </span>
                     </div>
 
-                    @if($latestPayment)
-                        <div class="mt-6 rounded-2xl bg-slate-50 p-5">
-                            <div class="flex flex-col justify-between gap-5 md:flex-row md:items-start">
-                                <div>
-                                    <p class="text-sm font-black text-polmind-blue">
-                                        {{ $latestPayment->payment_number }}
-                                    </p>
+                    @if($paymentHistories->count())
+                        <div class="mt-6 space-y-3">
+                            @foreach($paymentHistories as $payment)
+                                @php
+                                    $proofUrl = $payment->proof_file_path
+                                        ? asset('storage/' . $payment->proof_file_path)
+                                        : null;
 
-                                    <p class="mt-2 text-sm text-slate-600">
-                                        {{ $latestPayment->sender_name ?? '-' }} · {{ $latestPayment->sender_bank ?? '-' }}
-                                    </p>
+                                    $paymentStatus = $payment->status ?? 'waiting_verification';
 
-                                    <p class="mt-1 text-sm text-slate-600">
-                                        Tanggal Transfer:
-                                        <span class="font-bold">
-                                            {{ $latestPayment->transfer_date?->format('d M Y') ?? '-' }}
-                                        </span>
-                                    </p>
+                                    $paymentBadgeClass = match ($paymentStatus) {
+                                        'valid' => 'bg-green-100 text-green-700',
+                                        'waiting_verification' => 'bg-yellow-100 text-yellow-700',
+                                        'rejected' => 'bg-red-100 text-red-700',
+                                        default => 'bg-slate-100 text-slate-600',
+                                    };
 
-                                    @if($latestPayment->proof_file_name)
-                                        <p class="mt-1 text-xs text-slate-500">
-                                            File: {{ $latestPayment->proof_file_name }}
-                                        </p>
+                                    $paymentLabel = $paymentLabels[$paymentStatus] ?? str_replace('_', ' ', ucfirst($paymentStatus));
+                                @endphp
+
+                                <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                                    <div class="flex flex-col justify-between gap-5 md:flex-row md:items-start">
+                                        <div>
+                                            <p class="text-sm font-black text-polmind-blue">
+                                                {{ $payment->payment_number }}
+                                            </p>
+
+                                            <p class="mt-2 text-sm text-slate-600">
+                                                {{ $payment->sender_name ?? '-' }} · {{ $payment->sender_bank ?? '-' }}
+                                            </p>
+
+                                            <p class="mt-1 text-sm text-slate-600">
+                                                Tanggal Transfer:
+                                                <span class="font-bold">
+                                                    {{ $payment->transfer_date?->format('d M Y') ?? '-' }}
+                                                </span>
+                                            </p>
+
+                                            @if($payment->proof_file_name)
+                                                <p class="mt-1 text-xs text-slate-500">
+                                                    File: {{ $payment->proof_file_name }}
+                                                </p>
+                                            @endif
+
+                                            <p class="mt-3 text-2xl font-black {{ $paymentStatus === 'rejected' ? 'text-red-600' : 'text-green-700' }}">
+                                                Rp{{ number_format($payment->amount, 0, ',', '.') }}
+                                            </p>
+                                        </div>
+
+                                        <div class="flex flex-wrap gap-2">
+                                            <span class="rounded-full px-3 py-1 text-xs font-black {{ $paymentBadgeClass }}">
+                                                {{ $paymentLabel }}
+                                            </span>
+
+                                            @if($proofUrl)
+                                                <a href="{{ $proofUrl }}"
+                                                   target="_blank"
+                                                   class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+                                                    Lihat Bukti
+                                                </a>
+                                            @endif
+                                        </div>
+                                    </div>
+
+                                    @if($payment->admin_note)
+                                        <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                                            <p class="font-black">Catatan Admin</p>
+                                            <p class="mt-1">{{ $payment->admin_note }}</p>
+                                        </div>
                                     @endif
-
-                                    <p class="mt-3 text-2xl font-black text-green-700">
-                                        Rp{{ number_format($latestPayment->amount, 0, ',', '.') }}
-                                    </p>
                                 </div>
-
-                                <div class="flex flex-wrap gap-2">
-                                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($latestPayment->status) }}">
-                                        {{ str_replace('_', ' ', ucfirst($latestPayment->status)) }}
-                                    </span>
-
-                                    @if($proofUrl)
-                                        <a href="{{ $proofUrl }}"
-                                           target="_blank"
-                                           class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
-                                            Lihat Bukti
-                                        </a>
-                                    @endif
-                                </div>
-                            </div>
-
-                            @if($latestPayment->admin_note)
-                                <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
-                                    <p class="font-black">Catatan Admin</p>
-                                    <p class="mt-1">{{ $latestPayment->admin_note }}</p>
-                                </div>
-                            @endif
+                            @endforeach
                         </div>
                     @else
                         <div class="mt-6 rounded-2xl bg-slate-50 p-5 text-sm leading-6 text-slate-600">
-                            Belum ada bukti pembayaran daftar ulang yang diupload.
+                            Belum ada pembayaran daftar ulang yang diupload.
                         </div>
                     @endif
                 </div>
@@ -372,7 +431,7 @@
                 <div class="rounded-3xl border border-blue-200 bg-blue-50 p-6">
                     <h2 class="text-lg font-black text-polmind-blue">Informasi Penting</h2>
                     <p class="mt-3 text-sm leading-6 text-slate-700">
-                        Daftar ulang dianggap selesai setelah bukti pembayaran divalidasi oleh admin PMB.
+                        Daftar ulang dianggap selesai setelah total pembayaran valid mencapai total tagihan dan divalidasi oleh admin PMB.
                     </p>
 
                     @if($deadline)
@@ -383,6 +442,40 @@
                             </p>
                         </div>
                     @endif
+                </div>
+
+                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-lg font-black text-polmind-blue">Ringkasan Pembayaran</h2>
+
+                    <div class="mt-5 space-y-4 text-sm">
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Total Tagihan</p>
+                            <p class="mt-1 text-xl font-black text-slate-900">
+                                Rp{{ number_format($totalAmount, 0, ',', '.') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Sudah Dibayar Valid</p>
+                            <p class="mt-1 text-xl font-black text-polmind-blue">
+                                Rp{{ number_format($validPaidAmount, 0, ',', '.') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Menunggu Verifikasi</p>
+                            <p class="mt-1 text-xl font-black text-yellow-700">
+                                Rp{{ number_format($waitingPaidAmount, 0, ',', '.') }}
+                            </p>
+                        </div>
+
+                        <div>
+                            <p class="text-xs font-bold text-slate-500">Sisa Tagihan</p>
+                            <p class="mt-1 text-xl font-black text-red-600">
+                                Rp{{ number_format($remainingAmount, 0, ',', '.') }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -419,7 +512,7 @@
                     </div>
 
                     @if($reRegistration?->admin_note)
-                        <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700">
+                        <div class="mt-5 rounded-2xl border border-yellow-200 bg-yellow-50 p-4 text-sm leading-6 text-yellow-800">
                             <p class="font-black">Catatan Admin</p>
                             <p class="mt-1">{{ $reRegistration->admin_note }}</p>
                         </div>
