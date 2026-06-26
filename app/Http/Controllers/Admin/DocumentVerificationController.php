@@ -8,6 +8,7 @@ use App\Models\ApplicantDocument;
 use App\Models\DocumentType;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class DocumentVerificationController extends Controller
 {
@@ -41,7 +42,12 @@ class DocumentVerificationController extends Controller
                         ->orWhereHas('applicant', function ($applicantQuery) use ($keyword) {
                             $applicantQuery->where('registration_number', 'like', "%{$keyword}%")
                                 ->orWhere('full_name', 'like', "%{$keyword}%")
-                                ->orWhere('nik', 'like', "%{$keyword}%");
+                                ->orWhere('nik', 'like', "%{$keyword}%")
+                                ->orWhere('phone', 'like', "%{$keyword}%");
+                        })
+                        ->orWhereHas('applicant.education', function ($educationQuery) use ($keyword) {
+                            $educationQuery->where('school_name', 'like', "%{$keyword}%")
+                                ->orWhere('school_npsn', 'like', "%{$keyword}%");
                         });
                 });
             })
@@ -54,6 +60,11 @@ class DocumentVerificationController extends Controller
             ->when($request->filled('study_program'), function ($query) use ($request) {
                 $query->whereHas('applicant', function ($applicantQuery) use ($request) {
                     $applicantQuery->where('study_program_id', $request->study_program);
+                });
+            })
+            ->when($request->filled('registration_path'), function ($query) use ($request) {
+                $query->whereHas('applicant', function ($applicantQuery) use ($request) {
+                    $applicantQuery->where('registration_path', $request->registration_path);
                 });
             })
             ->latest()
@@ -73,6 +84,14 @@ class DocumentVerificationController extends Controller
 
     public function accept(ApplicantDocument $document)
     {
+        if ($document->status !== 'menunggu_verifikasi') {
+            return back()->withErrors('Hanya berkas yang menunggu verifikasi yang dapat diterima.');
+        }
+
+        if (! $document->file_path || ! Storage::disk('public')->exists($document->file_path)) {
+            return back()->withErrors('File berkas tidak ditemukan di storage. Berkas tidak dapat diterima.');
+        }
+
         $document->update([
             'status' => 'diterima',
             'admin_note' => null,
@@ -87,6 +106,14 @@ class DocumentVerificationController extends Controller
 
     public function reject(Request $request, ApplicantDocument $document)
     {
+        if ($document->status !== 'menunggu_verifikasi') {
+            return back()->withErrors('Hanya berkas yang menunggu verifikasi yang dapat ditolak.');
+        }
+
+        if (! $document->file_path || ! Storage::disk('public')->exists($document->file_path)) {
+            return back()->withErrors('File berkas tidak ditemukan di storage. Berkas tidak dapat ditolak.');
+        }
+
         $validated = $request->validate([
             'admin_note' => ['required', 'string', 'max:1000'],
         ]);
