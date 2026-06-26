@@ -18,6 +18,10 @@ class ReportController extends Controller
             ->orderBy('code')
             ->get();
 
+        $classTypes = ClassType::where('is_active', true)
+            ->orderBy('code')
+            ->get();
+
         $baseApplicants = $this->filteredApplicants($request);
 
         $totalApplicants = (clone $baseApplicants)->count();
@@ -25,11 +29,16 @@ class ReportController extends Controller
         $documentValid = (clone $baseApplicants)->where('document_status', 'valid')->count();
         $paymentValid = (clone $baseApplicants)->where('payment_status', 'valid')->count();
         $acceptedApplicants = (clone $baseApplicants)->where('selection_status', 'diterima')->count();
+        $reserveApplicants = (clone $baseApplicants)->where('selection_status', 'cadangan')->count();
+        $rejectedApplicants = (clone $baseApplicants)->where('selection_status', 'ditolak')->count();
         $reRegistered = (clone $baseApplicants)->where('re_registration_status', 'daftar_ulang_valid')->count();
         $readySync = (clone $baseApplicants)->where('sync_status', 'siap_sinkron')->count();
+        $processingSync = (clone $baseApplicants)->where('sync_status', 'proses_sinkron')->count();
         $synced = (clone $baseApplicants)->where('sync_status', 'sudah_sinkron')->count();
+        $failedSync = (clone $baseApplicants)->where('sync_status', 'gagal_sinkron')->count();
 
         $targetApplicants = 180;
+
         $targetProgress = $targetApplicants > 0
             ? round(($totalApplicants / $targetApplicants) * 100)
             : 0;
@@ -42,6 +51,7 @@ class ReportController extends Controller
             ['label' => 'Diterima', 'value' => $acceptedApplicants],
             ['label' => 'Daftar Ulang Valid', 'value' => $reRegistered],
             ['label' => 'Siap Sinkron SIAKAD', 'value' => $readySync],
+            ['label' => 'Sudah Sinkron', 'value' => $synced],
         ])->map(function ($item) use ($totalApplicants) {
             $item['percent'] = $totalApplicants > 0
                 ? round(($item['value'] / $totalApplicants) * 100)
@@ -58,6 +68,7 @@ class ReportController extends Controller
             $accepted = (clone $query)->where('selection_status', 'diterima')->count();
             $reRegistered = (clone $query)->where('re_registration_status', 'daftar_ulang_valid')->count();
             $readySync = (clone $query)->where('sync_status', 'siap_sinkron')->count();
+            $synced = (clone $query)->where('sync_status', 'sudah_sinkron')->count();
 
             $quota = max($program->quota, 1);
 
@@ -69,25 +80,73 @@ class ReportController extends Controller
                 'accepted' => $accepted,
                 're_registered' => $reRegistered,
                 'ready_sync' => $readySync,
+                'synced' => $synced,
                 'quota_percent' => round(($reRegistered / $quota) * 100),
             ];
         });
 
-        $classReports = ClassType::where('is_active', true)
-            ->orderBy('code')
-            ->get()
-            ->map(function ($classType) use ($request) {
-                $query = $this->filteredApplicants($request)
-                    ->where('class_type_id', $classType->id);
+        $classReports = $classTypes->map(function ($classType) use ($request) {
+            $query = $this->filteredApplicants($request)
+                ->where('class_type_id', $classType->id);
 
-                return [
-                    'code' => $classType->code,
-                    'name' => $classType->name,
-                    'registrants' => (clone $query)->count(),
-                    'accepted' => (clone $query)->where('selection_status', 'diterima')->count(),
-                    're_registered' => (clone $query)->where('re_registration_status', 'daftar_ulang_valid')->count(),
-                ];
-            });
+            return [
+                'code' => $classType->code,
+                'name' => $classType->name,
+                'registrants' => (clone $query)->count(),
+                'accepted' => (clone $query)->where('selection_status', 'diterima')->count(),
+                're_registered' => (clone $query)->where('re_registration_status', 'daftar_ulang_valid')->count(),
+                'synced' => (clone $query)->where('sync_status', 'sudah_sinkron')->count(),
+            ];
+        });
+
+        $registrationPathReports = collect([
+            'umum' => 'Umum',
+            'prestasi' => 'Prestasi',
+            'undangan' => 'Undangan',
+        ])->map(function ($label, $path) use ($request) {
+            $query = $this->filteredApplicants($request)
+                ->where('registration_path', $path);
+
+            return [
+                'key' => $path,
+                'label' => $label,
+                'registrants' => (clone $query)->count(),
+                'accepted' => (clone $query)->where('selection_status', 'diterima')->count(),
+                're_registered' => (clone $query)->where('re_registration_status', 'daftar_ulang_valid')->count(),
+                'synced' => (clone $query)->where('sync_status', 'sudah_sinkron')->count(),
+            ];
+        })->values();
+
+        $selectionReports = collect([
+            'belum_diseleksi' => 'Belum Diseleksi',
+            'diterima' => 'Diterima',
+            'cadangan' => 'Cadangan',
+            'ditolak' => 'Ditolak',
+        ])->map(function ($label, $status) use ($request) {
+            return [
+                'key' => $status,
+                'label' => $label,
+                'total' => (clone $this->filteredApplicants($request))
+                    ->where('selection_status', $status)
+                    ->count(),
+            ];
+        })->values();
+
+        $syncReports = collect([
+            'belum_siap' => 'Belum Siap',
+            'siap_sinkron' => 'Siap Sinkron',
+            'proses_sinkron' => 'Proses Sinkron',
+            'sudah_sinkron' => 'Sudah Sinkron',
+            'gagal_sinkron' => 'Gagal Sinkron',
+        ])->map(function ($label, $status) use ($request) {
+            return [
+                'key' => $status,
+                'label' => $label,
+                'total' => (clone $this->filteredApplicants($request))
+                    ->where('sync_status', $status)
+                    ->count(),
+            ];
+        })->values();
 
         $sourceReports = $this->filteredApplicants($request)
             ->select('source_information', DB::raw('COUNT(*) as total'))
@@ -139,19 +198,27 @@ class ReportController extends Controller
 
         return view('admin.reports.index', compact(
             'studyPrograms',
+            'classTypes',
             'totalApplicants',
             'biodataComplete',
             'documentValid',
             'paymentValid',
             'acceptedApplicants',
+            'reserveApplicants',
+            'rejectedApplicants',
             'reRegistered',
             'readySync',
+            'processingSync',
             'synced',
+            'failedSync',
             'targetApplicants',
             'targetProgress',
             'funnel',
             'programReports',
             'classReports',
+            'registrationPathReports',
+            'selectionReports',
+            'syncReports',
             'sourceReports',
             'waitingPayments',
             'validPayments',
@@ -184,6 +251,21 @@ class ReportController extends Controller
             })
             ->when($request->filled('study_program'), function ($query) use ($request) {
                 $query->where('study_program_id', $request->study_program);
+            })
+            ->when($request->filled('class_type'), function ($query) use ($request) {
+                $query->where('class_type_id', $request->class_type);
+            })
+            ->when($request->filled('registration_path'), function ($query) use ($request) {
+                $query->where('registration_path', $request->registration_path);
+            })
+            ->when($request->filled('selection_status'), function ($query) use ($request) {
+                $query->where('selection_status', $request->selection_status);
+            })
+            ->when($request->filled('re_registration_status'), function ($query) use ($request) {
+                $query->where('re_registration_status', $request->re_registration_status);
+            })
+            ->when($request->filled('sync_status'), function ($query) use ($request) {
+                $query->where('sync_status', $request->sync_status);
             });
     }
 }
