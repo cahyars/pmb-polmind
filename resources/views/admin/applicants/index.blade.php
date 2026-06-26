@@ -23,6 +23,36 @@
         @endforeach
     </div>
 
+    {{-- Registration Path Stats --}}
+    <div class="grid gap-5 md:grid-cols-3">
+        @foreach([
+            [
+                'label' => 'Jalur Umum',
+                'value' => $registrationPathStats['umum'] ?? 0,
+                'desc' => 'Pendaftar jalur umum',
+                'class' => 'text-polmind-blue',
+            ],
+            [
+                'label' => 'Jalur Prestasi',
+                'value' => $registrationPathStats['prestasi'] ?? 0,
+                'desc' => 'Pendaftar jalur prestasi',
+                'class' => 'text-green-700',
+            ],
+            [
+                'label' => 'Jalur Undangan',
+                'value' => $registrationPathStats['undangan'] ?? 0,
+                'desc' => 'Pendaftar jalur undangan',
+                'class' => 'text-purple-700',
+            ],
+        ] as $card)
+            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
+                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
+            </div>
+        @endforeach
+    </div>
+
     {{-- Filter Section --}}
     <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
@@ -47,7 +77,7 @@
             </button>
         </div>
 
-        <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
+        <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
             <div class="xl:col-span-2">
                 <label class="text-sm font-bold text-slate-700">Pencarian</label>
                 <input type="text"
@@ -103,7 +133,24 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-3 xl:col-span-5">
+            <div>
+                <label class="text-sm font-bold text-slate-700">Jalur Pendaftaran</label>
+                <select name="registration_path"
+                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Semua Jalur</option>
+                    <option value="umum" @selected(request('registration_path') === 'umum')>
+                        Umum
+                    </option>
+                    <option value="prestasi" @selected(request('registration_path') === 'prestasi')>
+                        Prestasi
+                    </option>
+                    <option value="undangan" @selected(request('registration_path') === 'undangan')>
+                        Undangan
+                    </option>
+                </select>
+            </div>
+
+            <div class="flex items-end gap-3 xl:col-span-6">
                 <button type="submit"
                         class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
@@ -157,6 +204,12 @@
                 'diterima' => 'bg-purple-100 text-purple-700',
                 'daftar_ulang_valid' => 'bg-emerald-100 text-emerald-700',
             ];
+
+            $registrationPathClasses = [
+                'umum' => 'bg-blue-50 text-polmind-blue',
+                'prestasi' => 'bg-green-100 text-green-700',
+                'undangan' => 'bg-purple-100 text-purple-700',
+            ];
         @endphp
 
         <div class="overflow-x-auto">
@@ -169,6 +222,7 @@
                         <th class="px-6 py-4">Asal Sekolah</th>
                         <th class="px-6 py-4">Prodi</th>
                         <th class="px-6 py-4">Gelombang</th>
+                        <th class="px-6 py-4">Jalur</th>
                         <th class="px-6 py-4">Status</th>
                         <th class="px-6 py-4">Tanggal</th>
                         <th class="px-6 py-4 text-right">Aksi</th>
@@ -240,6 +294,16 @@
                             </td>
 
                             <td class="px-6 py-5">
+                                @php
+                                    $registrationPath = $applicant->registration_path ?? 'umum';
+                                @endphp
+
+                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                                    {{ $applicant->registration_path_label }}
+                                </span>
+                            </td>
+
+                            <td class="px-6 py-5">
                                 <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $statusLabels[$status] ?? str_replace('_', ' ', ucfirst($status)) }}
                                 </span>
@@ -258,7 +322,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
+                            <td colspan="10" class="px-6 py-12 text-center">
                                 <p class="text-sm font-bold text-slate-600">
                                     Data camaba tidak ditemukan.
                                 </p>

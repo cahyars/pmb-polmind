@@ -21,6 +21,12 @@ class ApplicantController extends Controller
 
         $validReRegistrations = ReRegistration::where('status', 'valid')->count();
 
+        $registrationPathStats = [
+            'umum' => Applicant::where('registration_path', 'umum')->count(),
+            'prestasi' => Applicant::where('registration_path', 'prestasi')->count(),
+            'undangan' => Applicant::where('registration_path', 'undangan')->count(),
+        ];
+
         $waves = AdmissionWave::orderBy('id')->get();
 
         $studyPrograms = StudyProgram::where('is_active', true)
@@ -57,6 +63,9 @@ class ApplicantController extends Controller
             ->when($request->filled('study_program'), function ($query) use ($request) {
                 $query->where('study_program_id', $request->study_program);
             })
+            ->when($request->filled('registration_path'), function ($query) use ($request) {
+                $query->where('registration_path', $request->registration_path);
+            })
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('registration_status', $request->status);
             })
@@ -69,6 +78,7 @@ class ApplicantController extends Controller
             'biodataComplete',
             'incompleteApplicants',
             'validReRegistrations',
+            'registrationPathStats',
             'waves',
             'studyPrograms',
             'applicants'

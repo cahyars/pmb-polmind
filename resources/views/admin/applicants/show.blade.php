@@ -35,10 +35,11 @@
 
     $badgeClass = function ($status) {
         return match ($status) {
-            'valid', 'diterima', 'paid', 'success' => 'bg-green-100 text-green-700',
+            'valid', 'diterima', 'paid', 'success', 'prestasi' => 'bg-green-100 text-green-700',
             'menunggu_verifikasi', 'waiting_verification', 'pending', 'sebagian_upload' => 'bg-yellow-100 text-yellow-700',
             'ditolak', 'rejected', 'failed' => 'bg-red-100 text-red-700',
-            'biodata_lengkap' => 'bg-blue-100 text-polmind-blue',
+            'biodata_lengkap', 'umum' => 'bg-blue-100 text-polmind-blue',
+            'undangan' => 'bg-purple-100 text-purple-700',
             default => 'bg-slate-100 text-slate-600',
         };
     };
@@ -68,7 +69,7 @@
                 </p>
             </div>
 
-            <div class="grid gap-3 sm:grid-cols-2 lg:w-[460px]">
+            <div class="grid gap-3 sm:grid-cols-3 lg:w-[660px]">
                 <div class="rounded-2xl bg-white/10 p-4">
                     <p class="text-xs font-semibold text-blue-100">Program Studi</p>
                     <p class="mt-2 text-lg font-black">
@@ -86,6 +87,16 @@
                     </p>
                     <p class="text-xs text-blue-100">
                         {{ $applicant->pmbYear?->name ?? '-' }}
+                    </p>
+                </div>
+
+                <div class="rounded-2xl bg-white/10 p-4">
+                    <p class="text-xs font-semibold text-blue-100">Jalur</p>
+                    <p class="mt-2 text-lg font-black">
+                        {{ $applicant->registration_path_label }}
+                    </p>
+                    <p class="text-xs text-blue-100">
+                        Jalur Pendaftaran
                     </p>
                 </div>
             </div>
@@ -143,6 +154,7 @@
                         'Tempat Lahir' => $applicant->birth_place ?? '-',
                         'Tanggal Lahir' => $applicant->birth_date?->format('d M Y') ?? '-',
                         'Agama' => $applicant->religion ?? '-',
+                        'Jalur Pendaftaran' => $applicant->registration_path_label,
                         'Sumber Informasi' => $applicant->source_information ?? '-',
                     ] as $label => $value)
                         <div class="rounded-2xl bg-slate-50 p-4">
@@ -363,6 +375,29 @@
 
         {{-- Sidebar --}}
         <aside class="space-y-6">
+
+            {{-- Jalur Pendaftaran --}}
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-lg font-black text-polmind-blue">Jalur Pendaftaran</h2>
+
+                <div class="mt-5 rounded-2xl bg-slate-50 p-5">
+                    <p class="text-xs font-bold text-slate-500">Kategori Jalur</p>
+
+                    <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($applicant->registration_path ?? 'umum') }}">
+                        {{ $applicant->registration_path_label }}
+                    </span>
+
+                    <p class="mt-4 text-xs leading-5 text-slate-600">
+                        @if(($applicant->registration_path ?? 'umum') === 'prestasi')
+                            Camaba mendaftar melalui jalur prestasi. Pastikan dokumen pendukung prestasi telah diverifikasi.
+                        @elseif(($applicant->registration_path ?? 'umum') === 'undangan')
+                            Camaba mendaftar melalui jalur undangan. Pastikan data rekomendasi/undangan sesuai ketentuan PMB.
+                        @else
+                            Camaba mendaftar melalui jalur umum dengan alur seleksi reguler.
+                        @endif
+                    </p>
+                </div>
+            </div>
 
             {{-- Action --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
