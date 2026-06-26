@@ -135,6 +135,13 @@
                     <p class="mt-2 text-sm font-bold text-slate-900">{{ $applicant->admissionWave?->name ?? '-' }}</p>
                 </div>
 
+                <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
+                    <p class="text-xs font-black uppercase tracking-wide text-polmind-blue">Jalur Pendaftaran</p>
+                    <p class="mt-2 text-sm font-bold text-slate-900">
+                        {{ $applicant->registration_path_label }}
+                    </p>
+                </div>
+
                 <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <p class="text-xs font-black uppercase tracking-wide text-slate-500">Status Seleksi</p>
                     <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $statusBadgeClass }}">

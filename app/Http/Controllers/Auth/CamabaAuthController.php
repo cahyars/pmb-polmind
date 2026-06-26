@@ -51,6 +51,7 @@ class CamabaAuthController extends Controller
             'phone' => ['required', 'string', 'max:30'],
             'study_program_id' => ['required', 'exists:study_programs,id'],
             'class_type_id' => ['required', 'exists:class_types,id'],
+            'registration_path' => ['required', 'in:umum,prestasi,undangan'],
             'source_information' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ]);
@@ -85,6 +86,7 @@ class CamabaAuthController extends Controller
                 'phone' => $validated['phone'],
 
                 'source_information' => $validated['source_information'] ?? null,
+                'registration_path' => $validated['registration_path'],
 
                 'registration_status' => 'registrasi_awal',
                 'document_status' => 'belum_upload',

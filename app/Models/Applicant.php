@@ -32,6 +32,7 @@ class Applicant extends Authenticatable
         'religion',
 
         'source_information',
+        'registration_path',
 
         'registration_status',
         'document_status',
@@ -54,6 +55,16 @@ class Applicant extends Authenticatable
         'synced_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function getRegistrationPathLabelAttribute(): string
+    {
+        return match ($this->registration_path) {
+            'umum' => 'Umum',
+            'prestasi' => 'Prestasi',
+            'undangan' => 'Undangan',
+            default => 'Umum',
+        };
+    }
 
     public function pmbYear()
     {

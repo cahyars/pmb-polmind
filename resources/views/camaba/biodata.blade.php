@@ -123,6 +123,14 @@
                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                 </div>
 
+                <div>
+                    <label class="text-sm font-bold text-slate-700">Jalur Pendaftaran</label>
+                    <input type="text"
+                        value="{{ $applicant->registration_path_label }}"
+                        disabled
+                        class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-100 px-4 py-3 text-sm text-slate-600">
+                </div>
+
                 <div class="md:col-span-2">
                     <label class="text-sm font-bold text-slate-700">Pilihan Prodi Kedua</label>
                     <select name="second_study_program_id"

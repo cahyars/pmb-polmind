@@ -346,6 +346,13 @@
                     </div>
 
                     <div>
+                        <p class="text-xs font-bold text-slate-500">Jalur Pendaftaran</p>
+                        <p class="mt-1 font-bold text-slate-800">
+                            {{ $applicant->registration_path_label }}
+                        </p>
+                    </div>
+
+                    <div>
                         <p class="text-xs font-bold text-slate-500">Jenis Kelas</p>
                         <p class="mt-1 font-bold text-slate-800">
                             {{ $applicant->classType?->name ?? '-' }}

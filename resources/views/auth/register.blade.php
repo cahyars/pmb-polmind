@@ -108,6 +108,28 @@
             </div>
 
             <div>
+                <label class="text-sm font-bold text-slate-700">Jalur Pendaftaran</label>
+                <select name="registration_path"
+                        required
+                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Pilih Jalur Pendaftaran</option>
+                    <option value="umum" @selected(old('registration_path') === 'umum')>
+                        Umum
+                    </option>
+                    <option value="prestasi" @selected(old('registration_path') === 'prestasi')>
+                        Prestasi
+                    </option>
+                    <option value="undangan" @selected(old('registration_path') === 'undangan')>
+                        Undangan
+                    </option>
+                </select>
+
+                <p class="mt-2 text-xs leading-5 text-slate-500">
+                    Pilih jalur pendaftaran sesuai kategori calon mahasiswa.
+                </p>
+            </div>
+
+            <div>
                 <label class="text-sm font-bold text-slate-700">Sumber Informasi</label>
                 <select name="source_information"
                         class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
