@@ -231,6 +231,101 @@ class ReportController extends Controller
         ));
     }
 
+    public function exportApplicants(Request $request)
+    {
+        $filename = 'laporan-camaba-pmb-polmind-' . now()->format('Ymd-His') . '.csv';
+
+        $applicants = $this->filteredApplicants($request)
+            ->with([
+                'pmbYear',
+                'admissionWave',
+                'studyProgram',
+                'classType',
+                'education',
+                'selection',
+                'reRegistration',
+            ])
+            ->latest()
+            ->get();
+
+        return response()->streamDownload(function () use ($applicants) {
+            $handle = fopen('php://output', 'w');
+
+            // BOM UTF-8 agar karakter Indonesia aman saat dibuka di Excel
+            fwrite($handle, "\xEF\xBB\xBF");
+
+            fputcsv($handle, [
+                'No',
+                'No Pendaftaran',
+                'Nama Lengkap',
+                'Email',
+                'No HP',
+                'NIK',
+                'NISN',
+                'Jenis Kelamin',
+                'Tempat Lahir',
+                'Tanggal Lahir',
+                'Tahun PMB',
+                'Gelombang',
+                'Program Studi',
+                'Kelas',
+                'Jalur Pendaftaran',
+                'Asal Sekolah',
+                'Jurusan Asal',
+                'Tahun Lulus',
+                'Status Registrasi',
+                'Status Berkas',
+                'Status Pembayaran',
+                'Status Seleksi',
+                'Nilai Tes',
+                'Nilai Interview',
+                'Nilai Akhir',
+                'Status Daftar Ulang',
+                'Status Sinkron',
+                'NIM',
+                'Tanggal Daftar',
+            ]);
+
+            foreach ($applicants as $index => $applicant) {
+                fputcsv($handle, [
+                    $index + 1,
+                    $applicant->registration_number,
+                    $applicant->full_name,
+                    $applicant->email,
+                    $applicant->phone,
+                    $applicant->nik,
+                    $applicant->nisn,
+                    $applicant->gender,
+                    $applicant->birth_place,
+                    $applicant->birth_date?->format('d/m/Y'),
+                    $applicant->pmbYear?->name,
+                    $applicant->admissionWave?->name,
+                    $applicant->studyProgram?->code . ' - ' . $applicant->studyProgram?->name,
+                    $applicant->classType?->name,
+                    $applicant->registration_path_label,
+                    $applicant->education?->school_name,
+                    $applicant->education?->major,
+                    $applicant->education?->graduation_year,
+                    str_replace('_', ' ', $applicant->registration_status),
+                    str_replace('_', ' ', $applicant->document_status),
+                    str_replace('_', ' ', $applicant->payment_status),
+                    str_replace('_', ' ', $applicant->selection_status),
+                    $applicant->selection?->test_score,
+                    $applicant->selection?->interview_score,
+                    $applicant->selection?->final_score,
+                    str_replace('_', ' ', $applicant->re_registration_status),
+                    str_replace('_', ' ', $applicant->sync_status),
+                    $applicant->nim,
+                    $applicant->created_at?->format('d/m/Y H:i'),
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
     private function filteredApplicants(Request $request)
     {
         $query = Applicant::query();

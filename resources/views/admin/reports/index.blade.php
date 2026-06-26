@@ -33,6 +33,34 @@
                     {{ $totalApplicants }} / {{ $targetApplicants }} pendaftar
                 </p>
             </div>
+
+            <div class="flex flex-col gap-3 lg:w-64">
+                <a href="{{ route('admin.reports.export-applicants', request()->query()) }}"
+                class="inline-flex justify-center rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                    Export Data Camaba
+                </a>
+
+                <button type="button"
+                        onclick="navigator.clipboard.writeText(`Selamat pagi Bapak/Ibu, izin menyampaikan update sementara PMB Politeknik Mitra Industri.
+
+            Total pendaftar: {{ $totalApplicants }} camaba.
+            Biodata lengkap: {{ $biodataComplete }} camaba.
+            Berkas valid: {{ $documentValid }} camaba.
+            Pembayaran pendaftaran valid: {{ $paymentValid }} camaba.
+            Diterima: {{ $acceptedApplicants }} camaba.
+            Cadangan: {{ $reserveApplicants }} camaba.
+            Ditolak: {{ $rejectedApplicants }} camaba.
+            Daftar ulang valid: {{ $reRegistered }} camaba.
+            Siap sinkron SIAKAD: {{ $readySync }} camaba.
+            Sudah sinkron SIAKAD: {{ $synced }} camaba.
+
+            Total pembayaran valid: Rp{{ number_format($totalPaid, 0, ',', '.') }}.
+
+            Demikian update sementara yang dapat kami sampaikan. Terima kasih.`); Swal.fire({title: 'Narasi disalin', text: 'Teks laporan PMB sudah disalin ke clipboard.', icon: 'success', confirmButtonColor: '#003B82'})"
+                        class="inline-flex justify-center rounded-xl border border-white/30 bg-white/10 px-5 py-3 text-sm font-black text-white transition hover:bg-white/20">
+                    Copy Narasi
+                </button>
+            </div>
         </div>
     </div>
 
@@ -147,6 +175,11 @@
                 class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
                     Reset
                 </a>
+
+                <a href="{{ route('admin.reports.export-applicants', request()->query()) }}"
+                class="rounded-xl bg-green-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-green-900/20 transition hover:bg-green-700">
+                    Export CSV
+                </a>
             </div>
         </form>
     </div>
@@ -223,13 +256,13 @@
         {{-- Main --}}
         <div class="space-y-8">
 
-            {{-- Funnel --}}
+            {{-- Funnel Chart --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex flex-col justify-between gap-3 md:flex-row md:items-center">
                     <div>
                         <h2 class="text-xl font-black text-polmind-blue">Funnel PMB</h2>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
-                            Alur progres camaba dari registrasi awal sampai siap sinkron.
+                            Alur progres camaba dari registrasi awal sampai sinkron SIAKAD.
                         </p>
                     </div>
 
@@ -238,23 +271,36 @@
                     </span>
                 </div>
 
-                <div class="mt-6 space-y-5">
-                    @foreach($funnel as $item)
-                        <div>
-                            <div class="flex items-center justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-black text-slate-900">{{ $item['label'] }}</p>
-                                    <p class="mt-1 text-xs text-slate-500">{{ $item['value'] }} camaba</p>
+                <div class="mt-8 overflow-x-auto">
+                    <div class="flex min-w-[900px] items-end gap-5 rounded-2xl bg-slate-50 p-6">
+                        @foreach($funnel as $item)
+                            @php
+                                $barHeight = $item['percent'] > 0 ? max($item['percent'], 8) : 0;
+                            @endphp
+
+                            <div class="flex min-h-[330px] flex-1 flex-col items-center justify-end">
+                                <div class="mb-3 text-center">
+                                    <p class="text-sm font-black text-polmind-blue">
+                                        {{ $item['percent'] }}%
+                                    </p>
+                                    <p class="mt-1 text-xs font-bold text-slate-500">
+                                        {{ $item['value'] }} camaba
+                                    </p>
                                 </div>
 
-                                <p class="text-sm font-black text-polmind-blue">{{ $item['percent'] }}%</p>
-                            </div>
+                                <div class="flex h-56 w-full items-end justify-center rounded-2xl bg-white p-3 shadow-sm">
+                                    <div class="w-full max-w-[64px] rounded-t-2xl bg-polmind-blue transition-all"
+                                        style="height: {{ $barHeight }}%"></div>
+                                </div>
 
-                            <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
-                                <div class="h-full rounded-full bg-polmind-blue" style="width: {{ min($item['percent'], 100) }}%"></div>
+                                <div class="mt-4 min-h-[48px] text-center">
+                                    <p class="text-xs font-black leading-5 text-slate-800">
+                                        {{ $item['label'] }}
+                                    </p>
+                                </div>
                             </div>
-                        </div>
-                    @endforeach
+                        @endforeach
+                    </div>
                 </div>
             </div>
 

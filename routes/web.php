@@ -82,6 +82,8 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::post('/follow-ups/{applicant}', [FollowUpController::class, 'store'])->name('follow-ups.store');
 
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
+    Route::get('/reports/export/applicants', [ReportController::class, 'exportApplicants'])
+        ->name('reports.export-applicants');
 
     Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
 
