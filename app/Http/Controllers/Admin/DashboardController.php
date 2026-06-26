@@ -8,7 +8,6 @@ use App\Models\ApplicantDocument;
 use App\Models\IntegrationLog;
 use App\Models\Payment;
 use App\Models\ReRegistration;
-use App\Models\Selection;
 use App\Models\StudyProgram;
 
 class DashboardController extends Controller
@@ -17,19 +16,28 @@ class DashboardController extends Controller
     {
         $totalApplicants = Applicant::count();
 
+        $biodataComplete = Applicant::where('registration_status', 'biodata_lengkap')->count();
+
         $pendingDocuments = ApplicantDocument::where('status', 'menunggu_verifikasi')->count();
 
         $pendingPayments = Payment::where('status', 'waiting_verification')->count();
 
         $validReRegistrations = ReRegistration::where('status', 'valid')->count();
 
-        $acceptedApplicants = Selection::where('status', 'diterima')->count();
+        $acceptedApplicants = Applicant::where('selection_status', 'diterima')->count();
 
-        $readySyncApplicants = Applicant::where('sync_status', 'siap_sinkron')
-            ->orWhereHas('reRegistration', function ($query) {
-                $query->where('status', 'valid');
-            })
-            ->count();
+        $readySyncApplicants = Applicant::where('sync_status', 'siap_sinkron')->count();
+        $processingSyncApplicants = Applicant::where('sync_status', 'proses_sinkron')->count();
+        $syncedApplicants = Applicant::where('sync_status', 'sudah_sinkron')->count();
+        $failedSyncApplicants = Applicant::where('sync_status', 'gagal_sinkron')->count();
+
+        $totalValidPayment = Payment::where('status', 'valid')->sum('amount');
+
+        $registrationPathStats = [
+            'umum' => Applicant::where('registration_path', 'umum')->count(),
+            'prestasi' => Applicant::where('registration_path', 'prestasi')->count(),
+            'undangan' => Applicant::where('registration_path', 'undangan')->count(),
+        ];
 
         $targetApplicants = 180;
 
@@ -37,14 +45,14 @@ class DashboardController extends Controller
             ? round(($totalApplicants / $targetApplicants) * 100)
             : 0;
 
-        $funnel = [
+        $funnel = collect([
             [
                 'label' => 'Registrasi Awal',
-                'value' => Applicant::count(),
+                'value' => $totalApplicants,
             ],
             [
                 'label' => 'Biodata Lengkap',
-                'value' => Applicant::where('registration_status', 'biodata_lengkap')->count(),
+                'value' => $biodataComplete,
             ],
             [
                 'label' => 'Berkas Valid',
@@ -62,9 +70,11 @@ class DashboardController extends Controller
                 'label' => 'Daftar Ulang Valid',
                 'value' => $validReRegistrations,
             ],
-        ];
-
-        $funnel = collect($funnel)->map(function ($item) use ($totalApplicants) {
+            [
+                'label' => 'Sudah Sinkron',
+                'value' => $syncedApplicants,
+            ],
+        ])->map(function ($item) use ($totalApplicants) {
             $item['percent'] = $totalApplicants > 0
                 ? round(($item['value'] / $totalApplicants) * 100)
                 : 0;
@@ -77,16 +87,16 @@ class DashboardController extends Controller
             ->withCount([
                 'applicants as registrants_count',
                 'applicants as accepted_count' => function ($query) {
-                    $query->whereHas('selection', function ($selectionQuery) {
-                        $selectionQuery->where('status', 'diterima');
-                    });
+                    $query->where('selection_status', 'diterima');
                 },
                 'applicants as re_registered_count' => function ($query) {
-                    $query->whereHas('reRegistration', function ($reRegistrationQuery) {
-                        $reRegistrationQuery->where('status', 'valid');
-                    });
+                    $query->where('re_registration_status', 'daftar_ulang_valid');
+                },
+                'applicants as synced_count' => function ($query) {
+                    $query->where('sync_status', 'sudah_sinkron');
                 },
             ])
+            ->orderBy('code')
             ->get();
 
         $latestApplicants = Applicant::query()
@@ -96,7 +106,7 @@ class DashboardController extends Controller
             ->get();
 
         $latestPayments = Payment::query()
-            ->with(['applicant', 'invoice'])
+            ->with(['applicant.studyProgram', 'invoice'])
             ->latest()
             ->limit(5)
             ->get();
@@ -107,20 +117,33 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        $latestDocuments = ApplicantDocument::query()
+            ->with(['applicant.studyProgram', 'documentType'])
+            ->latest()
+            ->limit(5)
+            ->get();
+
         return view('admin.dashboard', compact(
             'totalApplicants',
+            'biodataComplete',
             'pendingDocuments',
             'pendingPayments',
             'validReRegistrations',
             'acceptedApplicants',
             'readySyncApplicants',
+            'processingSyncApplicants',
+            'syncedApplicants',
+            'failedSyncApplicants',
+            'totalValidPayment',
+            'registrationPathStats',
             'targetApplicants',
             'targetProgress',
             'funnel',
             'programs',
             'latestApplicants',
             'latestPayments',
-            'latestIntegrationLogs'
+            'latestIntegrationLogs',
+            'latestDocuments'
         ));
     }
 }

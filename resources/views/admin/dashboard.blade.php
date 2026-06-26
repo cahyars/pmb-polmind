@@ -63,26 +63,26 @@
                 'label' => 'Berkas Menunggu',
                 'value' => $pendingDocuments,
                 'desc' => 'Perlu diverifikasi',
-                'url' => '/admin/documents',
+                'url' => '/admin/documents?status=menunggu_verifikasi',
                 'class' => 'bg-yellow-100 text-yellow-700',
             ],
             [
-                'label' => 'Pembayaran Masuk',
+                'label' => 'Pembayaran Menunggu',
                 'value' => $pendingPayments,
-                'desc' => 'Menunggu validasi',
-                'url' => '/admin/payments',
+                'desc' => 'Perlu validasi pembayaran',
+                'url' => '/admin/payments?status=waiting_verification',
                 'class' => 'bg-purple-100 text-purple-700',
             ],
             [
                 'label' => 'Daftar Ulang Valid',
                 'value' => $validReRegistrations,
-                'desc' => 'Siap sinkron SIAKAD',
-                'url' => '/admin/re-registrations',
+                'desc' => 'Siap proses akademik',
+                'url' => '/admin/re-registrations?status=valid',
                 'class' => 'bg-green-100 text-green-700',
             ],
         ] as $card)
             <a href="{{ url($card['url']) }}"
-               class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
@@ -94,6 +94,40 @@
                         Detail
                     </span>
                 </div>
+            </a>
+        @endforeach
+    </div>
+
+    {{-- Registration Path Stats --}}
+    <div class="grid gap-5 md:grid-cols-3">
+        @foreach([
+            [
+                'label' => 'Jalur Umum',
+                'value' => $registrationPathStats['umum'] ?? 0,
+                'desc' => 'Pendaftar jalur umum',
+                'class' => 'text-polmind-blue',
+                'url' => '/admin/applicants?registration_path=umum',
+            ],
+            [
+                'label' => 'Jalur Prestasi',
+                'value' => $registrationPathStats['prestasi'] ?? 0,
+                'desc' => 'Pendaftar jalur prestasi',
+                'class' => 'text-green-700',
+                'url' => '/admin/applicants?registration_path=prestasi',
+            ],
+            [
+                'label' => 'Jalur Undangan',
+                'value' => $registrationPathStats['undangan'] ?? 0,
+                'desc' => 'Pendaftar jalur undangan',
+                'class' => 'text-purple-700',
+                'url' => '/admin/applicants?registration_path=undangan',
+            ],
+        ] as $card)
+            <a href="{{ url($card['url']) }}"
+            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
+                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </a>
         @endforeach
     </div>
@@ -257,41 +291,71 @@
                         </p>
                     </div>
 
-                    <span class="rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600">
-                        UI Dummy
+                    <span class="rounded-full bg-green-100 px-4 py-2 text-xs font-black text-green-700">
+                        Real Database
                     </span>
                 </div>
 
                 <div class="mt-6 space-y-5">
-                    @foreach([
-                        ['title' => 'Bukti pembayaran Ahmad Fauzi masuk', 'desc' => 'Menunggu verifikasi admin keuangan.', 'time' => '5 menit lalu', 'icon' => '💳'],
-                        ['title' => 'Siti Aminah melakukan daftar ulang', 'desc' => 'Status pembayaran daftar ulang menunggu validasi.', 'time' => '20 menit lalu', 'icon' => '🎓'],
-                        ['title' => 'Kartu Keluarga Dewi Lestari ditolak', 'desc' => 'Camaba perlu upload ulang dokumen.', 'time' => '1 jam lalu', 'icon' => '📄'],
-                        ['title' => 'Data Nabila Putri siap sinkron', 'desc' => 'Masuk ke antrian integrasi SIAKAD.', 'time' => '2 jam lalu', 'icon' => '🔄'],
-                    ] as $activity)
-                        <div class="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                    @forelse($latestPayments as $payment)
+                        <a href="{{ url('/admin/payments') }}"
+                        class="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
                             <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
-                                {{ $activity['icon'] }}
+                                💳
                             </div>
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                                     <div>
                                         <p class="font-black text-slate-900">
-                                            {{ $activity['title'] }}
+                                            Pembayaran {{ $payment->applicant?->full_name ?? '-' }}
                                         </p>
                                         <p class="mt-1 text-sm leading-6 text-slate-600">
-                                            {{ $activity['desc'] }}
+                                            {{ $payment->payment_number }} ·
+                                            Rp{{ number_format($payment->amount, 0, ',', '.') }} ·
+                                            {{ str_replace('_', ' ', $payment->status) }}
                                         </p>
                                     </div>
 
                                     <span class="shrink-0 text-xs font-bold text-slate-500">
-                                        {{ $activity['time'] }}
+                                        {{ $payment->created_at?->diffForHumans() }}
                                     </span>
                                 </div>
                             </div>
+                        </a>
+                    @empty
+                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                            Belum ada aktivitas pembayaran terbaru.
                         </div>
-                    @endforeach
+                    @endforelse
+
+                    @forelse($latestDocuments->take(3) as $document)
+                        <a href="{{ url('/admin/documents') }}"
+                        class="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
+                                📄
+                            </div>
+
+                            <div class="min-w-0 flex-1">
+                                <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                                    <div>
+                                        <p class="font-black text-slate-900">
+                                            Berkas {{ $document->documentType?->name ?? '-' }}
+                                        </p>
+                                        <p class="mt-1 text-sm leading-6 text-slate-600">
+                                            {{ $document->applicant?->full_name ?? '-' }} ·
+                                            {{ str_replace('_', ' ', $document->status) }}
+                                        </p>
+                                    </div>
+
+                                    <span class="shrink-0 text-xs font-bold text-slate-500">
+                                        {{ $document->created_at?->diffForHumans() }}
+                                    </span>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                    @endforelse
                 </div>
             </div>
 
@@ -345,13 +409,38 @@
                     Data daftar ulang valid akan disiapkan untuk sinkronisasi ke SIAKAD.
                 </p>
 
-                <div class="mt-5 rounded-2xl bg-white p-4">
-                    <p class="text-xs font-black uppercase tracking-wide text-slate-500">
-                        Siap Sinkron
-                    </p>
-                    <p class="mt-2 text-3xl font-black text-polmind-blue">
-                        {{ $readySyncApplicants }} Data
-                    </p>
+                <div class="mt-5 grid gap-3">
+                    <div class="rounded-2xl bg-white p-4">
+                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">
+                            Siap Sinkron
+                        </p>
+                        <p class="mt-2 text-3xl font-black text-purple-700">
+                            {{ $readySyncApplicants }} Data
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-3">
+                        <div class="rounded-2xl bg-white p-3 text-center">
+                            <p class="text-xs font-bold text-slate-500">Proses</p>
+                            <p class="mt-1 text-xl font-black text-yellow-700">
+                                {{ $processingSyncApplicants }}
+                            </p>
+                        </div>
+
+                        <div class="rounded-2xl bg-white p-3 text-center">
+                            <p class="text-xs font-bold text-slate-500">Sukses</p>
+                            <p class="mt-1 text-xl font-black text-green-700">
+                                {{ $syncedApplicants }}
+                            </p>
+                        </div>
+
+                        <div class="rounded-2xl bg-white p-3 text-center">
+                            <p class="text-xs font-bold text-slate-500">Gagal</p>
+                            <p class="mt-1 text-xl font-black text-red-700">
+                                {{ $failedSyncApplicants }}
+                            </p>
+                        </div>
+                    </div>
                 </div>
 
                 <a href="{{ url('/admin/integrations') }}"
@@ -373,20 +462,27 @@
                 <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
                     <p class="text-sm leading-6 text-slate-700">
                         Total pendaftar sementara <span class="font-black text-polmind-blue">{{ $totalApplicants }} camaba</span>,
-                        dengan <span class="font-black text-green-700">{{ $acceptedApplicants }} diterima</span> dan
-                        <span class="font-black text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>.
+                        dengan <span class="font-black text-green-700">{{ $acceptedApplicants }} diterima</span>,
+                        <span class="font-black text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>,
+                        dan <span class="font-black text-purple-700">{{ $readySyncApplicants }} siap sinkron SIAKAD</span>.
+                        Total pembayaran valid sementara sebesar
+                        <span class="font-black text-green-700">Rp{{ number_format($totalValidPayment, 0, ',', '.') }}</span>.
                     </p>
                 </div>
 
                 <button type="button"
-                        onclick="Swal.fire({
-                            title: 'Generate Laporan',
-                            text: 'Fitur generate laporan otomatis akan dibuat setelah backend laporan aktif.',
-                            icon: 'info',
-                            confirmButtonColor: '#003B82'
-                        })"
+                    onclick="navigator.clipboard.writeText(`Selamat pagi Bapak/Ibu, izin menyampaikan update sementara PMB Polmind.
+
+                Total pendaftar sementara: {{ $totalApplicants }} camaba.
+                Biodata lengkap: {{ $biodataComplete }} camaba.
+                Diterima: {{ $acceptedApplicants }} camaba.
+                Daftar ulang valid: {{ $validReRegistrations }} camaba.
+                Siap sinkron SIAKAD: {{ $readySyncApplicants }} camaba.
+                Total pembayaran valid: Rp{{ number_format($totalValidPayment, 0, ',', '.') }}.
+
+                Demikian update sementara yang dapat kami sampaikan. Terima kasih.`); Swal.fire({title: 'Narasi disalin', text: 'Teks laporan singkat sudah disalin ke clipboard.', icon: 'success', confirmButtonColor: '#003B82'})"
                         class="mt-5 w-full rounded-xl border border-polmind-blue bg-white px-5 py-3 text-sm font-bold text-polmind-blue transition hover:bg-blue-50">
-                    Generate Narasi
+                    Copy Narasi Laporan
                 </button>
             </div>
 
@@ -401,10 +497,10 @@
                 </h3>
 
                 <ul class="mt-3 space-y-2 text-sm leading-6 text-yellow-800">
-                    <li>• Dashboard masih memakai data dummy.</li>
-                    <li>• Selanjutnya data akan ditarik dari database.</li>
-                    <li>• Shortcut sudah diarahkan ke modul admin.</li>
-                    <li>• Bug minor UI bisa masuk tahap polishing.</li>
+                    <li>• Dashboard sudah menggunakan data real database.</li>
+                    <li>• Monitoring jalur pendaftaran sudah aktif.</li>
+                    <li>• Integrasi SIAKAD sudah masuk tahap simulasi workflow.</li>
+                    <li>• Tahap berikutnya: laporan detail dan export data.</li>
                 </ul>
             </div>
 
