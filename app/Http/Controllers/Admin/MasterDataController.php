@@ -334,12 +334,14 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:class_types,code'],
+            'registration_code' => ['required', 'alpha', 'size:1', Rule::unique('class_types', 'registration_code')],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         ClassType::create([
             'code' => strtoupper($validated['code']),
+            'registration_code' => strtoupper($validated['registration_code']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'is_active' => $request->boolean('is_active'),
@@ -352,12 +354,14 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:class_types,code,' . $classType->id],
+            'registration_code' => ['required', 'alpha', 'size:1', Rule::unique('class_types', 'registration_code')->ignore($classType->id)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
         ]);
 
         $classType->update([
             'code' => strtoupper($validated['code']),
+            'registration_code' => strtoupper($validated['registration_code']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
             'is_active' => $request->boolean('is_active'),

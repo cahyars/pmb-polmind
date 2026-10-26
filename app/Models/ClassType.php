@@ -11,6 +11,7 @@ class ClassType extends Model
 
     protected $fillable = [
         'code',
+        'registration_code',
         'name',
         'description',
         'is_active',

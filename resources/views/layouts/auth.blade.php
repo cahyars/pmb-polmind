@@ -11,8 +11,8 @@
 
     <header class="border-b border-slate-200 bg-white">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-5 sm:px-6 lg:px-8">
-            <a href="{{ url('/') }}" class="text-xl font-bold text-polmind-blue">
-                Polmind
+            <a href="{{ url('/') }}" class="flex items-center">
+                <img src="{{ asset('images/logo-polmind.png') }}" alt="Politeknik Mitra Industri" class="h-12 w-auto">
             </a>
 
             <a href="#" class="text-sm font-medium text-slate-600 hover:text-polmind-blue">

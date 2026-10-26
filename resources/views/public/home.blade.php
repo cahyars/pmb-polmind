@@ -15,7 +15,7 @@
     <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-20">
         <div>
             <span class="inline-flex items-center rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold tracking-wide text-polmind-blue shadow-sm">
-                PMB 2024/2025
+                PMB 2027 · TA 2027/2028
             </span>
 
             <h1 class="mt-6 max-w-xl text-4xl font-black leading-tight tracking-tight text-polmind-blue sm:text-5xl lg:text-6xl">
@@ -23,8 +23,8 @@
             </h1>
 
             <p class="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-                Membangun talenta industri masa depan dengan kurikulum berbasis kompetensi,
-                pembelajaran praktis, dan pendekatan link-and-match industri.
+                Inkubator talenta global dengan konsep Teaching Factory, magang industri,
+                dan peluang karier di dalam maupun luar negeri. Perkuliahan dimulai 13 September 2027.
             </p>
 
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -34,7 +34,7 @@
                     <span class="ml-2">→</span>
                 </a>
 
-                <a href="https://wa.me/6281234567890"
+                <a href="https://wa.me/6282113296897"
                    target="_blank"
                    class="inline-flex items-center justify-center rounded-xl border border-polmind-border bg-white px-6 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-slate-50">
                     Konsultasi WA
@@ -43,16 +43,16 @@
 
             <div class="mt-8 grid max-w-lg grid-cols-3 gap-3">
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-2xl font-black text-polmind-blue">95%</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Lulusan terserap industri</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                     <p class="text-2xl font-black text-polmind-blue">3</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Program studi unggulan</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Program studi Sarjana Terapan (D4)</p>
                 </div>
                 <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-2xl font-black text-polmind-blue">100+</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Mitra industri</p>
+                    <p class="text-2xl font-black text-polmind-blue">4</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Gelombang pendaftaran</p>
+                </div>
+                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                    <p class="text-2xl font-black text-polmind-blue">TA 2027/28</p>
+                    <p class="mt-1 text-xs leading-5 text-slate-500">Semester Ganjil</p>
                 </div>
             </div>
         </div>
@@ -106,7 +106,7 @@
         <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
             @foreach([
                 ['title' => 'Daftar', 'desc' => 'Registrasi akun pada portal PMB Polmind.', 'icon' => '👤'],
-                ['title' => 'Bayar', 'desc' => 'Lakukan pembayaran biaya pendaftaran.', 'icon' => '💳'],
+                ['title' => 'Bayar', 'desc' => 'Bayar biaya formulir' . ($registrationFee ? ' Rp' . number_format($registrationFee, 0, ',', '.') : '') . '.', 'icon' => '💳'],
                 ['title' => 'Biodata', 'desc' => 'Lengkapi data diri dan riwayat pendidikan.', 'icon' => '📝'],
                 ['title' => 'Berkas', 'desc' => 'Unggah dokumen pendukung wajib.', 'icon' => '📁'],
                 ['title' => 'Seleksi', 'desc' => 'Ikuti proses seleksi sesuai ketentuan.', 'icon' => '✅'],
@@ -137,12 +137,12 @@
                     Program Studi Unggulan
                 </h2>
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                    Kurikulum dirancang khusus untuk memenuhi kebutuhan industri masa depan.
+                    Program Sarjana Terapan (D4). Kuota penerimaan terbatas.
                 </p>
             </div>
 
-            <a href="#" class="text-sm font-bold text-polmind-blue hover:underline">
-                Detail Kurikulum ↗
+            <a href="https://polmind.ac.id/pmb" target="_blank" class="text-sm font-bold text-polmind-blue hover:underline">
+                Info Lengkap ↗
             </a>
         </div>
 
@@ -150,20 +150,20 @@
             @foreach([
                 [
                     'name' => 'D4 Teknologi Rekayasa Perangkat Lunak',
-                    'desc' => 'Mencetak software engineer yang siap membangun aplikasi dan solusi digital industri.',
-                    'tags' => ['Software Dev', 'Cloud Computing'],
+                    'desc' => 'Pengembangan perangkat lunak dengan konsep Teaching Factory.',
+                    'tags' => ['Teaching Factory', 'Magang Industri'],
                     'icon' => '💻'
                 ],
                 [
                     'name' => 'D4 Bisnis Digital',
-                    'desc' => 'Mempelajari strategi bisnis digital, data, dan pemasaran berbasis teknologi.',
-                    'tags' => ['Data Analytics', 'Digital Marketing'],
+                    'desc' => 'Bisnis berbasis teknologi digital dengan orientasi kesiapan industri.',
+                    'tags' => ['Bisnis Digital', 'Magang Industri'],
                     'icon' => '📊'
                 ],
                 [
                     'name' => 'D4 Teknologi Rekayasa Manufaktur',
-                    'desc' => 'Fokus pada otomasi, mesin, kontrol, dan teknologi manufaktur modern.',
-                    'tags' => ['Robotics', 'Industrial IoT'],
+                    'desc' => 'Teknologi rekayasa manufaktur untuk kebutuhan industri di kawasan MM2100.',
+                    'tags' => ['Manufaktur', 'Magang Industri'],
                     'icon' => '🤖'
                 ],
             ] as $prodi)
@@ -205,9 +205,10 @@
 
             <div class="mt-6 space-y-4">
                 @foreach([
-                    ['name' => 'Gelombang 1', 'desc' => 'Beasiswa Prestasi & Unggulan', 'date' => '1 Jan - 31 Mar', 'status' => 'Sedang Berjalan'],
-                    ['name' => 'Gelombang 2', 'desc' => 'Reguler & Jalur Mandiri', 'date' => '1 Apr - 30 Jun', 'status' => 'Akan Datang'],
-                    ['name' => 'Gelombang 3', 'desc' => 'Reguler Akhir', 'date' => '1 Jul - 31 Agt', 'status' => 'Akan Datang'],
+                    ['name' => 'Gelombang I', 'date' => '2 Nov 2026 – 29 Jan 2027', 'desc' => 'Ujian 30 Jan · Pengumuman 2 Feb · Daftar ulang 2–12 Feb 2027', 'status' => 'Akan Datang'],
+                    ['name' => 'Gelombang II', 'date' => '1 Feb – 2 Apr 2027', 'desc' => 'Ujian 3 Apr · Pengumuman 6 Apr · Daftar ulang 6–16 Apr 2027', 'status' => 'Akan Datang'],
+                    ['name' => 'Gelombang III', 'date' => '5 Apr – 4 Jun 2027', 'desc' => 'Ujian 5 Jun · Pengumuman 9 Jun · Daftar ulang 9–18 Jun 2027', 'status' => 'Akan Datang'],
+                    ['name' => 'Gelombang IV', 'date' => '7 Jun – 30 Jul 2027', 'desc' => 'Ujian 31 Jul · Pengumuman 3 Agu · Daftar ulang 3–13 Agu 2027', 'status' => 'Akan Datang'],
                 ] as $wave)
                     <div class="rounded-2xl border border-white/20 bg-white/10 p-5 text-white">
                         <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
@@ -230,27 +231,32 @@
         <div class="rounded-3xl bg-polmind-yellow p-6 shadow-xl sm:p-8">
             <h2 class="text-2xl font-black text-polmind-blue-dark">Rincian Biaya</h2>
             <p class="mt-3 text-sm leading-6 text-polmind-blue-dark/80">
-                Investasi pendidikan terjangkau dengan jaminan kualitas industri.
+                Rincian biaya perkuliahan TA 2027/2028 akan diperbarui setelah penetapan resmi pimpinan institusi.
             </p>
+
+            @if($registrationFee)
+                <div class="mt-8 rounded-2xl bg-white p-5 shadow-sm">
+                    <p class="text-xs font-black uppercase tracking-wide text-polmind-blue">Biaya Formulir Pendaftaran</p>
+                    <p class="mt-2 text-3xl font-black text-polmind-blue-dark">Rp{{ number_format($registrationFee, 0, ',', '.') }}</p>
+                    <p class="mt-2 text-xs leading-5 text-slate-600">Dibayar setelah membuat akun, sebelum mengisi biodata dan mengunggah berkas.</p>
+                </div>
+            @endif
 
             <div class="mt-8 space-y-5">
                 <div class="flex justify-between border-b border-yellow-500/40 pb-4">
-                    <span class="font-semibold text-polmind-blue-dark">Pendaftaran</span>
-                    <span class="font-black text-polmind-blue-dark">Rp 350.000</span>
-                </div>
-                <div class="flex justify-between border-b border-yellow-500/40 pb-4">
-                    <span class="font-semibold text-polmind-blue-dark">UKT per Semester</span>
-                    <span class="font-black text-polmind-blue-dark">Rp 7.500.000*</span>
+                    <span class="font-semibold text-polmind-blue-dark">SPI</span>
+                    <span class="font-black text-polmind-blue-dark">Segera diumumkan</span>
                 </div>
                 <div class="flex justify-between">
-                    <span class="font-semibold text-polmind-blue-dark">SPI Sekali Bayar</span>
-                    <span class="font-black text-polmind-blue-dark">Rp 15.000.000</span>
+                    <span class="font-semibold text-polmind-blue-dark">UKT</span>
+                    <span class="font-black text-polmind-blue-dark">Segera diumumkan</span>
                 </div>
             </div>
 
             <p class="mt-8 rounded-2xl bg-white/40 p-4 text-xs leading-5 text-polmind-blue-dark">
-                * Tersedia beasiswa, cicilan, dan program potongan biaya berdasarkan ketentuan yang berlaku.
+                SPI dan UKT dibayar setelah dinyatakan diterima sebagai mahasiswa baru. Tersedia keringanan biaya SPI bagi pendaftar gelombang awal.
             </p>
+        </div>
         </div>
     </div>
 </section>
@@ -269,9 +275,10 @@
 
         <div class="mt-10 space-y-4" x-data="{ active: 1 }">
             @foreach([
-                ['q' => 'Apakah lulusan SMK bisa mendaftar?', 'a' => 'Bisa. Lulusan SMA, SMK, MA, dan Paket C dapat mendaftar sesuai ketentuan PMB yang berlaku.'],
-                ['q' => 'Bagaimana porsi praktik dan teori?', 'a' => 'Pembelajaran dirancang berbasis vokasi dengan porsi praktik yang kuat dan didukung project berbasis kebutuhan industri.'],
-                ['q' => 'Apakah ada jaminan kerja?', 'a' => 'Polmind memiliki pendekatan link-and-match industri untuk meningkatkan kesiapan kerja lulusan, namun proses penempatan tetap mengikuti ketentuan dan kebutuhan mitra industri.'],
+                ['q' => 'Siapa yang dapat mendaftar?', 'a' => 'Lulusan SMA/SMK/MA atau sederajat.'],
+                ['q' => 'Dokumen apa saja yang harus disiapkan?', 'a' => 'Pas foto formal terbaru, scan KTP, scan Kartu Keluarga, scan ijazah atau SKL, scan transkrip nilai/rapor, dan scan sertifikat penghargaan (jika ada).'],
+                ['q' => 'Kapan pembayaran SPI dan UKT dilakukan?', 'a' => 'SPI dan UKT dibayar setelah pendaftar dinyatakan diterima sebagai mahasiswa baru. Rincian biayanya akan diumumkan setelah ditetapkan secara resmi.'],
+                ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Tersedia program keringanan biaya SPI untuk pendaftar gelombang awal. Hubungi admin PMB untuk detailnya.'],
             ] as $index => $faq)
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <button type="button"
@@ -306,7 +313,7 @@
                    class="rounded-xl bg-polmind-yellow px-7 py-3 text-sm font-black text-polmind-blue-dark transition hover:brightness-95">
                     Daftar Sekarang
                 </a>
-                <a href="https://wa.me/6281234567890"
+                <a href="https://wa.me/6282113296897"
                    target="_blank"
                    class="rounded-xl border border-white/20 bg-white/10 px-7 py-3 text-sm font-black text-white transition hover:bg-white/20">
                     Konsultasi Admin PMB

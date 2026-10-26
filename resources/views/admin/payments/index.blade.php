@@ -270,7 +270,7 @@
                             $willFullyPaid = $payment->status === 'waiting_verification' && $remainingAfterValidation <= 0;
 
                             $proofUrl = $payment->proof_file_path
-                                ? asset('storage/' . $payment->proof_file_path)
+                                ? route('admin.payments.proof', $payment)
                                 : null;
 
                             $registrationPath = $payment->applicant?->registration_path ?? 'umum';
@@ -405,6 +405,12 @@
                                 <p class="mt-1 text-xs text-slate-500">
                                     {{ $payment->sender_bank ?? '-' }}
                                 </p>
+
+                                @if($payment->paymentMethod)
+                                    <p class="mt-1 text-xs text-slate-500">
+                                        Ke: <span class="font-bold text-slate-700">{{ $payment->paymentMethod->label }}</span>
+                                    </p>
+                                @endif
                             </td>
 
                             <td class="px-6 py-5">
@@ -435,7 +441,7 @@
 
                                     @if($proofUrl)
                                         <a href="{{ $proofUrl }}"
-                                           target="_blank"
+                                           @click.prevent="$store.preview.show($el.href, @js(basename($payment->proof_file_path)))"
                                            class="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
                                             Bukti
                                         </a>

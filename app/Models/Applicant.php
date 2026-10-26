@@ -26,10 +26,17 @@ class Applicant extends Authenticatable
 
         'nik',
         'nisn',
+        'npwp',
         'gender',
         'birth_place',
         'birth_date',
-        'religion',
+        'religion_id',
+        'citizenship',
+        'home_phone',
+        'transportation_id',
+        'kps_recipient',
+        'kps_number',
+        'special_need_id',
 
         'source_information',
         'registration_path',
@@ -52,9 +59,27 @@ class Applicant extends Authenticatable
 
     protected $casts = [
         'birth_date' => 'date',
+        'religion_id' => 'integer',
+        'transportation_id' => 'integer',
+        'kps_recipient' => 'boolean',
+        'special_need_id' => 'integer',
         'synced_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    public function getGenderLabelAttribute(): string
+    {
+        return match ($this->gender) {
+            'L' => 'Laki-laki',
+            'P' => 'Perempuan',
+            default => '-',
+        };
+    }
+
+    public function getReligionNameAttribute(): ?string
+    {
+        return RefOption::nameOf(RefOption::AGAMA, $this->religion_id);
+    }
 
     public function getRegistrationPathLabelAttribute(): string
     {
@@ -104,6 +129,16 @@ class Applicant extends Authenticatable
     public function parentData()
     {
         return $this->hasOne(ApplicantParent::class);
+    }
+
+    /**
+     * Pas foto camaba, dipakai sebagai foto profil.
+     */
+    public function photoDocument()
+    {
+        return $this->hasOne(ApplicantDocument::class)
+            ->whereNotNull('file_path')
+            ->whereHas('documentType', fn ($query) => $query->where('code', 'PAS_FOTO'));
     }
 
     public function documents()

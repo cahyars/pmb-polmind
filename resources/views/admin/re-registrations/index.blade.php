@@ -419,7 +419,7 @@
                                                 };
 
                                                 $proofUrl = $payment->proof_file_path
-                                                    ? asset('storage/' . $payment->proof_file_path)
+                                                    ? route('admin.payments.proof', $payment)
                                                     : null;
                                             @endphp
 
@@ -451,7 +451,7 @@
 
                                                     @if($proofUrl)
                                                         <a href="{{ $proofUrl }}"
-                                                           target="_blank"
+                                                           @click.prevent="$store.preview.show($el.href, @js(basename($payment->proof_file_path)))"
                                                            class="text-[11px] font-black text-polmind-blue hover:underline">
                                                             Bukti
                                                         </a>

@@ -12,7 +12,7 @@
         <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
                 <p class="text-sm font-bold text-blue-100">Laporan PMB Politeknik Mitra Industri</p>
-                <h1 class="mt-2 text-3xl font-black">Monitoring PMB 2026</h1>
+                <h1 class="mt-2 text-3xl font-black">Monitoring {{ $selectedPmbYear?->name ?? 'PMB' }}</h1>
                 <p class="mt-3 max-w-3xl text-sm leading-6 text-blue-100">
                     Total pendaftar sementara {{ $totalApplicants }} camaba dari target {{ $targetApplicants }}.
                     Progress target saat ini sekitar {{ $targetProgress }}%.

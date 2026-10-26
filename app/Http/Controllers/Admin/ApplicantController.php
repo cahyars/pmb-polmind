@@ -33,6 +33,9 @@ class ApplicantController extends Controller
             ->orderBy('code')
             ->get();
 
+        // Tandai camaba baru sudah dilihat (badge menu Data Camaba).
+        $request->user('web')?->forceFill(['applicants_seen_at' => now()])->save();
+
         $applicants = Applicant::query()
             ->with([
                 'pmbYear',
@@ -98,6 +101,7 @@ class ApplicantController extends Controller
                 'education',
                 'parentData',
                 'documents.documentType',
+                'photoDocument',
                 'registrationInvoice.items.feeComponent',
                 'registrationInvoice.payments',
                 'reRegistrationInvoice.items.feeComponent',

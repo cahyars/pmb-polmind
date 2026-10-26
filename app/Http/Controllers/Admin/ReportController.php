@@ -295,7 +295,7 @@ class ReportController extends Controller
                     $applicant->phone,
                     $applicant->nik,
                     $applicant->nisn,
-                    $applicant->gender,
+                    $applicant->gender_label,
                     $applicant->birth_place,
                     $applicant->birth_date?->format('d/m/Y'),
                     $applicant->pmbYear?->name,

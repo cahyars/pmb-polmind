@@ -16,19 +16,31 @@ return new class extends Migration
             $table->foreignId('applicant_id')->constrained('applicants')->cascadeOnDelete();
 
             $table->string('father_name')->nullable();
-            $table->string('father_job')->nullable();
+            $table->string('father_nik', 16)->nullable();
+            $table->date('father_birth_date')->nullable();
+            $table->unsignedSmallInteger('father_education_id')->nullable(); // ref pendidikan
+            $table->unsignedSmallInteger('father_job_id')->nullable(); // ref pekerjaan
+            $table->unsignedSmallInteger('father_income_id')->nullable(); // ref penghasilan
+            $table->unsignedInteger('father_special_need_id')->default(0);
             $table->string('father_phone')->nullable();
 
-            $table->string('mother_name')->nullable();
-            $table->string('mother_job')->nullable();
+            $table->string('mother_name')->nullable(); // nama ibu kandung
+            $table->string('mother_nik', 16)->nullable();
+            $table->date('mother_birth_date')->nullable();
+            $table->unsignedSmallInteger('mother_education_id')->nullable(); // ref pendidikan
+            $table->unsignedSmallInteger('mother_job_id')->nullable(); // ref pekerjaan
+            $table->unsignedSmallInteger('mother_income_id')->nullable(); // ref penghasilan
+            $table->unsignedInteger('mother_special_need_id')->default(0);
             $table->string('mother_phone')->nullable();
 
             $table->string('guardian_name')->nullable();
-            $table->string('guardian_job')->nullable();
-            $table->string('guardian_phone')->nullable();
             $table->string('guardian_relation')->nullable();
-
-            $table->string('parent_income_range')->nullable();
+            $table->string('guardian_nik', 16)->nullable();
+            $table->date('guardian_birth_date')->nullable();
+            $table->unsignedSmallInteger('guardian_education_id')->nullable(); // ref pendidikan
+            $table->unsignedSmallInteger('guardian_job_id')->nullable(); // ref pekerjaan
+            $table->unsignedSmallInteger('guardian_income_id')->nullable(); // ref penghasilan
+            $table->string('guardian_phone')->nullable();
 
             $table->timestamps();
         });

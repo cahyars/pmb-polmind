@@ -15,7 +15,10 @@ return new class extends Migration
             $table->id();
             $table->foreignId('applicant_id')->constrained('applicants')->cascadeOnDelete();
 
-            $table->text('address')->nullable();
+            $table->text('address')->nullable(); // jalan
+            $table->string('hamlet')->nullable(); // dusun
+            $table->string('region_id', 10)->nullable()->index(); // id_wilayah kecamatan SIAKAD
+            $table->unsignedSmallInteger('residence_type_id')->nullable(); // ref jenis_tinggal
 
             $table->string('province_code')->nullable();
             $table->string('province_name')->nullable();

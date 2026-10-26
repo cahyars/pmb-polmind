@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Dump database SIAKAD (berisi data pribadi mahasiswa) - jangan di-commit
+siakad-polmind.sql
+*.sql

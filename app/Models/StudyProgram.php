@@ -12,6 +12,8 @@ class StudyProgram extends Model
     protected $fillable = [
         'code',
         'name',
+        'pddikti_code',
+        'siakad_id',
         'degree',
         'quota',
         'description',

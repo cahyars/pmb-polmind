@@ -56,17 +56,31 @@
                     ← Kembali ke Data Camaba
                 </a>
 
-                <p class="mt-6 text-sm font-bold text-blue-100">
-                    {{ $applicant->registration_number }}
-                </p>
+                <div class="mt-6 flex items-center gap-5">
+                    @if($applicant->photoDocument)
+                        <button type="button"
+                                @click="$store.preview.show(@js(route('admin.documents.file', $applicant->photoDocument)), @js(basename($applicant->photoDocument->file_path)))"
+                                class="shrink-0" title="Lihat pas foto">
+                            <img src="{{ route('admin.documents.file', $applicant->photoDocument) }}"
+                                 alt="Foto {{ $applicant->full_name }}"
+                                 class="h-24 w-20 rounded-2xl bg-white object-cover ring-4 ring-white/20">
+                        </button>
+                    @endif
 
-                <h1 class="mt-2 text-3xl font-black">
-                    {{ $applicant->full_name }}
-                </h1>
+                    <div>
+                        <p class="text-sm font-bold text-blue-100">
+                            {{ $applicant->registration_number }}
+                        </p>
 
-                <p class="mt-2 text-sm text-blue-100">
-                    {{ $applicant->email }} · {{ $applicant->phone ?? '-' }}
-                </p>
+                        <h1 class="mt-2 text-3xl font-black">
+                            {{ $applicant->full_name }}
+                        </h1>
+
+                        <p class="mt-2 text-sm text-blue-100">
+                            {{ $applicant->email }} · {{ $applicant->phone ?? '-' }}
+                        </p>
+                    </div>
+                </div>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:w-[660px]">
@@ -145,15 +159,26 @@
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-xl font-black text-polmind-blue">Biodata Camaba</h2>
 
+                @php
+                    $ref = \App\Models\RefOption::class;
+                @endphp
+
                 <div class="mt-6 grid gap-5 md:grid-cols-2">
                     @foreach([
                         'Nama Lengkap' => $applicant->full_name,
                         'NIK' => $applicant->nik ?? '-',
                         'NISN' => $applicant->nisn ?? '-',
-                        'Jenis Kelamin' => $applicant->gender === 'male' ? 'Laki-laki' : ($applicant->gender === 'female' ? 'Perempuan' : '-'),
+                        'NPWP' => $applicant->npwp ?: '-',
+                        'Jenis Kelamin' => $applicant->gender_label,
                         'Tempat Lahir' => $applicant->birth_place ?? '-',
                         'Tanggal Lahir' => $applicant->birth_date?->format('d M Y') ?? '-',
-                        'Agama' => $applicant->religion ?? '-',
+                        'Agama' => $applicant->religion_name ?? '-',
+                        'Kewarganegaraan' => $ref::nameOf($ref::KEWARGANEGARAAN, $applicant->citizenship) ?? '-',
+                        'Nomor HP' => $applicant->phone ?? '-',
+                        'Telepon Rumah' => $applicant->home_phone ?: '-',
+                        'Alat Transportasi' => $ref::nameOf($ref::ALAT_TRANSPORTASI, $applicant->transportation_id) ?? '-',
+                        'Kebutuhan Khusus' => $ref::nameOf($ref::KEBUTUHAN_KHUSUS, $applicant->special_need_id) ?? '-',
+                        'Penerima KPS' => $applicant->kps_recipient ? 'Ya (' . ($applicant->kps_number ?: '-') . ')' : 'Tidak',
                         'Jalur Pendaftaran' => $applicant->registration_path_label,
                         'Sumber Informasi' => $applicant->source_information ?? '-',
                     ] as $label => $value)
@@ -172,9 +197,14 @@
 
                     <div class="mt-6 space-y-4 text-sm">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Alamat</p>
+                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Jalan</p>
                             <p class="mt-2 font-semibold text-slate-800">
                                 {{ $applicant->address?->address ?? '-' }}
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Dusun: {{ $applicant->address?->hamlet ?: '-' }}
+                                · Jenis tinggal: {{ \App\Models\RefOption::nameOf(\App\Models\RefOption::JENIS_TINGGAL, $applicant->address?->residence_type_id) ?? '-' }}
+                                · ID Wilayah: {{ $applicant->address?->region_id ?? '-' }}
                             </p>
                         </div>
 
@@ -249,27 +279,38 @@
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-xl font-black text-polmind-blue">Data Orang Tua / Wali</h2>
 
+                @php
+                    $parent = $applicant->parentData;
+                    $ref = \App\Models\RefOption::class;
+                    $people = [
+                        'Ayah' => 'father',
+                        'Ibu Kandung' => 'mother',
+                        'Wali' => 'guardian',
+                    ];
+                @endphp
+
                 <div class="mt-6 grid gap-5 md:grid-cols-3">
-                    <div class="rounded-2xl bg-slate-50 p-5">
-                        <p class="text-sm font-black text-slate-900">Ayah</p>
-                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->father_name ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->father_job ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->father_phone ?? '-' }}</p>
-                    </div>
+                    @foreach($people as $title => $prefix)
+                        <div class="rounded-2xl bg-slate-50 p-5">
+                            <p class="text-sm font-black text-slate-900">{{ $title }}</p>
+                            <p class="mt-3 text-sm font-bold text-slate-700">{{ $parent?->{$prefix . '_name'} ?: '-' }}</p>
 
-                    <div class="rounded-2xl bg-slate-50 p-5">
-                        <p class="text-sm font-black text-slate-900">Ibu</p>
-                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->mother_name ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->mother_job ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->mother_phone ?? '-' }}</p>
-                    </div>
-
-                    <div class="rounded-2xl bg-slate-50 p-5">
-                        <p class="text-sm font-black text-slate-900">Wali</p>
-                        <p class="mt-3 text-sm font-bold text-slate-700">{{ $applicant->parentData?->guardian_name ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->guardian_relation ?? '-' }}</p>
-                        <p class="mt-1 text-xs text-slate-500">{{ $applicant->parentData?->guardian_phone ?? '-' }}</p>
-                    </div>
+                            <dl class="mt-3 space-y-1 text-xs text-slate-500">
+                                @if($prefix === 'guardian')
+                                    <div>Hubungan: {{ $parent?->guardian_relation ?: '-' }}</div>
+                                @endif
+                                <div>NIK: {{ $parent?->{$prefix . '_nik'} ?: '-' }}</div>
+                                <div>Tgl lahir: {{ $parent?->{$prefix . '_birth_date'}?->format('d M Y') ?? '-' }}</div>
+                                <div>Pendidikan: {{ $ref::nameOf($ref::PENDIDIKAN, $parent?->{$prefix . '_education_id'}) ?? '-' }}</div>
+                                <div>Pekerjaan: {{ $ref::nameOf($ref::PEKERJAAN, $parent?->{$prefix . '_job_id'}) ?? '-' }}</div>
+                                <div>Penghasilan: {{ $ref::nameOf($ref::PENGHASILAN, $parent?->{$prefix . '_income_id'}) ?? '-' }}</div>
+                                @if($prefix !== 'guardian')
+                                    <div>Kebutuhan khusus: {{ $ref::nameOf($ref::KEBUTUHAN_KHUSUS, $parent?->{$prefix . '_special_need_id'}) ?? '-' }}</div>
+                                @endif
+                                <div>Telepon: {{ $parent?->{$prefix . '_phone'} ?: '-' }}</div>
+                            </dl>
+                        </div>
+                    @endforeach
                 </div>
             </div>
 
@@ -297,6 +338,13 @@
                                     <td class="px-4 py-4">
                                         <p class="font-semibold text-slate-700">{{ $document->file_name ?? '-' }}</p>
                                         <p class="mt-1 text-xs text-slate-500">{{ $document->file_size_kb ?? 0 }} KB</p>
+                                        @if($document->file_path)
+                                            <button type="button"
+                                                    @click="$store.preview.show(@js(route('admin.documents.file', $document)), @js(basename($document->file_path)))"
+                                                    class="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue hover:bg-blue-100">
+                                                Lihat
+                                            </button>
+                                        @endif
                                     </td>
                                     <td class="px-4 py-4">
                                         <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($document->status) }}">

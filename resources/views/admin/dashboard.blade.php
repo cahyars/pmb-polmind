@@ -26,7 +26,7 @@
 
                 <div class="mt-6 flex flex-wrap gap-3">
                     <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-blue-100">
-                        Tahun PMB: 2026
+                        Tahun PMB: {{ $selectedPmbYear?->name ?? '-' }}
                     </span>
                     <span class="rounded-full bg-polmind-yellow px-4 py-2 text-xs font-black text-polmind-blue-dark">
                         Gelombang 2 Aktif

@@ -5,12 +5,12 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
-use App\Models\ClassType;
 use App\Models\FeeComponent;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\PmbYear;
-use App\Models\StudyProgram;
+use App\Models\RegistrationSequence;
+use App\Services\RegistrationNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -21,47 +21,32 @@ class CamabaAuthController extends Controller
     {
         $activePmbYear = PmbYear::where('is_active', true)->first();
 
-        $activeWave = AdmissionWave::where('is_active', true)
-            ->when($activePmbYear, function ($query) use ($activePmbYear) {
-                $query->where('pmb_year_id', $activePmbYear->id);
-            })
-            ->first();
+        $activeWave = AdmissionWave::current($activePmbYear);
 
-        $studyPrograms = StudyProgram::where('is_active', true)
-            ->orderBy('code')
-            ->get();
+        $registrationFee = FeeComponent::registrationFee()?->amount ?? $activeWave?->registration_fee;
 
-        $classTypes = ClassType::where('is_active', true)
-            ->orderBy('code')
-            ->get();
-
-        return view('auth.register', compact(
-            'activePmbYear',
-            'activeWave',
-            'studyPrograms',
-            'classTypes'
-        ));
+        return view('auth.register', compact('activePmbYear', 'activeWave', 'registrationFee'));
     }
 
     public function register(Request $request)
     {
+        $request->merge([
+            'full_name' => mb_strtoupper(trim((string) $request->input('full_name'))),
+            'email' => mb_strtolower(trim((string) $request->input('email'))),
+        ]);
+
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'email' => ['required', 'email', 'max:255', 'unique:applicants,email'],
-            'phone' => ['required', 'string', 'max:30'],
-            'study_program_id' => ['required', 'exists:study_programs,id'],
-            'class_type_id' => ['required', 'exists:class_types,id'],
-            'registration_path' => ['required', 'in:umum,prestasi,undangan'],
+            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
             'source_information' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
+        ], [
+            'phone.regex' => 'Nomor WhatsApp hanya boleh berisi angka (9-15 digit).',
         ]);
 
         $activePmbYear = PmbYear::where('is_active', true)->first();
-        $activeWave = AdmissionWave::where('is_active', true)
-            ->when($activePmbYear, function ($query) use ($activePmbYear) {
-                $query->where('pmb_year_id', $activePmbYear->id);
-            })
-            ->first();
+        $activeWave = AdmissionWave::current($activePmbYear);
 
         if (! $activePmbYear || ! $activeWave) {
             return back()
@@ -70,14 +55,11 @@ class CamabaAuthController extends Controller
         }
 
         $applicant = DB::transaction(function () use ($validated, $activePmbYear, $activeWave) {
-            $registrationNumber = $this->generateRegistrationNumber($activePmbYear);
+            $registrationNumber = RegistrationNumber::temporary($activePmbYear);
 
             $applicant = Applicant::create([
                 'pmb_year_id' => $activePmbYear->id,
                 'admission_wave_id' => $activeWave->id,
-                'study_program_id' => $validated['study_program_id'],
-                'second_study_program_id' => null,
-                'class_type_id' => $validated['class_type_id'],
 
                 'registration_number' => $registrationNumber,
                 'full_name' => $validated['full_name'],
@@ -86,7 +68,6 @@ class CamabaAuthController extends Controller
                 'phone' => $validated['phone'],
 
                 'source_information' => $validated['source_information'] ?? null,
-                'registration_path' => $validated['registration_path'],
 
                 'registration_status' => 'registrasi_awal',
                 'document_status' => 'belum_upload',
@@ -145,39 +126,28 @@ class CamabaAuthController extends Controller
         return redirect('/login')->with('success', 'Anda berhasil logout.');
     }
 
-    private function generateRegistrationNumber(PmbYear $pmbYear): string
-    {
-        $count = Applicant::withTrashed()
-            ->where('pmb_year_id', $pmbYear->id)
-            ->lockForUpdate()
-            ->count();
-
-        $sequence = str_pad($count + 1, 4, '0', STR_PAD_LEFT);
-
-        return 'PMB' . $pmbYear->year . $sequence;
-    }
-
     private function createRegistrationInvoice(Applicant $applicant, AdmissionWave $activeWave): void
     {
-        $registrationFee = FeeComponent::where('code', 'PENDAFTARAN')->first();
+        $registrationFee = FeeComponent::registrationFee();
 
         $amount = $registrationFee?->amount ?? $activeWave->registration_fee ?? 0;
 
         $invoice = Invoice::create([
             'applicant_id' => $applicant->id,
-            'invoice_number' => 'INV/PMB/' . now()->format('Y') . '/' . $applicant->registration_number,
+            'invoice_number' => 'INV/PMB/' . $applicant->pmbYear->year . '/'
+                . str_pad(RegistrationSequence::next($applicant->pmb_year_id, 'invoice-pendaftaran'), 5, '0', STR_PAD_LEFT),
             'type' => 'registration',
             'issue_date' => now()->toDateString(),
             'due_date' => now()->addDays(7)->toDateString(),
             'total_amount' => $amount,
             'status' => 'unpaid',
-            'note' => 'Invoice biaya pendaftaran PMB.',
+            'note' => 'Biaya formulir pendaftaran PMB.',
         ]);
 
         InvoiceItem::create([
             'invoice_id' => $invoice->id,
             'fee_component_id' => $registrationFee?->id,
-            'name' => $registrationFee?->name ?? 'Biaya Pendaftaran',
+            'name' => $registrationFee?->name ?? 'Biaya Formulir Pendaftaran',
             'amount' => $amount,
             'quantity' => 1,
             'subtotal' => $amount,

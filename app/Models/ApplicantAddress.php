@@ -12,6 +12,9 @@ class ApplicantAddress extends Model
     protected $fillable = [
         'applicant_id',
         'address',
+        'hamlet',
+        'region_id',
+        'residence_type_id',
 
         'province_code',
         'province_name',
@@ -29,6 +32,15 @@ class ApplicantAddress extends Model
         'rt',
         'rw',
     ];
+
+    protected $casts = [
+        'residence_type_id' => 'integer',
+    ];
+
+    public function region()
+    {
+        return $this->belongsTo(RefRegion::class, 'region_id');
+    }
 
     public function applicant()
     {

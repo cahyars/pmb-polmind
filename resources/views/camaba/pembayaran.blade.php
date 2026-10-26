@@ -7,7 +7,7 @@
 @section('content')
 @php
     $invoiceTypeLabels = [
-        'registration' => 'Pendaftaran',
+        'registration' => 'Formulir Pendaftaran',
         're_registration' => 'Daftar Ulang',
     ];
 
@@ -46,6 +46,40 @@
 
 <div class="space-y-8">
 
+    @if(session('payment_submitted'))
+        <div class="rounded-2xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-sm leading-6 text-yellow-900" role="status">
+            <p class="font-black">⏳ Bukti pembayaran terkirim dan sedang diverifikasi</p>
+            <p>Admin PMB akan memeriksa pembayaran Anda maksimal 1x24 jam kerja. Status akan berubah menjadi <b>Lunas</b> setelah diverifikasi.</p>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', () => window.Swal.fire({
+                icon: 'success',
+                title: 'Bukti Pembayaran Terkirim',
+                html: 'Pembayaran Anda <b>sedang diverifikasi</b> oleh admin PMB (maks. 1x24 jam kerja).<br>Kami akan membuka pengisian biodata dan berkas setelah pembayaran diverifikasi.',
+                confirmButtonText: 'Mengerti',
+                confirmButtonColor: '#003B82',
+            }));
+        </script>
+    @endif
+
+    @if(session('success'))
+        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700" role="alert">
+            <p class="font-bold">Bukti pembayaran belum terkirim:</p>
+            <ul class="mt-2 list-inside list-disc space-y-1">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     {{-- Header --}}
     <div class="rounded-3xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
         <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
@@ -69,31 +103,48 @@
         </div>
     </div>
 
-    {{-- Informasi Pembayaran --}}
+    {{-- Tujuan Pembayaran --}}
     <div class="rounded-3xl border border-blue-200 bg-blue-50 p-6">
         <div class="border-b border-blue-100 pb-4">
-            <h2 class="text-xl font-black text-polmind-blue">Informasi Pembayaran</h2>
+            <h2 class="text-xl font-black text-polmind-blue">Tujuan Pembayaran</h2>
+            <p class="mt-1 text-sm text-slate-600">Transfer ke salah satu tujuan berikut, lalu unggah bukti pembayaran di bawah.</p>
         </div>
 
-        <div class="mt-5 grid gap-4 md:grid-cols-3">
-            <div class="rounded-2xl bg-white p-5 shadow-sm">
-                <p class="text-xs font-bold text-slate-500">Bank</p>
-                <p class="mt-2 text-xl font-black text-polmind-blue">BCA / Mandiri / BNI</p>
-            </div>
+        @if($paymentMethods->isEmpty())
+            <p class="mt-5 rounded-2xl bg-white p-5 text-sm font-semibold text-slate-600">
+                Informasi rekening pembayaran belum tersedia. Silakan hubungi admin PMB melalui WhatsApp +62 821-1329-6897.
+            </p>
+        @else
+            <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                @foreach($paymentMethods as $method)
+                    <div class="rounded-2xl bg-white p-5 shadow-sm" x-data="{ copied: false }">
+                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">{{ $method->type_label }}</p>
+                        <p class="mt-2 text-lg font-black text-slate-900">{{ $method->provider }}</p>
 
-            <div class="rounded-2xl bg-white p-5 shadow-sm">
-                <p class="text-xs font-bold text-slate-500">No. Rekening</p>
-                <p class="mt-2 text-xl font-black text-polmind-blue">0000000000</p>
-            </div>
+                        @if($method->account_number)
+                            <div class="mt-2 flex items-center justify-between gap-3 rounded-xl bg-slate-50 px-3 py-2">
+                                <span class="font-mono text-lg font-black tracking-wider text-polmind-blue">{{ $method->account_number }}</span>
+                                <button type="button"
+                                        @click="navigator.clipboard.writeText(@js($method->account_number)); copied = true; setTimeout(() => copied = false, 2000)"
+                                        class="shrink-0 rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100"
+                                        x-text="copied ? '✓ Tersalin' : 'Salin'">Salin</button>
+                            </div>
+                        @endif
 
-            <div class="rounded-2xl bg-white p-5 shadow-sm">
-                <p class="text-xs font-bold text-slate-500">Atas Nama</p>
-                <p class="mt-2 text-xl font-black text-polmind-blue">Politeknik Mitra Industri</p>
+                        @if($method->account_name)
+                            <p class="mt-2 text-sm text-slate-600">a.n. <span class="font-bold">{{ $method->account_name }}</span></p>
+                        @endif
+
+                        @if($method->instructions)
+                            <p class="mt-3 whitespace-pre-line text-xs leading-5 text-slate-500">{{ $method->instructions }}</p>
+                        @endif
+                    </div>
+                @endforeach
             </div>
-        </div>
+        @endif
 
         <p class="mt-4 text-sm leading-6 text-slate-600">
-            Pastikan nominal pembayaran sesuai tagihan. Setelah bukti diupload, admin PMB akan melakukan verifikasi.
+            Pastikan nominal transfer sesuai tagihan. Setelah bukti diunggah, admin PMB akan memverifikasi maksimal 1x24 jam kerja.
         </p>
     </div>
 
@@ -133,6 +184,24 @@
                 </div>
 
                 {{-- Summary --}}
+                @if($invoice->type === 'registration')
+                    <div class="mt-6 grid gap-5 md:grid-cols-3">
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
+                            <p class="mt-2 break-all font-black text-polmind-blue">{{ $invoice->invoice_number }}</p>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="text-xs font-bold text-slate-500">Total Tagihan</p>
+                            <p class="mt-2 text-2xl font-black text-slate-900">Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}</p>
+                        </div>
+
+                        <div class="rounded-2xl bg-slate-50 p-4">
+                            <p class="text-xs font-bold text-slate-500">Sudah Dibayar</p>
+                            <p class="mt-2 text-2xl font-black {{ $validPaidAmount > 0 ? 'text-green-700' : 'text-slate-400' }}">Rp{{ number_format($validPaidAmount, 0, ',', '.') }}</p>
+                        </div>
+                    </div>
+                @else
                 <div class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
                     <div class="rounded-2xl bg-slate-50 p-4">
                         <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
@@ -175,8 +244,10 @@
                     {{ $invoice->due_date?->format('d M Y') ?? '-' }}
                 </div>
 
+                @endif
+
                 {{-- Rincian Tagihan --}}
-                <div class="mt-6">
+                <div class="mt-6 {{ $invoice->type === 'registration' ? 'hidden' : '' }}">
                     <h3 class="text-lg font-black text-slate-800">Rincian Tagihan</h3>
 
                     <div class="mt-4 space-y-3">
@@ -222,6 +293,8 @@
                         <div class="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm font-bold text-red-700">
                             Tagihan ini dibatalkan.
                         </div>
+                    @elseif($hasWaitingPayment && $invoice->type === 'registration')
+                        {{-- Status menunggu verifikasi cukup ditampilkan sebagai badge di atas. --}}
                     @elseif($hasWaitingPayment)
                         <div class="rounded-2xl border border-yellow-200 bg-yellow-50 p-5">
                             <div class="flex items-start gap-3">
@@ -248,6 +321,24 @@
                             <form action="{{ route('camaba.payments.upload-proof', $invoice->id) }}" method="POST" enctype="multipart/form-data" class="mt-5 grid gap-4 md:grid-cols-2">
                                 @csrf
 
+                                @if($paymentMethods->isNotEmpty())
+                                    <div class="md:col-span-2">
+                                        <p class="text-sm font-bold text-slate-700">Ditransfer ke <span class="text-red-500">*</span></p>
+                                        <div class="mt-2 grid gap-3 md:grid-cols-2">
+                                            @foreach($paymentMethods as $method)
+                                                <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-slate-300 bg-white p-3 text-sm transition has-checked:border-polmind-blue has-checked:bg-blue-50 has-checked:ring-2 has-checked:ring-blue-100">
+                                                    <input type="radio" name="payment_method_id" value="{{ $method->id }}" required class="mt-1"
+                                                           @checked((string) old('payment_method_id', $paymentMethods->count() === 1 ? $method->id : '') === (string) $method->id)>
+                                                    <span>
+                                                        <span class="block font-bold text-slate-800">{{ $method->provider }}</span>
+                                                        <span class="block font-mono text-xs text-slate-500">{{ $method->account_number ?? $method->type_label }}</span>
+                                                    </span>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
                                 <div>
                                     <label class="text-sm font-bold text-slate-700">Nama Pengirim</label>
                                     <input type="text"
@@ -258,7 +349,7 @@
                                 </div>
 
                                 <div>
-                                    <label class="text-sm font-bold text-slate-700">Bank Pengirim</label>
+                                    <label class="text-sm font-bold text-slate-700">Bank / E-Wallet Pengirim</label>
                                     <input type="text"
                                            name="sender_bank"
                                            value="{{ old('sender_bank') }}"
@@ -270,7 +361,8 @@
                                     <label class="text-sm font-bold text-slate-700">Tanggal Transfer</label>
                                     <input type="date"
                                            name="transfer_date"
-                                           value="{{ old('transfer_date') }}"
+                                           max="{{ now()->format('Y-m-d') }}"
+                                           value="{{ old('transfer_date', now()->format('Y-m-d')) }}"
                                            class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"
                                            required>
                                 </div>
@@ -281,12 +373,14 @@
                                            name="amount"
                                            min="1"
                                            max="{{ $remainingAmount }}"
-                                           value="{{ old('amount', $remainingAmount) }}"
+                                           value="{{ $invoice->type === 'registration' ? $remainingAmount : old('amount', $remainingAmount) }}"
+                                           @readonly($invoice->type === 'registration')
                                            class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"
                                            required>
 
                                     <p class="mt-2 text-xs text-slate-500">
-                                        Sisa tagihan saat ini Rp{{ number_format($remainingAmount, 0, ',', '.') }}.
+                                        {{ $invoice->type === 'registration' ? 'Nominal sesuai biaya formulir' : 'Sisa tagihan saat ini' }}
+                                        Rp{{ number_format($remainingAmount, 0, ',', '.') }}.
                                     </p>
                                 </div>
 
@@ -294,11 +388,12 @@
                                     <label class="text-sm font-bold text-slate-700">Bukti Pembayaran</label>
                                     <input type="file"
                                            name="proof_file"
+                                           accept=".jpg,.jpeg,.png,.pdf"
                                            class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none file:mr-4 file:rounded-lg file:border-0 file:bg-blue-100 file:px-4 file:py-2 file:text-sm file:font-bold file:text-polmind-blue"
                                            required>
 
                                     <p class="mt-2 text-xs text-slate-500">
-                                        Format: JPG, JPEG, PNG, PDF.
+                                        Format: JPG, JPEG, PNG, PDF. Maksimal 4 MB.
                                     </p>
                                 </div>
 
@@ -333,7 +428,7 @@
                             @foreach($paymentHistories as $payment)
                                 @php
                                     $historyProofUrl = $payment->proof_file_path
-                                        ? asset('storage/' . $payment->proof_file_path)
+                                        ? route('camaba.payments.proof', $payment)
                                         : null;
 
                                     $historyStatus = $payment->status ?? 'waiting_verification';
@@ -357,6 +452,12 @@
                                             <p class="mt-2 text-sm text-slate-600">
                                                 {{ $payment->sender_name ?? '-' }} · {{ $payment->sender_bank ?? '-' }}
                                             </p>
+
+                                            @if($payment->paymentMethod)
+                                                <p class="mt-1 text-sm text-slate-600">
+                                                    Ke: <span class="font-bold">{{ $payment->paymentMethod->label }}</span>
+                                                </p>
+                                            @endif
 
                                             <p class="mt-1 text-sm text-slate-600">
                                                 Tanggal Transfer:
@@ -383,7 +484,7 @@
 
                                             @if($historyProofUrl)
                                                 <a href="{{ $historyProofUrl }}"
-                                                   target="_blank"
+                                                   @click.prevent="$store.preview.show($el.href, @js(basename($payment->proof_file_path)))"
                                                    class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
                                                     Lihat Bukti
                                                 </a>

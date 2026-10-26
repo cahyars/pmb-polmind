@@ -33,6 +33,7 @@ class PaymentVerificationController extends Controller
                 'applicant.education',
                 'invoice.items',
                 'invoice.payments',
+                'paymentMethod',
             ])
             ->when($request->filled('keyword'), function ($query) use ($request) {
                 $keyword = $request->keyword;

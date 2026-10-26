@@ -86,8 +86,8 @@ class DocumentController extends Controller
             ->where('document_type_id', $documentType->id)
             ->first();
 
-        if ($existingDocument?->file_path && Storage::disk('public')->exists($existingDocument->file_path)) {
-            Storage::disk('public')->delete($existingDocument->file_path);
+        if ($existingDocument?->file_path && Storage::disk('local')->exists($existingDocument->file_path)) {
+            Storage::disk('local')->delete($existingDocument->file_path);
         }
 
         $folder = 'applicant-documents/' . $applicant->registration_number;
@@ -96,7 +96,7 @@ class DocumentController extends Controller
 
         $filename = $documentType->code . '_' . now()->format('YmdHis') . '.' . $extension;
 
-        $filePath = $file->storeAs($folder, $filename, 'public');
+        $filePath = $file->storeAs($folder, $filename, 'local');
 
         ApplicantDocument::updateOrCreate(
             [
@@ -127,8 +127,8 @@ class DocumentController extends Controller
 
         abort_if($document->applicant_id !== $applicant->id, 403);
 
-        if ($document->file_path && Storage::disk('public')->exists($document->file_path)) {
-            Storage::disk('public')->delete($document->file_path);
+        if ($document->file_path && Storage::disk('local')->exists($document->file_path)) {
+            Storage::disk('local')->delete($document->file_path);
         }
 
         $document->update([

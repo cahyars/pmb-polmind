@@ -26,6 +26,39 @@ class Invoice extends Model
         'total_amount' => 'decimal:2',
     ];
 
+    /**
+     * Samakan nominal tagihan formulir dengan biaya di Master Data selama
+     * belum ada pembayaran yang dikirim atau divalidasi.
+     */
+    public function syncRegistrationFee(): void
+    {
+        if ($this->type !== 'registration' || in_array($this->status, ['paid', 'partial', 'cancelled'], true)) {
+            return;
+        }
+
+        $fee = FeeComponent::registrationFee();
+
+        if (! $fee || (float) $fee->amount === (float) $this->total_amount) {
+            return;
+        }
+
+        $hasPayment = $this->payments()->whereIn('status', ['waiting_verification', 'valid'])->exists();
+
+        if ($hasPayment) {
+            return;
+        }
+
+        $this->update(['total_amount' => $fee->amount]);
+
+        $this->items()->update([
+            'fee_component_id' => $fee->id,
+            'name' => $fee->name,
+            'amount' => $fee->amount,
+            'quantity' => 1,
+            'subtotal' => $fee->amount,
+        ]);
+    }
+
     public function applicant()
     {
         return $this->belongsTo(Applicant::class);

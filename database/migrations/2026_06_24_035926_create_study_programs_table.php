@@ -15,6 +15,8 @@ return new class extends Migration
             $table->id();
             $table->string('code')->unique(); // TRPL, TRM, BD
             $table->string('name');
+            $table->string('pddikti_code', 20)->nullable(); // kode_prodi PDDikti, contoh 58302
+            $table->string('siakad_id', 36)->nullable(); // id_prodi SIAKAD (UUID)
             $table->string('degree')->default('D4');
             $table->integer('quota')->default(0);
             $table->text('description')->nullable();

@@ -88,7 +88,7 @@ class DocumentVerificationController extends Controller
             return back()->withErrors('Hanya berkas yang menunggu verifikasi yang dapat diterima.');
         }
 
-        if (! $document->file_path || ! Storage::disk('public')->exists($document->file_path)) {
+        if (! $document->file_path || ! Storage::disk('local')->exists($document->file_path)) {
             return back()->withErrors('File berkas tidak ditemukan di storage. Berkas tidak dapat diterima.');
         }
 
@@ -110,7 +110,7 @@ class DocumentVerificationController extends Controller
             return back()->withErrors('Hanya berkas yang menunggu verifikasi yang dapat ditolak.');
         }
 
-        if (! $document->file_path || ! Storage::disk('public')->exists($document->file_path)) {
+        if (! $document->file_path || ! Storage::disk('local')->exists($document->file_path)) {
             return back()->withErrors('File berkas tidak ditemukan di storage. Berkas tidak dapat ditolak.');
         }
 

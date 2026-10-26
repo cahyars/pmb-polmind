@@ -321,7 +321,7 @@
                             @foreach($paymentHistories as $payment)
                                 @php
                                     $proofUrl = $payment->proof_file_path
-                                        ? asset('storage/' . $payment->proof_file_path)
+                                        ? route('camaba.payments.proof', $payment)
                                         : null;
 
                                     $paymentStatus = $payment->status ?? 'waiting_verification';
@@ -372,7 +372,7 @@
 
                                             @if($proofUrl)
                                                 <a href="{{ $proofUrl }}"
-                                                   target="_blank"
+                                                   @click.prevent="$store.preview.show($el.href, @js(basename($payment->proof_file_path)))"
                                                    class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
                                                     Lihat Bukti
                                                 </a>

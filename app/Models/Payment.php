@@ -12,6 +12,7 @@ class Payment extends Model
     protected $fillable = [
         'applicant_id',
         'invoice_id',
+        'payment_method_id',
         'payment_number',
         'transfer_date',
         'sender_name',
@@ -34,6 +35,11 @@ class Payment extends Model
     public function applicant()
     {
         return $this->belongsTo(Applicant::class);
+    }
+
+    public function paymentMethod()
+    {
+        return $this->belongsTo(PaymentMethod::class);
     }
 
     public function invoice()

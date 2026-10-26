@@ -80,7 +80,7 @@
                 $document = $documents->get($documentType->id);
                 $status = $document?->status ?? 'belum_upload';
                 $extensions = implode(', ', $documentType->allowed_extensions ?? []);
-                $fileUrl = $document?->file_path ? asset('storage/' . $document->file_path) : null;
+                $fileUrl = $document?->file_path ? route('camaba.documents.file', $document) : null;
             @endphp
 
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -105,6 +105,12 @@
                                 {{ $statusLabels[$status] ?? $status }}
                             </span>
                         </div>
+
+                        @if($documentType->code === 'PAS_FOTO')
+                            <p class="mt-2 text-xs leading-5 text-slate-500">
+                                📷 Pas foto otomatis menjadi foto profil Anda. Gunakan foto formal terbaru, latar polos, wajah terlihat jelas.
+                            </p>
+                        @endif
 
                         <div class="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
                             <p>
@@ -131,7 +137,7 @@
                                 <div class="mt-3 flex flex-wrap gap-3">
                                     @if($fileUrl)
                                         <a href="{{ $fileUrl }}"
-                                           target="_blank"
+                                           @click.prevent="$store.preview.show($el.href, @js(basename($document->file_path)))"
                                            class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
                                             Lihat File
                                         </a>

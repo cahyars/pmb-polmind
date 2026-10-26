@@ -29,10 +29,17 @@ return new class extends Migration
 
             $table->string('nik', 20)->nullable()->unique();
             $table->string('nisn', 20)->nullable();
-            $table->string('gender')->nullable(); // male, female
+            $table->string('npwp', 25)->nullable();
+            $table->string('gender', 1)->nullable(); // L, P
             $table->string('birth_place')->nullable();
             $table->date('birth_date')->nullable();
-            $table->string('religion')->nullable();
+            $table->unsignedSmallInteger('religion_id')->nullable(); // ref agama
+            $table->string('citizenship', 5)->default('ID'); // ref kewarganegaraan
+            $table->string('home_phone', 20)->nullable();
+            $table->unsignedSmallInteger('transportation_id')->nullable(); // ref alat_transportasi
+            $table->boolean('kps_recipient')->default(false);
+            $table->string('kps_number')->nullable();
+            $table->unsignedInteger('special_need_id')->default(0); // ref kebutuhan_khusus (bitmask)
 
             $table->string('source_information')->nullable(); // Instagram, Roadshow, Teman, dll
 

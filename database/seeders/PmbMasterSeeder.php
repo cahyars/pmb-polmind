@@ -14,27 +14,16 @@ class PmbMasterSeeder extends Seeder
 {
     public function run(): void
     {
-        $pmb2026 = PmbYear::updateOrCreate(
-            ['code' => 'PMB2026'],
+        // Jadwal mengacu pada https://polmind.ac.id/pmb (PMB 2027, TA 2027/2028).
+        $pmb2027 = PmbYear::updateOrCreate(
+            ['code' => 'PMB2027'],
             [
-                'year' => 2026,
-                'name' => 'PMB 2026',
-                'start_date' => '2026-01-01',
-                'end_date' => '2026-08-31',
+                'year' => 2027,
+                'name' => 'PMB 2027',
+                'start_date' => '2026-11-02',
+                'end_date' => '2027-07-30',
                 'is_active' => true,
                 'status' => 'active',
-            ]
-        );
-
-        PmbYear::updateOrCreate(
-            ['code' => 'PMB2025'],
-            [
-                'year' => 2025,
-                'name' => 'PMB 2025',
-                'start_date' => '2025-01-01',
-                'end_date' => '2025-08-31',
-                'is_active' => false,
-                'status' => 'archived',
             ]
         );
 
@@ -42,27 +31,36 @@ class PmbMasterSeeder extends Seeder
             [
                 'code' => 'GEL1',
                 'name' => 'Gelombang 1',
-                'start_date' => '2026-01-01',
-                'end_date' => '2026-03-31',
-                'registration_fee' => 350000,
+                'start_date' => '2026-11-02',
+                'end_date' => '2027-01-29',
+                'registration_fee' => 300000,
                 'is_active' => false,
-                'status' => 'closed',
+                'status' => 'draft',
             ],
             [
                 'code' => 'GEL2',
                 'name' => 'Gelombang 2',
-                'start_date' => '2026-04-01',
-                'end_date' => '2026-06-30',
-                'registration_fee' => 350000,
-                'is_active' => true,
-                'status' => 'open',
+                'start_date' => '2027-02-01',
+                'end_date' => '2027-04-02',
+                'registration_fee' => 300000,
+                'is_active' => false,
+                'status' => 'draft',
             ],
             [
                 'code' => 'GEL3',
                 'name' => 'Gelombang 3',
-                'start_date' => '2026-07-01',
-                'end_date' => '2026-08-31',
-                'registration_fee' => 350000,
+                'start_date' => '2027-04-05',
+                'end_date' => '2027-06-04',
+                'registration_fee' => 300000,
+                'is_active' => false,
+                'status' => 'draft',
+            ],
+            [
+                'code' => 'GEL4',
+                'name' => 'Gelombang 4',
+                'start_date' => '2027-06-07',
+                'end_date' => '2027-07-30',
+                'registration_fee' => 300000,
                 'is_active' => false,
                 'status' => 'draft',
             ],
@@ -71,12 +69,18 @@ class PmbMasterSeeder extends Seeder
         foreach ($waves as $wave) {
             AdmissionWave::updateOrCreate(
                 [
-                    'pmb_year_id' => $pmb2026->id,
+                    'pmb_year_id' => $pmb2027->id,
                     'code' => $wave['code'],
                 ],
                 $wave
             );
         }
+
+        // Kode PDDikti dan ID prodi diambil dari SIAKAD (database/data/siakad/prodi.json).
+        $siakadPrograms = collect(json_decode(
+            file_get_contents(database_path('data/siakad/prodi.json')),
+            true
+        ))->keyBy('name');
 
         $programs = [
             [
@@ -84,7 +88,7 @@ class PmbMasterSeeder extends Seeder
                 'name' => 'Teknologi Rekayasa Perangkat Lunak',
                 'degree' => 'D4',
                 'quota' => 40,
-                'description' => 'Program studi bidang pengembangan perangkat lunak, sistem informasi, dan teknologi digital.',
+                'description' => 'Program studi bidang pengembangan perangkat lunak dengan konsep Teaching Factory.',
                 'is_active' => true,
             ],
             [
@@ -92,7 +96,7 @@ class PmbMasterSeeder extends Seeder
                 'name' => 'Teknologi Rekayasa Manufaktur',
                 'degree' => 'D4',
                 'quota' => 40,
-                'description' => 'Program studi bidang manufaktur, otomasi, proses produksi, dan teknologi industri.',
+                'description' => 'Program studi bidang teknologi rekayasa manufaktur untuk kebutuhan industri.',
                 'is_active' => true,
             ],
             [
@@ -100,10 +104,15 @@ class PmbMasterSeeder extends Seeder
                 'name' => 'Bisnis Digital',
                 'degree' => 'D4',
                 'quota' => 40,
-                'description' => 'Program studi bidang bisnis berbasis digital, pemasaran digital, dan kewirausahaan.',
+                'description' => 'Program studi bidang bisnis berbasis teknologi digital.',
                 'is_active' => true,
             ],
         ];
+
+        $programs = array_map(fn (array $program) => $program + [
+            'pddikti_code' => $siakadPrograms[$program['name']]['code'] ?? null,
+            'siakad_id' => $siakadPrograms[$program['name']]['siakad_id'] ?? null,
+        ], $programs);
 
         foreach ($programs as $program) {
             StudyProgram::updateOrCreate(
@@ -115,12 +124,14 @@ class PmbMasterSeeder extends Seeder
         $classTypes = [
             [
                 'code' => 'REG_A',
+                'registration_code' => 'A',
                 'name' => 'Reguler A',
                 'description' => 'Kelas reguler pagi.',
                 'is_active' => true,
             ],
             [
                 'code' => 'REG_B',
+                'registration_code' => 'B',
                 'name' => 'Reguler B',
                 'description' => 'Kelas karyawan atau malam.',
                 'is_active' => true,
@@ -201,9 +212,9 @@ class PmbMasterSeeder extends Seeder
         $fees = [
             [
                 'code' => 'PENDAFTARAN',
-                'name' => 'Biaya Pendaftaran',
+                'name' => 'Biaya Formulir Pendaftaran',
                 'type' => 'registration',
-                'amount' => 350000,
+                'amount' => 300000,
                 'sort_order' => 1,
                 'is_active' => true,
             ],

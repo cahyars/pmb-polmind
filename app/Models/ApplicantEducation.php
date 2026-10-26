@@ -18,6 +18,7 @@ class ApplicantEducation extends Model
         'school_name',
         'school_type',
         'school_status',
+        'school_region_id',
         'school_address',
 
         'major',

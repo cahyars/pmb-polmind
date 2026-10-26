@@ -24,17 +24,13 @@
 
         $initials = $initials ?: 'C';
 
-        $progressItems = [
-            $authApplicant?->registration_status === 'biodata_lengkap',
-            $authApplicant?->document_status === 'valid',
-            $authApplicant?->payment_status === 'valid',
-            in_array($authApplicant?->selection_status, ['diterima', 'cadangan', 'ditolak']),
-            $authApplicant?->re_registration_status === 'daftar_ulang_valid',
-        ];
+        $journey = $authApplicant ? \App\Services\ApplicantJourney::for($authApplicant) : null;
+        $registrationPaid = $journey?->registrationPaid() ?? false;
+        $progressPercent = $journey?->progressPercent() ?? 0;
 
-        $progressPercent = $authApplicant
-            ? round((collect($progressItems)->filter()->count() / count($progressItems)) * 100)
-            : 0;
+        $photoDocument = $authApplicant?->photoDocument;
+        $photoUrl = $photoDocument ? route('camaba.documents.file', $photoDocument) : null;
+        $isTemporaryNumber = \App\Services\RegistrationNumber::isTemporary($registrationNumber);
     @endphp
 
         @php
@@ -47,12 +43,14 @@
                 ],
                 [
                     'label' => 'Biodata',
+                    'locked' => ! $registrationPaid,
                     'url' => '/camaba/biodata',
                     'icon' => '👤',
                     'active' => request()->is('camaba/biodata*'),
                 ],
                 [
                     'label' => 'Berkas',
+                    'locked' => ! $registrationPaid,
                     'url' => '/camaba/upload-berkas',
                     'icon' => '📄',
                     'active' => request()->is('camaba/upload-berkas*'),
@@ -65,18 +63,21 @@
                 ],
                 [
                     'label' => 'Status Seleksi',
+                    'locked' => ! $registrationPaid,
                     'url' => '/camaba/status-seleksi',
                     'icon' => '✅',
                     'active' => request()->is('camaba/status-seleksi*'),
                 ],
                 [
                     'label' => 'Pengumuman',
+                    'locked' => ! $registrationPaid,
                     'url' => '/camaba/pengumuman',
                     'icon' => '🎓',
                     'active' => request()->is('camaba/pengumuman*'),
                 ],
                 [
                     'label' => 'Daftar Ulang',
+                    'locked' => ! $registrationPaid,
                     'url' => '/camaba/daftar-ulang',
                     'icon' => '📝',
                     'active' => request()->is('camaba/daftar-ulang*'),
@@ -99,18 +100,8 @@
             {{-- Brand --}}
             <div class="flex h-20 shrink-0 items-center justify-between border-b border-slate-200 px-5">
                 <a href="{{ url('/camaba/dashboard') }}" class="flex items-center gap-3">
-                    <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-polmind-blue text-lg font-black text-white">
-                        P
-                    </div>
-
-                    <div>
-                        <p class="text-sm font-black leading-tight text-polmind-blue">
-                            PMB Polmind
-                        </p>
-                        <p class="text-xs font-medium text-slate-500">
-                            Portal Camaba
-                        </p>
-                    </div>
+                    <img src="{{ asset('images/logo-polmind.png') }}" alt="Politeknik Mitra Industri" class="h-12 w-auto">
+                    <span class="border-l border-slate-200 pl-3 text-xs font-bold text-slate-500">Portal Camaba</span>
                 </a>
 
                 <button type="button"
@@ -124,16 +115,20 @@
             <div class="shrink-0 border-b border-slate-200 p-5">
                 <div class="rounded-3xl bg-polmind-blue p-5 text-white shadow-lg shadow-blue-900/10">
                     <div class="flex items-center gap-3">
-                        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-black">
-                            {{ $initials }}
-                        </div>
+                        @if($photoUrl)
+                            <img src="{{ $photoUrl }}" alt="Foto {{ $displayName }}" class="h-12 w-12 shrink-0 rounded-2xl bg-white object-cover ring-2 ring-white/30">
+                        @else
+                            <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-sm font-black">
+                                {{ $initials }}
+                            </div>
+                        @endif
 
                         <div class="min-w-0">
                             <p class="truncate text-sm font-black">
                                 {{ $displayName }}
                             </p>
                             <p class="mt-1 truncate text-xs text-blue-100">
-                                {{ $registrationNumber }}
+                                {{ $registrationNumber }}{{ $isTemporaryNumber ? ' (sementara)' : '' }}
                             </p>
                         </div>
                     </div>
@@ -150,7 +145,7 @@
                     </div>
 
                     <p class="mt-3 text-xs leading-5 text-blue-100">
-                        Lengkapi biodata, berkas, dan pembayaran untuk melanjutkan proses seleksi.
+                        {{ $registrationPaid ? 'Lengkapi biodata dan berkas untuk mengikuti seleksi.' : 'Bayar formulir terlebih dahulu untuk membuka pengisian biodata dan berkas.' }}
                     </p>
                 </div>
             </div>
@@ -159,20 +154,28 @@
             <div class="flex-1 overflow-y-auto px-4 py-5">
                 <nav class="space-y-1">
                     @foreach($menus as $menu)
+                        @php
+                            $locked = $menu['locked'] ?? false;
+                        @endphp
                         <a href="{{ url($menu['url']) }}"
+                           @if($locked) @click.prevent="window.showPaymentRequired()" aria-disabled="true" title="Bayar formulir terlebih dahulu" @endif
                            class="flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition
                            {{ $menu['active']
                                 ? 'bg-polmind-blue text-white shadow-sm'
-                                : 'text-slate-600 hover:bg-blue-50 hover:text-polmind-blue'
+                                : ($locked ? 'text-slate-400 hover:bg-slate-50' : 'text-slate-600 hover:bg-blue-50 hover:text-polmind-blue')
                            }}">
                             <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base
-                                {{ $menu['active'] ? 'bg-white/10' : 'bg-slate-100' }}">
+                                {{ $menu['active'] ? 'bg-white/10' : 'bg-slate-100' }} {{ $locked ? 'opacity-50' : '' }}">
                                 {{ $menu['icon'] }}
                             </span>
 
-                            <span class="truncate">
+                            <span class="flex-1 truncate">
                                 {{ $menu['label'] }}
                             </span>
+
+                            @if($locked)
+                                <span class="text-xs" aria-hidden="true">🔒</span>
+                            @endif
                         </a>
                     @endforeach
                 </nav>
@@ -230,9 +233,13 @@
                             </p>
                         </div>
 
-                        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-polmind-blue text-sm font-black text-white">
-                            {{ $initials }}
-                        </div>
+                        @if($photoUrl)
+                            <img src="{{ $photoUrl }}" alt="Foto {{ $displayName }}" class="h-11 w-11 rounded-2xl object-cover ring-2 ring-slate-200">
+                        @else
+                            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-polmind-blue text-sm font-black text-white">
+                                {{ $initials }}
+                            </div>
+                        @endif
                     </div>
                 </div>
             </header>
@@ -243,5 +250,27 @@
             </main>
         </div>
     </div>
+
+    @include('partials.file-preview-modal')
+
+    <script>
+        window.showPaymentRequired = () => window.Swal.fire({
+            icon: 'info',
+            title: 'Bayar Formulir Terlebih Dahulu',
+            html: 'Silakan melakukan pembayaran formulir pendaftaran terlebih dahulu. Pengisian biodata, berkas, dan tahapan berikutnya akan terbuka setelah pembayaran <b>diverifikasi admin</b>.',
+            confirmButtonText: 'Ke Halaman Pembayaran',
+            showCancelButton: true,
+            cancelButtonText: 'Nanti',
+            confirmButtonColor: '#003B82',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = @js(route('camaba.payments.index'));
+            }
+        });
+
+        @if(session('payment_required'))
+            document.addEventListener('DOMContentLoaded', () => window.showPaymentRequired());
+        @endif
+    </script>
 </body>
 </html> 

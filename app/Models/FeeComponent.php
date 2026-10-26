@@ -24,6 +24,18 @@ class FeeComponent extends Model
         'is_active' => 'boolean',
     ];
 
+    public const REGISTRATION_CODE = 'PENDAFTARAN';
+
+    /**
+     * Komponen biaya formulir pendaftaran yang aktif.
+     */
+    public static function registrationFee(): ?self
+    {
+        return self::where('code', self::REGISTRATION_CODE)
+            ->where('is_active', true)
+            ->first();
+    }
+
     public function invoiceItems()
     {
         return $this->hasMany(InvoiceItem::class);

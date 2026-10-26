@@ -206,35 +206,9 @@
                             @php
                                 $registrationPath = $applicant->registration_path ?? 'umum';
 
-                                $payload = [
-                                    'registration_number' => $applicant->registration_number,
-                                    'registration_path' => $applicant->registration_path,
-                                    'full_name' => $applicant->full_name,
-                                    'nik' => $applicant->nik,
-                                    'nisn' => $applicant->nisn,
-                                    'gender' => $applicant->gender,
-                                    'birth_place' => $applicant->birth_place,
-                                    'birth_date' => $applicant->birth_date?->format('Y-m-d'),
-                                    'phone' => $applicant->phone,
-                                    'email' => $applicant->email,
-                                    'study_program' => $applicant->studyProgram?->code,
-                                    'class_type' => $applicant->classType?->code,
-                                    'school_name' => $applicant->education?->school_name,
-                                    'graduation_year' => $applicant->education?->graduation_year,
-                                    'sync_status' => $applicant->sync_status,
-                                ];
+                                $payload = \App\Services\SiakadPayload::build($applicant);
 
-                                $missingFields = collect([
-                                    'NIK' => $applicant->nik,
-                                    'Jenis Kelamin' => $applicant->gender,
-                                    'Tempat Lahir' => $applicant->birth_place,
-                                    'Tanggal Lahir' => $applicant->birth_date,
-                                    'Nomor HP' => $applicant->phone,
-                                    'Program Studi' => $applicant->studyProgram?->code,
-                                    'Jenis Kelas' => $applicant->classType?->code,
-                                    'Asal Sekolah' => $applicant->education?->school_name,
-                                    'Tahun Lulus' => $applicant->education?->graduation_year,
-                                ])->filter(fn($value) => blank($value))->keys()->values();
+                                $missingFields = collect(\App\Services\SiakadPayload::missingFields($applicant));
 
                                 $canProcess = in_array($applicant->sync_status, ['siap_sinkron', 'gagal_sinkron'])
                                     && $missingFields->isEmpty();
@@ -347,7 +321,7 @@
 
                                 <td class="px-6 py-5">
                                     <script type="application/json" id="payload-{{ $applicant->id }}">
-{!! json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) !!}
+{!! json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP) !!}
                                     </script>
 
                                     <button type="button"

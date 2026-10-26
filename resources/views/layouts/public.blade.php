@@ -13,8 +13,8 @@
 
     <header class="sticky top-0 z-50 border-b border-slate-200 bg-white/90 backdrop-blur">
         <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
-            <a href="{{ url('/') }}" class="text-xl font-bold tracking-tight text-polmind-blue">
-                Polmind
+            <a href="{{ url('/') }}" class="flex items-center">
+                <img src="{{ asset('images/logo-polmind.png') }}" alt="Politeknik Mitra Industri" class="h-12 w-auto">
             </a>
 
             <nav class="hidden items-center gap-8 text-sm font-medium text-slate-600 md:flex">
@@ -74,25 +74,25 @@
             <div>
                 <h2 class="text-lg font-bold text-polmind-blue">Polmind</h2>
                 <p class="mt-3 max-w-sm text-sm leading-6 text-slate-600">
-                    Politeknik Mitra Industri adalah institusi pendidikan vokasi yang berfokus pada pengembangan talenta industri.
+                    Politeknik Mitra Industri adalah institusi pendidikan vokasi di bawah Yayasan Mitra Global Mandiri. Kami adalah Inkubator Talenta Global!
                 </p>
             </div>
 
             <div>
                 <h3 class="font-semibold text-slate-900">Tautan Cepat</h3>
                 <div class="mt-3 space-y-2 text-sm text-slate-600">
-                    <a href="#" class="block hover:text-polmind-blue">Tentang Kami</a>
+                    <a href="https://polmind.ac.id" target="_blank" class="block hover:text-polmind-blue">Website Polmind</a>
                     <a href="#" class="block hover:text-polmind-blue">Program Studi</a>
-                    <a href="#" class="block hover:text-polmind-blue">Informasi Beasiswa</a>
+                    <a href="https://polmind.ac.id/pmb" target="_blank" class="block hover:text-polmind-blue">Informasi PMB</a>
                 </div>
             </div>
 
             <div>
                 <h3 class="font-semibold text-slate-900">Kontak Kami</h3>
                 <div class="mt-3 space-y-2 text-sm text-slate-600">
-                    <p>Kawasan Industri MM2100, Bekasi</p>
-                    <p>+62 812-3456-7890</p>
-                    <p>pmb@polmind.ac.id</p>
+                    <p>Kawasan Industri MM2100 (MM2100 Industrial Town)</p>
+                    <p>+62 821-1329-6897</p>
+                    <p>info@polmind.ac.id</p>
                 </div>
             </div>
         </div>

@@ -296,7 +296,7 @@
                         class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Pilih Tahun PMB</option>
                     @foreach($pmbYears as $year)
-                        <option value="{{ $year->id }}" @selected($year->is_active)>
+                        <option value="{{ $year->id }}" @selected($year->id === ($selectedPmbYear?->id ?? $activePmbYear?->id))>
                             {{ $year->name }}
                         </option>
                     @endforeach
@@ -678,6 +678,9 @@
                     <input type="text" name="code" placeholder="Kode, contoh REG_C" required
                         class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
 
+                    <input type="text" name="registration_code" placeholder="Kode nomor pendaftar, contoh C" required maxlength="1"
+                        class="uppercase rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
                     <input type="text" name="name" placeholder="Nama kelas" required
                         class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
 
@@ -709,6 +712,7 @@
                     <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
                         <tr>
                             <th class="px-6 py-4">Kode</th>
+                            <th class="px-6 py-4">Kode No. Pendaftar</th>
                             <th class="px-6 py-4">Nama</th>
                             <th class="px-6 py-4">Deskripsi</th>
                             <th class="px-6 py-4">Aktif</th>
@@ -720,6 +724,7 @@
                         @forelse($classTypes as $classType)
                             <tr>
                                 <td class="px-6 py-4 font-black text-polmind-blue">{{ $classType->code }}</td>
+                                <td class="px-6 py-4 font-black text-slate-800">{{ $classType->registration_code ?? '-' }}</td>
                                 <td class="px-6 py-4 font-bold text-slate-800">{{ $classType->name }}</td>
                                 <td class="px-6 py-4 text-slate-600">{{ $classType->description ?? '-' }}</td>
                                 <td class="px-6 py-4">
@@ -753,7 +758,7 @@
                             </tr>
 
                             <tr id="edit-class-type-{{ $classType->id }}" class="hidden bg-slate-50">
-                                <td colspan="5" class="px-6 py-5">
+                                <td colspan="6" class="px-6 py-5">
                                     <form action="{{ route('admin.master-data.class-types.update', $classType) }}" method="POST">
                                         @csrf
                                         @method('PUT')
@@ -761,6 +766,10 @@
                                         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                                             <input type="text" name="code" value="{{ $classType->code }}" required
                                                 class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                            <input type="text" name="registration_code" value="{{ $classType->registration_code }}" required maxlength="1"
+                                                title="Huruf awal nomor pendaftar"
+                                                class="uppercase rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
 
                                             <input type="text" name="name" value="{{ $classType->name }}" required
                                                 class="rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">

@@ -12,6 +12,17 @@
     <div x-data="{ sidebarOpen: false }" class="min-h-screen">
 
         @php
+            $adminUser = auth('web')->user();
+
+            // Badge pekerjaan yang perlu ditindaklanjuti (mengikuti Tahun Akademik terpilih).
+            $badges = [
+                'applicants' => \App\Models\Applicant::query()
+                    ->when($adminUser?->applicants_seen_at, fn ($query, $seenAt) => $query->where('created_at', '>', $seenAt))
+                    ->count(),
+                'documents' => \App\Models\ApplicantDocument::where('status', 'menunggu_verifikasi')->count(),
+                'payments' => \App\Models\Payment::where('status', 'waiting_verification')->count(),
+            ];
+
             $menus = [
                 [
                     'label' => 'Dashboard',
@@ -23,18 +34,24 @@
                     'label' => 'Data Camaba',
                     'url' => '/admin/applicants',
                     'icon' => '👤',
+                    'badge' => $badges['applicants'],
+                    'badgeTitle' => 'camaba baru sejak terakhir dibuka',
                     'active' => request()->is('admin/applicants*'),
                 ],
                 [
                     'label' => 'Verifikasi Berkas',
                     'url' => '/admin/documents',
                     'icon' => '📄',
+                    'badge' => $badges['documents'],
+                    'badgeTitle' => 'berkas menunggu verifikasi',
                     'active' => request()->is('admin/documents*'),
                 ],
                 [
                     'label' => 'Verifikasi Pembayaran',
                     'url' => '/admin/payments',
                     'icon' => '💳',
+                    'badge' => $badges['payments'],
+                    'badgeTitle' => 'pembayaran menunggu verifikasi',
                     'active' => request()->is('admin/payments*'),
                 ],
                 [
@@ -66,6 +83,12 @@
                     'url' => '/admin/master-data',
                     'icon' => '⚙️',
                     'active' => request()->is('admin/master-data*'),
+                ],
+                [
+                    'label' => 'Tujuan Pembayaran',
+                    'url' => '/admin/payment-methods',
+                    'icon' => '🏦',
+                    'active' => request()->is('admin/payment-methods*'),
                 ],
                 [
                     'label' => 'Integrasi SIAKAD',
@@ -127,9 +150,16 @@
                                 {{ $menu['icon'] }}
                             </span>
 
-                            <span class="line-clamp-1">
+                            <span class="line-clamp-1 flex-1">
                                 {{ $menu['label'] }}
                             </span>
+
+                            @if(($menu['badge'] ?? 0) > 0)
+                                <span class="ml-auto inline-flex min-w-6 items-center justify-center rounded-full bg-red-500 px-1.5 py-0.5 text-[11px] font-black text-white"
+                                      title="{{ $menu['badge'] }} {{ $menu['badgeTitle'] }}">
+                                    {{ $menu['badge'] > 99 ? '99+' : $menu['badge'] }}
+                                </span>
+                            @endif
                         </a>
                     @endforeach
                 </nav>
@@ -142,12 +172,17 @@
                         Sistem PMB
                     </p>
                     <p class="mt-1 text-sm font-black text-white">
-                        Polmind 2026
-                    </p>
-                    <p class="mt-2 text-xs leading-5 text-blue-100">
-                        UI development sebelum integrasi database.
+                        {{ $selectedPmbYear?->name ?? 'Belum ada Tahun PMB' }}
                     </p>
                 </div>
+
+                <form action="{{ route('admin.logout') }}" method="POST" class="mt-3">
+                    @csrf
+                    <button type="submit"
+                            class="w-full rounded-xl bg-white/10 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-white/20">
+                        Keluar
+                    </button>
+                </form>
             </div>
         </aside>
 
@@ -175,6 +210,26 @@
                         </div>
                     </div>
 
+                    <div class="flex items-center gap-4">
+                    @if(isset($adminPmbYears) && $adminPmbYears->isNotEmpty())
+                        <form action="{{ route('admin.pmb-year.select') }}" method="POST" class="shrink-0">
+                            @csrf
+                            <label for="admin-pmb-year" class="block text-[10px] font-black uppercase tracking-wide text-slate-500">
+                                Tahun Akademik
+                            </label>
+                            <select id="admin-pmb-year"
+                                    name="pmb_year_id"
+                                    onchange="this.form.submit()"
+                                    class="mt-1 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-bold text-polmind-blue outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                @foreach($adminPmbYears as $pmbYear)
+                                    <option value="{{ $pmbYear->id }}" @selected($selectedPmbYear?->id === $pmbYear->id)>
+                                        {{ $pmbYear->name }} · TA {{ $pmbYear->year }}/{{ $pmbYear->year + 1 }}{{ $pmbYear->is_active ? ' (Aktif)' : '' }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </form>
+                    @endif
+
                     <div class="hidden items-center gap-3 sm:flex">
                         <div class="text-right">
                             <p class="text-sm font-black text-slate-900">
@@ -189,6 +244,7 @@
                             AD
                         </div>
                     </div>
+                    </div>
                 </div>
             </header>
 
@@ -199,10 +255,6 @@
         </div>
     </div>
 
-    <script>
-        document.addEventListener('alpine:init', () => {
-            // Reserved for future admin layout interactions
-        });
-    </script>
+    @include('partials.file-preview-modal')
 </body>
 </html>

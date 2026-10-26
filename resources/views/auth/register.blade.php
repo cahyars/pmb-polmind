@@ -14,7 +14,7 @@
                 Registrasi Camaba
             </h1>
             <p class="mt-3 text-sm leading-6 text-slate-600">
-                Isi data awal untuk membuat akun pendaftaran mahasiswa baru.
+                Buat akun terlebih dahulu. Pilihan program studi dan data lainnya dilengkapi setelah login.
             </p>
         </div>
 
@@ -40,6 +40,12 @@
                     {{ $activeWave?->name ?? 'Belum tersedia' }}
                 </span>
             </p>
+            @if($registrationFee)
+                <p class="mt-3 border-t border-blue-100 pt-3 text-xs leading-5 text-slate-600">
+                    Setelah akun dibuat, lakukan pembayaran <span class="font-black text-polmind-blue">biaya formulir Rp{{ number_format($registrationFee, 0, ',', '.') }}</span>
+                    untuk membuka pengisian biodata dan berkas.
+                </p>
+            @endif
         </div>
 
         <form action="{{ route('register.store') }}" method="POST" class="mt-8 space-y-5">
@@ -51,8 +57,12 @@
                        name="full_name"
                        value="{{ old('full_name') }}"
                        required
-                       placeholder="Masukkan nama lengkap"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                       maxlength="255"
+                       autocomplete="name"
+                       placeholder="NAMA LENGKAP SESUAI IJAZAH"
+                       oninput="const p = this.selectionStart; this.value = this.value.toUpperCase(); this.setSelectionRange(p, p);"
+                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm uppercase outline-none transition placeholder:normal-case focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                <p class="mt-1 text-xs text-slate-500">Ditulis dengan huruf kapital, sesuai ijazah/KTP.</p>
             </div>
 
             <div class="grid gap-5 md:grid-cols-2">
@@ -73,64 +83,13 @@
                            value="{{ old('phone') }}"
                            required
                            placeholder="08xxxxxxxxxx"
+                           inputmode="tel"
                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                 </div>
             </div>
 
-            <div class="grid gap-5 md:grid-cols-2">
-                <div>
-                    <label class="text-sm font-bold text-slate-700">Pilihan Program Studi</label>
-                    <select name="study_program_id"
-                            required
-                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                        <option value="">Pilih Program Studi</option>
-                        @foreach($studyPrograms as $program)
-                            <option value="{{ $program->id }}" @selected(old('study_program_id') == $program->id)>
-                                {{ $program->code }} - {{ $program->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-
-                <div>
-                    <label class="text-sm font-bold text-slate-700">Jenis Kelas</label>
-                    <select name="class_type_id"
-                            required
-                            class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                        <option value="">Pilih Kelas</option>
-                        @foreach($classTypes as $classType)
-                            <option value="{{ $classType->id }}" @selected(old('class_type_id') == $classType->id)>
-                                {{ $classType->name }}
-                            </option>
-                        @endforeach
-                    </select>
-                </div>
-            </div>
-
             <div>
-                <label class="text-sm font-bold text-slate-700">Jalur Pendaftaran</label>
-                <select name="registration_path"
-                        required
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                    <option value="">Pilih Jalur Pendaftaran</option>
-                    <option value="umum" @selected(old('registration_path') === 'umum')>
-                        Umum
-                    </option>
-                    <option value="prestasi" @selected(old('registration_path') === 'prestasi')>
-                        Prestasi
-                    </option>
-                    <option value="undangan" @selected(old('registration_path') === 'undangan')>
-                        Undangan
-                    </option>
-                </select>
-
-                <p class="mt-2 text-xs leading-5 text-slate-500">
-                    Pilih jalur pendaftaran sesuai kategori calon mahasiswa.
-                </p>
-            </div>
-
-            <div>
-                <label class="text-sm font-bold text-slate-700">Sumber Informasi</label>
+                <label class="text-sm font-bold text-slate-700">Sumber Informasi <span class="font-semibold text-slate-400">(opsional)</span></label>
                 <select name="source_information"
                         class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Pilih sumber informasi</option>
@@ -142,23 +101,57 @@
                 </select>
             </div>
 
-            <div class="grid gap-5 md:grid-cols-2">
+            <div class="grid gap-5 md:grid-cols-2"
+                 x-data="{ password: '', confirmation: '', showPassword: false, showConfirmation: false }">
                 <div>
-                    <label class="text-sm font-bold text-slate-700">Password</label>
-                    <input type="password"
-                           name="password"
-                           required
-                           placeholder="Minimal 8 karakter"
-                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <label for="password" class="text-sm font-bold text-slate-700">Password</label>
+                    <div class="relative mt-2">
+                        <input id="password"
+                               :type="showPassword ? 'text' : 'password'"
+                               type="password"
+                               name="password"
+                               x-model="password"
+                               required
+                               minlength="8"
+                               autocomplete="new-password"
+                               placeholder="Minimal 8 karakter"
+                               class="w-full rounded-xl border border-slate-300 py-3 pl-4 pr-20 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        <button type="button"
+                                @click="showPassword = ! showPassword"
+                                :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
+                                class="absolute inset-y-0 right-2 my-auto h-9 rounded-lg px-3 text-xs font-bold text-polmind-blue hover:bg-blue-50"
+                                x-text="showPassword ? 'Sembunyikan' : 'Lihat'">Lihat</button>
+                    </div>
+                    <p class="mt-1 text-xs"
+                       :class="password.length === 0 ? 'text-slate-500' : (password.length >= 8 ? 'text-green-600' : 'text-red-600')"
+                       x-text="password.length === 0 ? 'Minimal 8 karakter.' : (password.length >= 8 ? '✓ Panjang password sudah cukup.' : 'Kurang ' + (8 - password.length) + ' karakter lagi.')">
+                        Minimal 8 karakter.
+                    </p>
                 </div>
 
                 <div>
-                    <label class="text-sm font-bold text-slate-700">Konfirmasi Password</label>
-                    <input type="password"
-                           name="password_confirmation"
-                           required
-                           placeholder="Ulangi password"
-                           class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <label for="password_confirmation" class="text-sm font-bold text-slate-700">Konfirmasi Password</label>
+                    <div class="relative mt-2">
+                        <input id="password_confirmation"
+                               :type="showConfirmation ? 'text' : 'password'"
+                               type="password"
+                               name="password_confirmation"
+                               x-model="confirmation"
+                               required
+                               autocomplete="new-password"
+                               placeholder="Ulangi password"
+                               :class="confirmation.length === 0 ? 'border-slate-300' : (confirmation === password ? 'border-green-500 ring-4 ring-green-100' : 'border-red-400 ring-4 ring-red-100')"
+                               class="w-full rounded-xl border py-3 pl-4 pr-20 text-sm outline-none transition focus:border-polmind-blue">
+                        <button type="button"
+                                @click="showConfirmation = ! showConfirmation"
+                                :aria-label="showConfirmation ? 'Sembunyikan konfirmasi password' : 'Tampilkan konfirmasi password'"
+                                class="absolute inset-y-0 right-2 my-auto h-9 rounded-lg px-3 text-xs font-bold text-polmind-blue hover:bg-blue-50"
+                                x-text="showConfirmation ? 'Sembunyikan' : 'Lihat'">Lihat</button>
+                    </div>
+                    <p x-show="confirmation.length > 0" x-cloak class="mt-1 text-xs font-bold"
+                       :class="confirmation === password ? 'text-green-600' : 'text-red-600'"
+                       x-text="confirmation === password ? '✓ Password cocok.' : '✗ Password belum cocok.'">
+                    </p>
                 </div>
             </div>
 

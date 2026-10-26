@@ -1,9 +1,13 @@
 <?php
 
+use App\Models\FeeComponent;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
+use App\Http\Controllers\Admin\FileController as AdminFileController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
+use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
@@ -12,16 +16,31 @@ use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MasterDataController;
 use App\Http\Controllers\Auth\CamabaAuthController;
+use App\Http\Controllers\RegionController;
+use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
+use App\Http\Controllers\Camaba\FileController as CamabaFileController;
 use App\Http\Controllers\Camaba\PaymentController as CamabaPaymentController;
 use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
 use App\Http\Controllers\Camaba\ReRegistrationController as CamabaReRegistrationController;
+use App\Http\Middleware\EnsureRegistrationPaid;
+use App\Http\Middleware\SelectAdminPmbYear;
 
 Route::get('/', function () {
-    return view('public.home');
+    return view('public.home', [
+        'registrationFee' => FeeComponent::registrationFee()?->amount,
+    ]);
 });
+
+Route::get('/referensi/sekolah', [SchoolController::class, 'index'])
+    ->middleware(['auth:applicant', 'throttle:60,1'])
+    ->name('schools.index');
+
+Route::get('/referensi/wilayah', [RegionController::class, 'index'])
+    ->middleware('throttle:120,1')
+    ->name('regions.index');
 
 Route::get('/login', [CamabaAuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [CamabaAuthController::class, 'login'])->name('login.store');
@@ -37,23 +56,39 @@ Route::middleware('auth:applicant')
         ->group(function () {
         Route::get('/dashboard', [CamabaDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
-        Route::put('/biodata', [CamabaBiodataController::class, 'update'])->name('biodata.update');
-
-        Route::get('/upload-berkas', [CamabaDocumentController::class, 'index'])->name('documents.index');
-        Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])->name('documents.store');
-        Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
-
         Route::get('/pembayaran', [CamabaPaymentController::class, 'index'])->name('payments.index');
         Route::post('/pembayaran/{invoice}/upload-proof', [CamabaPaymentController::class, 'uploadProof'])->name('payments.upload-proof');
+        Route::get('/pembayaran/bukti/{payment}', [CamabaFileController::class, 'paymentProof'])->name('payments.proof');
 
-        Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
-        Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
+        Route::get('/upload-berkas/{document}/file', [CamabaFileController::class, 'document'])->name('documents.file');
 
-        Route::get('/daftar-ulang', [CamabaReRegistrationController::class, 'index'])->name('re-registration.index');
+        // Terbuka setelah pembayaran formulir diverifikasi admin.
+        Route::middleware(EnsureRegistrationPaid::class)->group(function () {
+            Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
+            Route::put('/biodata', [CamabaBiodataController::class, 'update'])->name('biodata.update');
+
+            Route::get('/upload-berkas', [CamabaDocumentController::class, 'index'])->name('documents.index');
+            Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])->name('documents.store');
+            Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
+
+            Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
+            Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
+
+            Route::get('/daftar-ulang', [CamabaReRegistrationController::class, 'index'])->name('re-registration.index');
+        });
     });
 
 Route::prefix('admin')->name('admin.')->group(function () {
+    Route::middleware('guest:web')->group(function () {
+        Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
+        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.store');
+    });
+});
+
+Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYear::class])->group(function () {
+    Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
+    Route::post('/pmb-year', [AdminAuthController::class, 'selectPmbYear'])->name('pmb-year.select');
+
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
@@ -61,8 +96,16 @@ Route::prefix('admin')->name('admin.')->group(function () {
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
 
     Route::get('/documents', [DocumentVerificationController::class, 'index'])->name('documents.index');
+    Route::get('/documents/{document}/file', [AdminFileController::class, 'document'])->name('documents.file');
+    Route::get('/payments/{payment}/proof', [AdminFileController::class, 'paymentProof'])->name('payments.proof');
     Route::patch('/documents/{document}/accept', [DocumentVerificationController::class, 'accept'])->name('documents.accept');
     Route::patch('/documents/{document}/reject', [DocumentVerificationController::class, 'reject'])->name('documents.reject');
+
+    Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+    Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
+    Route::patch('/payment-methods/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+    Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
 
     Route::get('/payments', [PaymentVerificationController::class, 'index'])->name('payments.index');
     Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');

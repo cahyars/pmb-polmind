@@ -201,7 +201,7 @@
                     @forelse($documents as $document)
                         @php
                             $fileUrl = $document->file_path
-                                ? asset('storage/' . $document->file_path)
+                                ? route('admin.documents.file', $document)
                                 : null;
 
                             $registrationPath = $document->applicant?->registration_path ?? 'umum';
@@ -266,7 +266,7 @@
 
                                 @if($fileUrl)
                                     <a href="{{ $fileUrl }}"
-                                       target="_blank"
+                                       @click.prevent="$store.preview.show($el.href, @js(basename($document->file_path)))"
                                        class="mt-3 inline-flex rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
                                         Lihat File
                                     </a>
