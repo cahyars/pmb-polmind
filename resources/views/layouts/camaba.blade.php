@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Dashboard Camaba') - PMB Polmind</title>
+    @include('partials.favicon')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -38,48 +39,48 @@
                 [
                     'label' => 'Dashboard',
                     'url' => '/camaba/dashboard',
-                    'icon' => '▦',
+                    'icon' => 'dashboard',
                     'active' => request()->is('camaba/dashboard'),
                 ],
                 [
                     'label' => 'Biodata',
                     'locked' => ! $registrationPaid,
                     'url' => '/camaba/biodata',
-                    'icon' => '👤',
+                    'icon' => 'user',
                     'active' => request()->is('camaba/biodata*'),
                 ],
                 [
                     'label' => 'Berkas',
                     'locked' => ! $registrationPaid,
                     'url' => '/camaba/upload-berkas',
-                    'icon' => '📄',
+                    'icon' => 'document-text',
                     'active' => request()->is('camaba/upload-berkas*'),
                 ],
                 [
                     'label' => 'Pembayaran',
                     'url' => '/camaba/pembayaran',
-                    'icon' => '💳',
+                    'icon' => 'card',
                     'active' => request()->is('camaba/pembayaran*'),
                 ],
                 [
                     'label' => 'Status Seleksi',
                     'locked' => ! $registrationPaid,
                     'url' => '/camaba/status-seleksi',
-                    'icon' => '✅',
+                    'icon' => 'clipboard-check',
                     'active' => request()->is('camaba/status-seleksi*'),
                 ],
                 [
                     'label' => 'Pengumuman',
                     'locked' => ! $registrationPaid,
                     'url' => '/camaba/pengumuman',
-                    'icon' => '🎓',
+                    'icon' => 'megaphone',
                     'active' => request()->is('camaba/pengumuman*'),
                 ],
                 [
                     'label' => 'Daftar Ulang',
                     'locked' => ! $registrationPaid,
                     'url' => '/camaba/daftar-ulang',
-                    'icon' => '📝',
+                    'icon' => 'cap',
                     'active' => request()->is('camaba/daftar-ulang*'),
                 ],
             ];
@@ -106,8 +107,9 @@
 
                 <button type="button"
                         @click="sidebarOpen = false"
-                        class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-black text-slate-600 lg:hidden">
-                    ✕
+                        aria-label="Tutup menu"
+                        class="rounded-xl border border-slate-200 bg-white p-2 text-slate-600 lg:hidden">
+                    <x-icon name="close" class="h-5 w-5" />
                 </button>
             </div>
 
@@ -151,7 +153,7 @@
             </div>
 
             {{-- Menu --}}
-            <div class="flex-1 overflow-y-auto px-4 py-5">
+            <div class="scrollbar-none flex-1 overflow-y-auto px-4 py-5">
                 <nav class="space-y-1">
                     @foreach($menus as $menu)
                         @php
@@ -164,17 +166,14 @@
                                 ? 'bg-polmind-blue text-white shadow-sm'
                                 : ($locked ? 'text-slate-400 hover:bg-slate-50' : 'text-slate-600 hover:bg-blue-50 hover:text-polmind-blue')
                            }}">
-                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-base
-                                {{ $menu['active'] ? 'bg-white/10' : 'bg-slate-100' }} {{ $locked ? 'opacity-50' : '' }}">
-                                {{ $menu['icon'] }}
-                            </span>
+                            <x-icon :name="$menu['icon']" :class="$locked ? 'h-5 w-5 shrink-0 opacity-60' : 'h-5 w-5 shrink-0'" />
 
                             <span class="flex-1 truncate">
                                 {{ $menu['label'] }}
                             </span>
 
                             @if($locked)
-                                <span class="text-xs" aria-hidden="true">🔒</span>
+                                <x-icon name="lock" class="h-4 w-4 shrink-0" />
                             @endif
                         </a>
                     @endforeach
@@ -184,14 +183,16 @@
             {{-- Sidebar Footer --}}
             <div class="shrink-0 border-t border-slate-200 p-4">
                 <a href="{{ url('/') }}"
-                   class="flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                    ← Kembali ke Landing
+                   class="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                    <x-icon name="arrow-left" class="h-4 w-4" />
+                    Kembali ke Landing
                 </a>
                 <form action="{{ route('logout') }}" method="POST" class="mt-3">
                     @csrf
 
                     <button type="submit"
-                            class="w-full rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-700 transition hover:bg-red-100">
+                            class="flex w-full items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-left text-sm font-bold text-red-700 transition hover:bg-red-100">
+                        <x-icon name="logout" class="h-4 w-4" />
                         Logout
                     </button>
                 </form>
@@ -209,8 +210,9 @@
                     <div class="flex min-w-0 items-center gap-4">
                         <button type="button"
                                 @click="sidebarOpen = true"
-                                class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-lg font-black text-polmind-blue shadow-sm lg:hidden">
-                            ☰
+                                aria-label="Buka menu"
+                                class="rounded-xl border border-slate-200 bg-white p-2 text-polmind-blue shadow-sm lg:hidden">
+                            <x-icon name="menu" class="h-5 w-5" />
                         </button>
 
                         <div class="min-w-0">
@@ -272,5 +274,12 @@
             document.addEventListener('DOMContentLoaded', () => window.showPaymentRequired());
         @endif
     </script>
+
+    @include('partials.whatsapp-float', [
+        'message' => $authApplicant
+            ? 'Halo Admin PMB, saya ' . $authApplicant->full_name . ' (' . $authApplicant->registration_number . ') ingin bertanya.'
+            : null,
+        'offset' => trim($__env->yieldContent('whatsapp_offset')) ?: null,
+    ])
 </body>
 </html> 

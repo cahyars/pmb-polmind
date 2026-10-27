@@ -76,16 +76,8 @@
 
             <div class="flex items-center justify-center">
                 <div class="rounded-3xl bg-white/10 p-8 text-center">
-                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-5xl">
-                        @if($status === 'diterima')
-                            🎉
-                        @elseif($status === 'cadangan')
-                            ⏳
-                        @elseif($status === 'ditolak')
-                            📌
-                        @else
-                            🔔
-                        @endif
+                    <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10">
+                        <x-icon :name="match ($status) { 'diterima' => 'badge-check', 'cadangan' => 'clock', 'ditolak' => 'bookmark', default => 'bell' }" class="h-10 w-10" />
                     </div>
 
                     <p class="mt-5 text-sm font-bold text-white/80">
@@ -261,8 +253,8 @@
             </div>
 
             <div class="rounded-3xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-2xl">
-                    📌
+                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-yellow-800">
+                    <x-icon name="bookmark" class="h-6 w-6" />
                 </div>
 
                 <h3 class="mt-5 text-lg font-black text-yellow-800">Catatan Penting</h3>

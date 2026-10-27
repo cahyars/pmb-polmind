@@ -13,8 +13,63 @@
     --color-polmind-yellow: #FFC107;
     --color-polmind-bg: #F3F6FA;
     --color-polmind-border: #D6DEE9;
+    --font-jakarta: 'Plus Jakarta Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
+        'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
 [x-cloak] {
     display: none !important;
+}
+/* Sembunyikan scrollbar tanpa menghilangkan kemampuan scroll (mis. menu sidebar). */
+@utility scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+
+    &::-webkit-scrollbar {
+        display: none;
+    }
+}
+
+/*
+ * Baris tabel selang-seling (panel admin). Baris tersembunyi, misalnya form edit
+ * inline di Master Data, tidak ikut dihitung agar pola zebra tetap rapi.
+ */
+@utility table-zebra {
+    & > tr:nth-child(odd of :not(.hidden)) {
+        background-color: var(--color-slate-50);
+    }
+
+    & > tr:not(.hidden):hover {
+        background-color: var(--color-blue-50);
+    }
+}
+
+/*
+ * Sidebar admin yang diciutkan (html[data-sidebar=collapsed], desktop saja):
+ * hanya ikon, lalu melebar melayang di atas konten saat di-hover/difokuskan.
+ */
+@media (width >= 64rem) {
+    [data-sidebar='collapsed'] .admin-main {
+        padding-left: 5rem;
+    }
+
+    [data-sidebar='collapsed'] .admin-sidebar:not(:hover, :focus-within) {
+        width: 5rem;
+    }
+
+    [data-sidebar='collapsed'] .admin-sidebar:not(:hover, :focus-within) .sidebar-label {
+        display: none;
+    }
+
+    [data-sidebar='collapsed'] .admin-sidebar:not(:hover, :focus-within) .sidebar-dot {
+        display: block;
+    }
+
+    [data-sidebar='collapsed'] .admin-sidebar:not(:hover, :focus-within) .sidebar-logo {
+        width: 2.5rem;
+    }
+
+    [data-sidebar='collapsed'] .admin-sidebar:is(:hover, :focus-within) {
+        box-shadow: 0 20px 40px -12px rgb(15 23 42 / 0.25);
+    }
 }

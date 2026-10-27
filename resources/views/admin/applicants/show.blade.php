@@ -48,11 +48,11 @@
 <div class="space-y-8">
 
     {{-- Header --}}
-    <div class="rounded-3xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
+    <div class="rounded-xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
         <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div>
                 <a href="{{ url('/admin/applicants') }}"
-                   class="inline-flex items-center rounded-xl bg-white/10 px-4 py-2 text-xs font-bold text-white transition hover:bg-white/20">
+                   class="inline-flex items-center rounded-lg bg-white/10 px-4 py-2 text-xs font-semibold text-white transition hover:bg-white/20">
                     ← Kembali ke Data Camaba
                 </a>
 
@@ -63,16 +63,16 @@
                                 class="shrink-0" title="Lihat pas foto">
                             <img src="{{ route('admin.documents.file', $applicant->photoDocument) }}"
                                  alt="Foto {{ $applicant->full_name }}"
-                                 class="h-24 w-20 rounded-2xl bg-white object-cover ring-4 ring-white/20">
+                                 class="h-24 w-20 rounded-lg bg-white object-cover ring-4 ring-white/20">
                         </button>
                     @endif
 
                     <div>
-                        <p class="text-sm font-bold text-blue-100">
+                        <p class="text-sm font-semibold text-blue-100">
                             {{ $applicant->registration_number }}
                         </p>
 
-                        <h1 class="mt-2 text-3xl font-black">
+                        <h1 class="mt-2 text-3xl font-bold">
                             {{ $applicant->full_name }}
                         </h1>
 
@@ -84,9 +84,9 @@
             </div>
 
             <div class="grid gap-3 sm:grid-cols-3 lg:w-[660px]">
-                <div class="rounded-2xl bg-white/10 p-4">
+                <div class="rounded-lg bg-white/10 p-4">
                     <p class="text-xs font-semibold text-blue-100">Program Studi</p>
-                    <p class="mt-2 text-lg font-black">
+                    <p class="mt-2 text-lg font-bold">
                         {{ $applicant->studyProgram?->code ?? '-' }}
                     </p>
                     <p class="text-xs text-blue-100">
@@ -94,9 +94,9 @@
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-white/10 p-4">
+                <div class="rounded-lg bg-white/10 p-4">
                     <p class="text-xs font-semibold text-blue-100">Gelombang</p>
-                    <p class="mt-2 text-lg font-black">
+                    <p class="mt-2 text-lg font-bold">
                         {{ $applicant->admissionWave?->name ?? '-' }}
                     </p>
                     <p class="text-xs text-blue-100">
@@ -104,9 +104,9 @@
                     </p>
                 </div>
 
-                <div class="rounded-2xl bg-white/10 p-4">
+                <div class="rounded-lg bg-white/10 p-4">
                     <p class="text-xs font-semibold text-blue-100">Jalur</p>
-                    <p class="mt-2 text-lg font-black">
+                    <p class="mt-2 text-lg font-bold">
                         {{ $applicant->registration_path_label }}
                     </p>
                     <p class="text-xs text-blue-100">
@@ -141,9 +141,9 @@
                 'status' => $applicant->selection_status,
             ],
         ] as $item)
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $item['label'] }}</p>
-                <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($item['status']) }}">
+                <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($item['status']) }}">
                     {{ $item['value'] }}
                 </span>
             </div>
@@ -156,8 +156,8 @@
         <div class="space-y-8">
 
             {{-- Biodata --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">Biodata Camaba</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Biodata Camaba</h2>
 
                 @php
                     $ref = \App\Models\RefOption::class;
@@ -182,9 +182,9 @@
                         'Jalur Pendaftaran' => $applicant->registration_path_label,
                         'Sumber Informasi' => $applicant->source_information ?? '-',
                     ] as $label => $value)
-                        <div class="rounded-2xl bg-slate-50 p-4">
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">{{ $label }}</p>
-                            <p class="mt-2 text-sm font-bold text-slate-800">{{ $value }}</p>
+                        <div class="rounded-lg bg-slate-50 p-4">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $label }}</p>
+                            <p class="mt-2 text-sm font-semibold text-slate-800">{{ $value }}</p>
                         </div>
                     @endforeach
                 </div>
@@ -192,12 +192,12 @@
 
             {{-- Alamat & Pendidikan --}}
             <div class="grid gap-8 lg:grid-cols-2">
-                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 class="text-xl font-black text-polmind-blue">Alamat Domisili</h2>
+                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-slate-900">Alamat Domisili</h2>
 
                     <div class="mt-6 space-y-4 text-sm">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Jalan</p>
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Jalan</p>
                             <p class="mt-2 font-semibold text-slate-800">
                                 {{ $applicant->address?->address ?? '-' }}
                             </p>
@@ -210,42 +210,42 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Provinsi</p>
+                                <p class="text-xs font-semibold text-slate-500">Provinsi</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->province_name ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Kab/Kota</p>
+                                <p class="text-xs font-semibold text-slate-500">Kab/Kota</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->regency_name ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Kecamatan</p>
+                                <p class="text-xs font-semibold text-slate-500">Kecamatan</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->district_name ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Desa/Kelurahan</p>
+                                <p class="text-xs font-semibold text-slate-500">Desa/Kelurahan</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->village_name ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">RT/RW</p>
+                                <p class="text-xs font-semibold text-slate-500">RT/RW</p>
                                 <p class="mt-1 font-semibold text-slate-800">
                                     {{ $applicant->address?->rt ?? '-' }}/{{ $applicant->address?->rw ?? '-' }}
                                 </p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Kode Pos</p>
+                                <p class="text-xs font-semibold text-slate-500">Kode Pos</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->address?->postal_code ?? '-' }}</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                    <h2 class="text-xl font-black text-polmind-blue">Pendidikan</h2>
+                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-slate-900">Pendidikan</h2>
 
                     <div class="mt-6 space-y-4 text-sm">
                         <div>
-                            <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Asal Sekolah</p>
-                            <p class="mt-2 font-bold text-slate-800">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Asal Sekolah</p>
+                            <p class="mt-2 font-semibold text-slate-800">
                                 {{ $applicant->education?->school_name ?? '-' }}
                             </p>
                             <p class="mt-1 text-xs text-slate-500">
@@ -255,19 +255,19 @@
 
                         <div class="grid grid-cols-2 gap-4">
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Jenis Sekolah</p>
+                                <p class="text-xs font-semibold text-slate-500">Jenis Sekolah</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->school_type ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Status</p>
+                                <p class="text-xs font-semibold text-slate-500">Status</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->school_status ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Jurusan</p>
+                                <p class="text-xs font-semibold text-slate-500">Jurusan</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->major ?? '-' }}</p>
                             </div>
                             <div>
-                                <p class="text-xs font-bold text-slate-500">Tahun Lulus</p>
+                                <p class="text-xs font-semibold text-slate-500">Tahun Lulus</p>
                                 <p class="mt-1 font-semibold text-slate-800">{{ $applicant->education?->graduation_year ?? '-' }}</p>
                             </div>
                         </div>
@@ -276,8 +276,8 @@
             </div>
 
             {{-- Orang Tua --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">Data Orang Tua / Wali</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Data Orang Tua / Wali</h2>
 
                 @php
                     $parent = $applicant->parentData;
@@ -291,9 +291,9 @@
 
                 <div class="mt-6 grid gap-5 md:grid-cols-3">
                     @foreach($people as $title => $prefix)
-                        <div class="rounded-2xl bg-slate-50 p-5">
-                            <p class="text-sm font-black text-slate-900">{{ $title }}</p>
-                            <p class="mt-3 text-sm font-bold text-slate-700">{{ $parent?->{$prefix . '_name'} ?: '-' }}</p>
+                        <div class="rounded-lg bg-slate-50 p-5">
+                            <p class="text-sm font-bold text-slate-900">{{ $title }}</p>
+                            <p class="mt-3 text-sm font-semibold text-slate-700">{{ $parent?->{$prefix . '_name'} ?: '-' }}</p>
 
                             <dl class="mt-3 space-y-1 text-xs text-slate-500">
                                 @if($prefix === 'guardian')
@@ -315,12 +315,12 @@
             </div>
 
             {{-- Dokumen --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">Berkas Pendaftaran</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Berkas Pendaftaran</h2>
 
                 <div class="mt-6 overflow-x-auto">
                     <table class="w-full min-w-[760px] text-left text-sm">
-                        <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                        <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                             <tr>
                                 <th class="px-4 py-3">Jenis Berkas</th>
                                 <th class="px-4 py-3">File</th>
@@ -329,10 +329,10 @@
                                 <th class="px-4 py-3">Verifikator</th>
                             </tr>
                         </thead>
-                        <tbody class="divide-y divide-slate-200">
+                        <tbody class="table-zebra">
                             @forelse($applicant->documents as $document)
                                 <tr>
-                                    <td class="px-4 py-4 font-bold text-slate-800">
+                                    <td class="px-4 py-4 font-medium text-slate-800">
                                         {{ $document->documentType?->name ?? '-' }}
                                     </td>
                                     <td class="px-4 py-4">
@@ -341,13 +341,13 @@
                                         @if($document->file_path)
                                             <button type="button"
                                                     @click="$store.preview.show(@js(route('admin.documents.file', $document)), @js(basename($document->file_path)))"
-                                                    class="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue hover:bg-blue-100">
+                                                    class="mt-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-polmind-blue hover:bg-blue-100">
                                                 Lihat
                                             </button>
                                         @endif
                                     </td>
                                     <td class="px-4 py-4">
-                                        <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($document->status) }}">
+                                        <span class="rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($document->status) }}">
                                             {{ str_replace('_', ' ', ucfirst($document->status)) }}
                                         </span>
                                     </td>
@@ -360,7 +360,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm font-semibold text-slate-500">
+                                    <td colspan="5" class="px-4 py-8 text-center text-sm font-medium text-slate-500">
                                         Belum ada berkas yang diupload.
                                     </td>
                                 </tr>
@@ -376,24 +376,24 @@
                     'Invoice Pendaftaran' => $applicant->registrationInvoice,
                     'Invoice Daftar Ulang' => $applicant->reRegistrationInvoice,
                 ] as $title => $invoice)
-                    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h2 class="text-xl font-black text-polmind-blue">{{ $title }}</h2>
+                    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                        <h2 class="text-base font-semibold text-slate-900">{{ $title }}</h2>
 
                         @if($invoice)
-                            <div class="mt-5 rounded-2xl bg-slate-50 p-5">
-                                <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
-                                <p class="mt-1 font-black text-slate-900">{{ $invoice->invoice_number }}</p>
+                            <div class="mt-5 rounded-lg bg-slate-50 p-5">
+                                <p class="text-xs font-semibold text-slate-500">Nomor Invoice</p>
+                                <p class="mt-1 font-bold text-slate-900">{{ $invoice->invoice_number }}</p>
 
                                 <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
                                     <div>
-                                        <p class="text-xs font-bold text-slate-500">Total</p>
-                                        <p class="mt-1 font-black text-polmind-blue">
+                                        <p class="text-xs font-semibold text-slate-500">Total</p>
+                                        <p class="mt-1 font-bold text-polmind-blue">
                                             Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
                                         </p>
                                     </div>
                                     <div>
-                                        <p class="text-xs font-bold text-slate-500">Status</p>
-                                        <span class="mt-1 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($invoice->status) }}">
+                                        <p class="text-xs font-semibold text-slate-500">Status</p>
+                                        <span class="mt-1 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($invoice->status) }}">
                                             {{ str_replace('_', ' ', ucfirst($invoice->status)) }}
                                         </span>
                                     </div>
@@ -402,16 +402,16 @@
 
                             <div class="mt-5 space-y-3">
                                 @foreach($invoice->items as $item)
-                                    <div class="flex justify-between rounded-xl border border-slate-200 px-4 py-3 text-sm">
+                                    <div class="flex justify-between rounded-lg border border-slate-200 px-4 py-3 text-sm">
                                         <span class="font-semibold text-slate-700">{{ $item->name }}</span>
-                                        <span class="font-black text-slate-900">
+                                        <span class="font-bold text-slate-900">
                                             Rp{{ number_format($item->subtotal, 0, ',', '.') }}
                                         </span>
                                     </div>
                                 @endforeach
                             </div>
                         @else
-                            <p class="mt-5 rounded-2xl bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                            <p class="mt-5 rounded-lg bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                                 Invoice belum tersedia.
                             </p>
                         @endif
@@ -425,13 +425,13 @@
         <aside class="space-y-6">
 
             {{-- Jalur Pendaftaran --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-black text-polmind-blue">Jalur Pendaftaran</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Jalur Pendaftaran</h2>
 
-                <div class="mt-5 rounded-2xl bg-slate-50 p-5">
-                    <p class="text-xs font-bold text-slate-500">Kategori Jalur</p>
+                <div class="mt-5 rounded-lg bg-slate-50 p-5">
+                    <p class="text-xs font-semibold text-slate-500">Kategori Jalur</p>
 
-                    <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($applicant->registration_path ?? 'umum') }}">
+                    <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($applicant->registration_path ?? 'umum') }}">
                         {{ $applicant->registration_path_label }}
                     </span>
 
@@ -448,8 +448,8 @@
             </div>
 
             {{-- Action --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-black text-polmind-blue">Aksi Admin</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Aksi Admin</h2>
 
                 <div class="mt-5 space-y-3">
                     @foreach([
@@ -465,7 +465,7 @@
                                     icon: 'info',
                                     confirmButtonColor: '#003B82'
                                 })"
-                                class="w-full rounded-xl px-4 py-3 text-sm font-black transition hover:brightness-95 {{ $action['color'] }}">
+                                class="w-full rounded-lg px-4 py-3 text-sm font-bold transition hover:brightness-95 {{ $action['color'] }}">
                             {{ $action['label'] }}
                         </button>
                     @endforeach
@@ -473,34 +473,34 @@
             </div>
 
             {{-- Seleksi --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-black text-polmind-blue">Status Seleksi</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Status Seleksi</h2>
 
                 @if($applicant->selection)
                     <div class="mt-5 space-y-4 text-sm">
                         <div>
-                            <p class="text-xs font-bold text-slate-500">Status</p>
-                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($applicant->selection->status) }}">
+                            <p class="text-xs font-semibold text-slate-500">Status</p>
+                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($applicant->selection->status) }}">
                                 {{ $selectionStatusLabels[$applicant->selection->status] ?? $applicant->selection->status }}
                             </span>
                         </div>
 
                         <div class="grid grid-cols-3 gap-3">
-                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                            <div class="rounded-lg bg-slate-50 p-3 text-center">
                                 <p class="text-xs text-slate-500">Tes</p>
-                                <p class="mt-1 font-black">{{ $applicant->selection->test_score ?? '-' }}</p>
+                                <p class="mt-1 font-bold">{{ $applicant->selection->test_score ?? '-' }}</p>
                             </div>
-                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                            <div class="rounded-lg bg-slate-50 p-3 text-center">
                                 <p class="text-xs text-slate-500">Interview</p>
-                                <p class="mt-1 font-black">{{ $applicant->selection->interview_score ?? '-' }}</p>
+                                <p class="mt-1 font-bold">{{ $applicant->selection->interview_score ?? '-' }}</p>
                             </div>
-                            <div class="rounded-xl bg-slate-50 p-3 text-center">
+                            <div class="rounded-lg bg-slate-50 p-3 text-center">
                                 <p class="text-xs text-slate-500">Final</p>
-                                <p class="mt-1 font-black">{{ $applicant->selection->final_score ?? '-' }}</p>
+                                <p class="mt-1 font-bold">{{ $applicant->selection->final_score ?? '-' }}</p>
                             </div>
                         </div>
 
-                        <p class="rounded-xl bg-slate-50 p-4 text-xs leading-5 text-slate-600">
+                        <p class="rounded-lg bg-slate-50 p-4 text-xs leading-5 text-slate-600">
                             {{ $applicant->selection->note ?? 'Belum ada catatan seleksi.' }}
                         </p>
                     </div>
@@ -512,12 +512,12 @@
             </div>
 
             {{-- Follow Up --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-black text-polmind-blue">Follow Up Terakhir</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Follow Up Terakhir</h2>
 
                 @if($applicant->latestFollowUp)
-                    <div class="mt-5 rounded-2xl bg-slate-50 p-5">
-                        <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-yellow-700">
+                    <div class="mt-5 rounded-lg bg-slate-50 p-5">
+                        <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
                             {{ str_replace('_', ' ', ucfirst($applicant->latestFollowUp->status)) }}
                         </span>
 
@@ -542,29 +542,29 @@
             </div>
 
             {{-- Integrasi --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-lg font-black text-polmind-blue">Integrasi SIAKAD</h2>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">Integrasi SIAKAD</h2>
 
-                <div class="mt-5 rounded-2xl bg-slate-50 p-5">
-                    <p class="text-xs font-bold text-slate-500">Sync Status</p>
-                    <p class="mt-2 font-black text-polmind-blue">
+                <div class="mt-5 rounded-lg bg-slate-50 p-5">
+                    <p class="text-xs font-semibold text-slate-500">Sync Status</p>
+                    <p class="mt-2 font-bold text-polmind-blue">
                         {{ str_replace('_', ' ', ucfirst($applicant->sync_status)) }}
                     </p>
 
-                    <p class="mt-4 text-xs font-bold text-slate-500">NIM</p>
-                    <p class="mt-2 font-black text-slate-900">
+                    <p class="mt-4 text-xs font-semibold text-slate-500">NIM</p>
+                    <p class="mt-2 font-bold text-slate-900">
                         {{ $applicant->nim ?? 'Belum tersedia' }}
                     </p>
                 </div>
 
                 <div class="mt-5 space-y-3">
                     @forelse($applicant->integrationLogs->take(3) as $log)
-                        <div class="rounded-xl border border-slate-200 p-4">
+                        <div class="rounded-lg border border-slate-200 p-4">
                             <div class="flex items-center justify-between gap-3">
-                                <p class="text-xs font-black text-slate-700">
+                                <p class="text-xs font-bold text-slate-700">
                                     {{ $log->system_name }}
                                 </p>
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($log->status) }}">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($log->status) }}">
                                     {{ $log->status }}
                                 </span>
                             </div>

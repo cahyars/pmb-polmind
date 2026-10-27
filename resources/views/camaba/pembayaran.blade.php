@@ -48,7 +48,7 @@
 
     @if(session('payment_submitted'))
         <div class="rounded-2xl border border-yellow-300 bg-yellow-50 px-5 py-4 text-sm leading-6 text-yellow-900" role="status">
-            <p class="font-black">⏳ Bukti pembayaran terkirim dan sedang diverifikasi</p>
+            <p class="flex items-center gap-2 font-black"><x-icon name="clock" class="h-5 w-5 shrink-0" /> Bukti pembayaran terkirim dan sedang diverifikasi</p>
             <p>Admin PMB akan memeriksa pembayaran Anda maksimal 1x24 jam kerja. Status akan berubah menjadi <b>Lunas</b> setelah diverifikasi.</p>
         </div>
 
@@ -112,7 +112,7 @@
 
         @if($paymentMethods->isEmpty())
             <p class="mt-5 rounded-2xl bg-white p-5 text-sm font-semibold text-slate-600">
-                Informasi rekening pembayaran belum tersedia. Silakan hubungi admin PMB melalui WhatsApp +62 821-1329-6897.
+                Informasi rekening pembayaran belum tersedia. Silakan hubungi admin PMB melalui WhatsApp {{ \App\Services\AdminWhatsApp::display() }}.
             </p>
         @else
             <div class="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

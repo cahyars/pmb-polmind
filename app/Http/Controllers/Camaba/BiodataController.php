@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Camaba;
 
 use App\Http\Controllers\Controller;
 use App\Models\Applicant;
+use App\Models\ApplicantEducation;
 use App\Models\ClassType;
 use App\Models\RefOption;
 use App\Models\RefRegion;
@@ -22,8 +23,6 @@ use Illuminate\Validation\Rule;
 class BiodataController extends Controller
 {
     public const STEPS = ['pribadi', 'prodi', 'alamat', 'sekolah', 'orangtua', 'ringkasan'];
-
-    public const SCHOOL_TYPES = ['SMA', 'SMK', 'MA', 'MAK', 'Paket C', 'Lainnya'];
 
     public function edit(Request $request)
     {
@@ -65,11 +64,11 @@ class BiodataController extends Controller
             'classTypes' => ClassType::where('is_active', true)->orderBy('code')->get(),
             'references' => $references,
             'provinces' => RefRegion::where('level', RefRegion::LEVEL_PROVINCE)->orderBy('name')->get(['id', 'name']),
-            'addressRegion' => $this->regionChain(old('region_id', $applicant->address?->region_id)),
-            'schoolRegion' => $this->regionChain(old('school_region_id', $applicant->education?->school_region_id)),
+            'addressRegion' => RefRegion::chainFor(old('region_id', $applicant->address?->region_id)),
+            'schoolRegion' => RefRegion::chainFor(old('school_region_id', $applicant->education?->school_region_id)),
             'programLocked' => $this->programLocked($applicant),
             'classLocked' => RegistrationNumber::isFinal($applicant->registration_number),
-            'schoolTypes' => self::SCHOOL_TYPES,
+            'schoolTypes' => ApplicantEducation::SCHOOL_TYPES,
         ]);
     }
 
@@ -113,11 +112,12 @@ class BiodataController extends Controller
         $request->merge([
             'full_name' => mb_strtoupper(trim((string) $request->input('full_name'))),
             'email' => mb_strtolower(trim((string) $request->input('email'))),
+            'nik' => preg_replace('/\s+/', '', (string) $request->input('nik')),
         ]);
 
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
-            'nik' => ['required', 'digits:16', Rule::unique('applicants', 'nik')->ignore($applicant->id)],
+            'nik' => Applicant::nikRules($applicant->admission_wave_id, $applicant->id),
             'nisn' => ['nullable', 'digits:10'],
             'npwp' => ['nullable', 'regex:/^[0-9]{15,16}$/'],
             'gender' => ['required', 'in:L,P'],
@@ -137,7 +137,7 @@ class BiodataController extends Controller
             'home_phone.regex' => 'Telepon rumah hanya boleh berisi angka.',
             'npwp.regex' => 'NPWP harus 15 atau 16 digit angka.',
             'kps_number.required_if' => 'Nomor KPS wajib diisi untuk penerima KPS.',
-        ]);
+        ] + Applicant::nikMessages($applicant->admissionWave));
 
         $applicant->update([
             'full_name' => $validated['full_name'],
@@ -173,7 +173,7 @@ class BiodataController extends Controller
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'second_study_program_id' => ['nullable', 'different:study_program_id', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'class_type_id' => [Rule::excludeIf($classLocked), 'required', Rule::exists('class_types', 'id')->where('is_active', true)],
-            'registration_path' => ['required', 'in:umum,prestasi,undangan'],
+            'registration_path' => ['required', Rule::in(array_keys(Applicant::REGISTRATION_PATHS))],
         ], [
             'second_study_program_id.different' => 'Pilihan prodi kedua harus berbeda dengan pilihan pertama.',
         ]);
@@ -247,29 +247,14 @@ class BiodataController extends Controller
     {
         $manual = $request->boolean('is_manual_school');
 
-        $validated = $request->validate([
-            'school_region_id' => ['required', Rule::exists('ref_regions', 'id')->where('level', RefRegion::LEVEL_DISTRICT)],
-            'is_manual_school' => ['required', 'boolean'],
-            'school_npsn' => [$manual ? 'nullable' : 'required', 'digits:8'],
-            'school_name' => ['required', 'string', 'max:255'],
-            'school_type' => ['required', Rule::in(self::SCHOOL_TYPES)],
-            'school_status' => ['nullable', 'in:Negeri,Swasta'],
+        $validated = $request->validate(ApplicantEducation::schoolRules($manual) + [
             'major' => ['required', 'string', 'max:255'],
             'graduation_year' => ['required', 'integer', 'min:2000', 'max:' . (now()->year + 1)],
-        ], [
-            'school_region_id.required' => 'Pilih provinsi, kabupaten/kota, dan kecamatan lokasi sekolah.',
-            'school_npsn.required' => 'Pilih sekolah dari daftar, atau centang "Sekolah saya tidak ada di daftar".',
-        ]);
+        ], ApplicantEducation::schoolMessages());
 
         $applicant->education()->updateOrCreate(
             ['applicant_id' => $applicant->id],
-            [
-                'school_region_id' => $validated['school_region_id'],
-                'is_manual_school' => $manual,
-                'school_npsn' => $this->blankToNull($validated['school_npsn'] ?? null),
-                'school_name' => mb_strtoupper($validated['school_name']),
-                'school_type' => $validated['school_type'],
-                'school_status' => $this->blankToNull($validated['school_status'] ?? null),
+            ApplicantEducation::schoolAttributes($validated) + [
                 'major' => $validated['major'],
                 'graduation_year' => $validated['graduation_year'],
             ]
@@ -311,20 +296,6 @@ class BiodataController extends Controller
         $applicant->parentData()->updateOrCreate(['applicant_id' => $applicant->id], $data);
 
         return null;
-    }
-
-    /**
-     * Provinsi, kab/kota, dan kecamatan terpilih untuk dropdown berjenjang.
-     */
-    private function regionChain(?string $districtId): array
-    {
-        $district = $districtId ? RefRegion::with('parent')->find($districtId) : null;
-
-        return [
-            'province' => $district?->parent?->parent_id,
-            'regency' => $district?->parent_id,
-            'district' => $district?->id,
-        ];
     }
 
     private function refRule(string $group)

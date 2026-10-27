@@ -34,7 +34,7 @@
             'card' => 'border-slate-200 bg-slate-50 opacity-75',
             'dot' => 'bg-slate-200 text-slate-500',
             'badge' => 'bg-slate-200 text-slate-600',
-            'badgeText' => '🔒 Terkunci',
+            'badgeText' => 'Terkunci',
         ],
     ];
 
@@ -75,8 +75,8 @@
         <div class="overflow-hidden rounded-3xl border-2 {{ $journey->paymentWaiting() ? 'border-yellow-300 bg-yellow-50' : 'border-red-200 bg-red-50' }} p-6 shadow-sm">
             <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
                 <div class="flex gap-4">
-                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl {{ $journey->paymentWaiting() ? 'bg-yellow-100' : 'bg-red-100' }} text-2xl">
-                        {{ $journey->paymentWaiting() ? '⏳' : '💳' }}
+                    <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl {{ $journey->paymentWaiting() ? 'bg-yellow-100 text-yellow-800' : 'bg-red-100 text-red-700' }}">
+                        <x-icon :name="$journey->paymentWaiting() ? 'clock' : 'card'" class="h-6 w-6" />
                     </div>
                     <div>
                         @if($journey->paymentWaiting())
@@ -243,8 +243,9 @@
                                 @elseif($step['state'] === 'locked' && ! $registrationPaid && $step['url'])
                                     <button type="button"
                                             @click="window.showPaymentRequired()"
-                                            class="hidden shrink-0 self-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black text-slate-500 sm:inline-flex">
-                                        🔒 Terkunci
+                                            class="hidden shrink-0 items-center gap-1.5 self-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-xs font-black text-slate-500 sm:inline-flex">
+                                        <x-icon name="lock" class="h-3.5 w-3.5" stroke-width="2" />
+                                        Terkunci
                                     </button>
                                 @endif
                             </div>
@@ -285,7 +286,7 @@
 
             {{-- Panduan --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" x-data="{ open: {{ $registrationPaid ? 'null' : '0' }} }">
-                <h2 class="text-lg font-black text-polmind-blue">📘 Panduan Pendaftaran</h2>
+                <h2 class="flex items-center gap-2 text-lg font-black text-polmind-blue"><x-icon name="book" class="h-5 w-5" /> Panduan Pendaftaran</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">Klik setiap langkah untuk melihat cara mengisinya.</p>
 
                 <div class="mt-5 space-y-2">
@@ -350,7 +351,7 @@
                     Jika mengalami kendala pendaftaran, hubungi admin PMB Politeknik Mitra Industri.
                 </p>
 
-                <a href="https://wa.me/6282113296897?text={{ rawurlencode('Halo Admin PMB, saya ' . $applicant->full_name . ' (' . $applicant->registration_number . ') ingin bertanya.') }}"
+                <a href="{{ \App\Services\AdminWhatsApp::url('Halo Admin PMB, saya ' . $applicant->full_name . ' (' . $applicant->registration_number . ') ingin bertanya.') }}"
                    target="_blank"
                    rel="noopener"
                    class="mt-5 inline-flex w-full justify-center rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-700">

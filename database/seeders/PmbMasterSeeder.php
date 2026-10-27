@@ -127,6 +127,8 @@ class PmbMasterSeeder extends Seeder
                 'registration_code' => 'A',
                 'name' => 'Reguler A',
                 'description' => 'Kelas reguler pagi.',
+                'schedule' => 'Senin-Jumat, pagi-sore',
+                'scheme' => "Untuk lulusan SMA/SMK/MA yang belum bekerja\nPerkuliahan tatap muka penuh di kampus",
                 'is_active' => true,
             ],
             [
@@ -134,6 +136,8 @@ class PmbMasterSeeder extends Seeder
                 'registration_code' => 'B',
                 'name' => 'Reguler B',
                 'description' => 'Kelas karyawan atau malam.',
+                'schedule' => 'Senin-Jumat malam dan/atau Sabtu',
+                'scheme' => "Untuk camaba yang sudah bekerja\nJadwal kuliah menyesuaikan jam kerja",
                 'is_active' => true,
             ],
         ];

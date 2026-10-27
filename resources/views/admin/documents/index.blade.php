@@ -30,13 +30,13 @@
 <div class="space-y-8">
 
     @if(session('success'))
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+        <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
             {{ session('success') }}
         </div>
     @endif
 
     @if($errors->any())
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+        <div class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
             {{ $errors->first() }}
         </div>
     @endif
@@ -69,18 +69,18 @@
                 'class' => 'text-slate-700',
             ],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
     </div>
 
     {{-- Filter --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="border-b border-slate-200 pb-5">
-            <h2 class="text-xl font-black text-polmind-blue">Filter Berkas</h2>
+            <h2 class="text-base font-semibold text-slate-900">Filter Berkas</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
                 Cari berdasarkan nama camaba, nomor pendaftaran, NIK, sekolah asal, atau nama file.
             </p>
@@ -88,18 +88,18 @@
 
         <form action="{{ route('admin.documents.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
             <div class="xl:col-span-2">
-                <label class="text-sm font-bold text-slate-700">Pencarian</label>
+                <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
                        name="keyword"
                        value="{{ request('keyword') }}"
                        placeholder="Nama, no pendaftaran, NIK, sekolah, file..."
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                       class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Jenis Berkas</label>
+                <label class="text-sm font-semibold text-slate-700">Jenis Berkas</label>
                 <select name="document_type"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Berkas</option>
                     @foreach($documentTypes as $type)
                         <option value="{{ $type->id }}" @selected(request('document_type') == $type->id)>
@@ -110,9 +110,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Program Studi</label>
+                <label class="text-sm font-semibold text-slate-700">Program Studi</label>
                 <select name="study_program"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Prodi</option>
                     @foreach($studyPrograms as $program)
                         <option value="{{ $program->id }}" @selected(request('study_program') == $program->id)>
@@ -123,9 +123,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Jalur</label>
+                <label class="text-sm font-semibold text-slate-700">Jalur</label>
                 <select name="registration_path"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Jalur</option>
                     <option value="umum" @selected(request('registration_path') === 'umum')>
                         Umum
@@ -140,9 +140,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Status</label>
+                <label class="text-sm font-semibold text-slate-700">Status</label>
                 <select name="status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Status</option>
                     @foreach($statusLabels as $key => $label)
                         <option value="{{ $key }}" @selected(request('status') === $key)>
@@ -154,12 +154,12 @@
 
             <div class="flex items-end gap-3 xl:col-span-6">
                 <button type="submit"
-                        class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                        class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
                 </button>
 
                 <a href="{{ route('admin.documents.index') }}"
-                   class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                   class="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Reset
                 </a>
             </div>
@@ -167,37 +167,37 @@
     </div>
 
     {{-- Table --}}
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">Antrian Verifikasi Berkas</h2>
+                <h2 class="text-base font-semibold text-slate-900">Antrian Verifikasi Berkas</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
                     Admin hanya dapat memvalidasi berkas yang berstatus menunggu verifikasi.
                 </p>
             </div>
 
-            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-polmind-blue">
                 {{ $documents->total() }} Data
             </span>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1300px] text-left text-sm">
-                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
-                        <th class="px-6 py-4">Camaba</th>
-                        <th class="px-6 py-4">Jalur</th>
-                        <th class="px-6 py-4">Jenis Berkas</th>
-                        <th class="px-6 py-4">File</th>
-                        <th class="px-6 py-4">Prodi</th>
-                        <th class="px-6 py-4">Status</th>
-                        <th class="px-6 py-4">Catatan</th>
-                        <th class="px-6 py-4">Upload</th>
-                        <th class="px-6 py-4 text-right">Aksi</th>
+                        <th class="px-5 py-3.5">Camaba</th>
+                        <th class="px-5 py-3.5">Jalur</th>
+                        <th class="px-5 py-3.5">Jenis Berkas</th>
+                        <th class="px-5 py-3.5">File</th>
+                        <th class="px-5 py-3.5">Prodi</th>
+                        <th class="px-5 py-3.5">Status</th>
+                        <th class="px-5 py-3.5">Catatan</th>
+                        <th class="px-5 py-3.5">Upload</th>
+                        <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200">
+                <tbody class="table-zebra">
                     @forelse($documents as $document)
                         @php
                             $fileUrl = $document->file_path
@@ -209,12 +209,12 @@
                         @endphp
 
                         <tr class="align-top transition hover:bg-slate-50">
-                            <td class="px-6 py-5">
-                                <p class="font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <p class="font-bold text-polmind-blue">
                                     {{ $document->applicant?->registration_number }}
                                 </p>
 
-                                <p class="mt-1 font-bold text-slate-800">
+                                <p class="mt-1 font-semibold text-slate-800">
                                     {{ $document->applicant?->full_name }}
                                 </p>
 
@@ -227,35 +227,35 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $document->applicant?->registration_path_label ?? 'Umum' }}
                                 </span>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <p class="font-bold text-slate-800">
+                            <td class="px-5 py-3.5">
+                                <p class="font-semibold text-slate-800">
                                     {{ $document->documentType?->name ?? '-' }}
                                 </p>
 
                                 <div class="mt-2 flex flex-wrap gap-2">
                                     @if($document->documentType?->is_required)
-                                        <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
+                                        <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
                                             Wajib
                                         </span>
                                     @else
-                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
+                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
                                             Opsional
                                         </span>
                                     @endif
 
-                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
+                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                         {{ $document->documentType?->code ?? '-' }}
                                     </span>
                                 </div>
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 <p class="max-w-56 truncate font-semibold text-slate-700">
                                     {{ $document->file_name ?? '-' }}
                                 </p>
@@ -267,18 +267,18 @@
                                 @if($fileUrl)
                                     <a href="{{ $fileUrl }}"
                                        @click.prevent="$store.preview.show($el.href, @js(basename($document->file_path)))"
-                                       class="mt-3 inline-flex rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
+                                       class="mt-3 inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-polmind-blue transition hover:bg-blue-100">
                                         Lihat File
                                     </a>
                                 @else
-                                    <span class="mt-3 inline-flex rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">
+                                    <span class="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
                                         File kosong
                                     </span>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $document->applicant?->studyProgram?->code ?? '-' }}
                                 </span>
 
@@ -287,8 +287,8 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$document->status] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $statusClasses[$document->status] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $statusLabels[$document->status] ?? $document->status }}
                                 </span>
 
@@ -305,10 +305,10 @@
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 @if($document->admin_note)
-                                    <div class="max-w-64 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
-                                        <p class="font-black">Catatan Admin</p>
+                                    <div class="max-w-64 rounded-lg border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
+                                        <p class="font-bold">Catatan Admin</p>
                                         <p class="mt-1">{{ $document->admin_note }}</p>
                                     </div>
                                 @else
@@ -316,14 +316,14 @@
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5 text-slate-600">
+                            <td class="px-5 py-3.5 text-slate-600">
                                 {{ $document->uploaded_at?->format('d M Y H:i') ?? '-' }}
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ url('/admin/applicants/' . $document->applicant?->registration_number) }}"
-                                       class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
                                         Detail
                                     </a>
 
@@ -335,18 +335,18 @@
                                             @method('PATCH')
 
                                             <button type="submit"
-                                                    class="rounded-xl bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700">
+                                                    class="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700">
                                                 Terima
                                             </button>
                                         </form>
 
                                         <button type="button"
                                                 onclick="document.getElementById('reject-form-{{ $document->id }}').classList.toggle('hidden')"
-                                                class="rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700">
+                                                class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700">
                                             Tolak
                                         </button>
                                     @else
-                                        <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">
+                                        <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
                                             Selesai
                                         </span>
                                     @endif
@@ -356,7 +356,7 @@
                                     <form id="reject-form-{{ $document->id }}"
                                           action="{{ route('admin.documents.reject', $document) }}"
                                           method="POST"
-                                          class="mt-3 hidden rounded-2xl border border-red-200 bg-red-50 p-3">
+                                          class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 p-3">
                                         @csrf
                                         @method('PATCH')
 
@@ -364,17 +364,17 @@
                                                   rows="3"
                                                   required
                                                   placeholder="Tulis alasan penolakan..."
-                                                  class="w-full rounded-xl border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100">{{ old('admin_note') }}</textarea>
+                                                  class="w-full rounded-lg border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100">{{ old('admin_note') }}</textarea>
 
                                         <div class="mt-2 flex justify-end gap-2">
                                             <button type="button"
                                                     onclick="document.getElementById('reject-form-{{ $document->id }}').classList.add('hidden')"
-                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
                                                 Batal
                                             </button>
 
                                             <button type="submit"
-                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white">
+                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white">
                                                 Simpan Tolak
                                             </button>
                                         </div>
@@ -385,7 +385,7 @@
                     @empty
                         <tr>
                             <td colspan="9" class="px-6 py-12 text-center">
-                                <p class="text-sm font-bold text-slate-600">
+                                <p class="text-sm font-semibold text-slate-600">
                                     Tidak ada data berkas ditemukan.
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">

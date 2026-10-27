@@ -214,36 +214,36 @@
 
                     @if($invoice)
                         <div class="mt-6 rounded-2xl bg-slate-50 p-5">
-                            <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-5">
-                                <div>
+                            <div class="grid gap-5 sm:grid-cols-2 2xl:grid-cols-4">
+                                <div class="min-w-0 sm:col-span-2 2xl:col-span-4">
                                     <p class="text-xs font-bold text-slate-500">Nomor Invoice</p>
-                                    <p class="mt-1 font-black text-polmind-blue">
+                                    <p class="mt-1 break-all font-black text-polmind-blue">
                                         {{ $invoice->invoice_number }}
                                     </p>
                                 </div>
 
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-xs font-bold text-slate-500">Total Tagihan</p>
-                                    <p class="mt-1 text-2xl font-black text-green-700">
+                                    <p class="mt-1 text-xl font-black text-green-700">
                                         Rp{{ number_format($invoice->total_amount, 0, ',', '.') }}
                                     </p>
                                 </div>
 
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-xs font-bold text-slate-500">Sudah Dibayar</p>
-                                    <p class="mt-1 text-2xl font-black text-polmind-blue">
+                                    <p class="mt-1 text-xl font-black text-polmind-blue">
                                         Rp{{ number_format($validPaidAmount, 0, ',', '.') }}
                                     </p>
                                 </div>
 
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-xs font-bold text-slate-500">Sisa Tagihan</p>
-                                    <p class="mt-1 text-2xl font-black text-red-600">
+                                    <p class="mt-1 text-xl font-black text-red-600">
                                         Rp{{ number_format($remainingAmount, 0, ',', '.') }}
                                     </p>
                                 </div>
 
-                                <div>
+                                <div class="min-w-0">
                                     <p class="text-xs font-bold text-slate-500">Jatuh Tempo</p>
                                     <p class="mt-1 font-bold text-slate-800">
                                         {{ $invoice->due_date?->format('d M Y') ?? '-' }}

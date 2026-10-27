@@ -78,7 +78,10 @@ class DocumentController extends Controller
             $rules['file'][] = 'mimes:' . implode(',', $allowedExtensions);
         }
 
-        $request->validate($rules);
+        $request->validate($rules, [
+            'file.max' => 'Ukuran file ' . $documentType->name . ' maksimal ' . number_format($maxSizeKb, 0, ',', '.') . ' KB.',
+            'file.mimes' => 'Format file ' . $documentType->name . ' harus ' . strtoupper(implode(', ', $allowedExtensions)) . '.',
+        ]);
 
         $file = $request->file('file');
 
@@ -118,7 +121,7 @@ class DocumentController extends Controller
 
         $this->refreshApplicantDocumentStatus($applicant);
 
-        return back()->with('success', 'Berkas berhasil diupload dan menunggu verifikasi admin.');
+        return back()->with('success', 'Unggah berkas ' . $documentType->name . ' berhasil disimpan.');
     }
 
     public function destroy(ApplicantDocument $document)

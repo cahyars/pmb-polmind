@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>@yield('title', 'Masuk PMB Polmind')</title>
+    @include('partials.favicon')
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
@@ -24,6 +25,8 @@
     <main class="flex min-h-[calc(100vh-85px)] items-center justify-center px-4 py-10">
         @yield('content')
     </main>
+
+    @include('partials.whatsapp-float')
 
 </body>
 </html>

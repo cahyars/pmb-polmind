@@ -3,6 +3,8 @@
 @section('title', 'Biodata Camaba')
 @section('page_title', 'Biodata Camaba')
 @section('page_subtitle', 'Isi biodata langkah demi langkah. Setiap langkah tersimpan otomatis saat Anda lanjut.')
+{{-- Naikkan tombol WhatsApp agar tidak menutupi bar navigasi sticky di bawah. --}}
+@section('whatsapp_offset', 'bottom-32 sm:bottom-28')
 
 @section('content')
 @php
@@ -316,8 +318,8 @@
                         <div>
                             <label for="registration_path" class="{{ $label }}">Jalur Pendaftaran {!! $required !!}</label>
                             <select id="registration_path" name="registration_path" required @disabled($programLocked) class="{{ $field }}">
-                                @foreach(['umum' => 'Umum', 'prestasi' => 'Prestasi', 'undangan' => 'Undangan'] as $value => $name)
-                                    <option value="{{ $value }}" @selected(old('registration_path', $applicant->registration_path ?? 'umum') === $value)>{{ $name }}</option>
+                                @foreach(\App\Models\Applicant::REGISTRATION_PATHS as $value => $path)
+                                    <option value="{{ $value }}" @selected(old('registration_path', $applicant->registration_path ?? 'umum') === $value)>{{ $path['label'] }}</option>
                                 @endforeach
                             </select>
                         </div>
@@ -395,114 +397,7 @@
                              'type' => old('school_type', $education?->school_type),
                              'status' => old('school_status', $education?->school_status),
                          ]))">
-                        <div>
-                            <p class="text-sm font-black text-slate-900">1. Lokasi sekolah</p>
-                            <p class="{{ $hint }}">Pilih wilayah sekolah asal Anda, lalu cari nama sekolahnya.</p>
-                            <div class="mt-2 grid gap-5 md:grid-cols-3">
-                                @include('camaba.partials.region-select', ['fieldName' => 'school_region_id'])
-                            </div>
-                        </div>
-
-                        <div>
-                            <p class="text-sm font-black text-slate-900">2. Nama sekolah {!! $required !!}</p>
-
-                            <input type="hidden" name="is_manual_school" :value="manual ? 1 : 0">
-                            <input type="hidden" name="school_npsn" :value="npsn">
-                            <input type="hidden" name="school_name" :value="name">
-                            <input type="hidden" name="school_type" :value="type">
-                            <input type="hidden" name="school_status" :value="status">
-
-                            {{-- Sekolah terpilih --}}
-                            <div x-show="name && ! manual" x-cloak class="mt-3 flex items-start justify-between gap-4 rounded-2xl border border-green-300 bg-green-50 p-4">
-                                <div>
-                                    <p class="font-black text-green-900" x-text="name"></p>
-                                    <p class="mt-1 text-xs text-green-800/80">
-                                        NPSN <span x-text="npsn"></span> · <span x-text="type"></span> <span x-text="status"></span>
-                                    </p>
-                                </div>
-                                <button type="button" @click="clearSchool()" class="shrink-0 text-xs font-bold text-green-800 underline">Ganti</button>
-                            </div>
-
-                            {{-- Pencarian --}}
-                            <div x-show="! manual && ! name" class="mt-3">
-                                <div x-show="! regency" class="rounded-2xl border border-dashed border-slate-300 p-5 text-center text-sm text-slate-500">
-                                    Pilih provinsi dan kabupaten/kota terlebih dahulu.
-                                </div>
-
-                                <div x-show="regency" x-cloak>
-                                    <input type="search" x-model.debounce.200ms="query" placeholder="Ketik nama sekolah, contoh: SMKN 1"
-                                           class="{{ $field }}" aria-label="Cari nama sekolah">
-
-                                    <p x-show="loadingSchools" class="{{ $hint }}">Memuat daftar sekolah...</p>
-
-                                    <p x-show="! loadingSchools && ! available" class="mt-3 rounded-xl bg-yellow-50 px-4 py-3 text-xs font-semibold text-yellow-800">
-                                        Daftar sekolah sedang tidak dapat dimuat. Silakan isi data sekolah secara manual di bawah.
-                                    </p>
-
-                                    <ul x-show="! loadingSchools && available" class="mt-3 max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-2xl border border-slate-200">
-                                        <template x-for="school in filteredSchools" :key="school.npsn">
-                                            <li>
-                                                <button type="button" @click="pickSchool(school)"
-                                                        class="flex w-full items-center justify-between gap-3 px-4 py-3 text-left transition hover:bg-blue-50">
-                                                    <span>
-                                                        <span class="block text-sm font-bold text-slate-800" x-text="school.name"></span>
-                                                        <span class="block text-xs text-slate-500" x-text="'NPSN ' + school.npsn + (school.address ? ' · ' + school.address : '')"></span>
-                                                    </span>
-                                                    <span class="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-black text-slate-600" x-text="school.type + ' ' + school.status"></span>
-                                                </button>
-                                            </li>
-                                        </template>
-                                        <li x-show="filteredSchools.length === 0" class="px-4 py-5 text-center text-sm text-slate-500">
-                                            Sekolah tidak ditemukan. Coba kata kunci lain atau isi manual.
-                                        </li>
-                                    </ul>
-                                    <p x-show="district && available && ! loadingSchools" class="{{ $hint }}">
-                                        <span x-show="! showAllDistricts">Menampilkan sekolah di kecamatan terpilih.</span>
-                                        <button type="button" class="font-bold text-polmind-blue underline" @click="showAllDistricts = ! showAllDistricts"
-                                                x-text="showAllDistricts ? 'Tampilkan kecamatan terpilih saja' : 'Tampilkan semua sekolah di kab/kota'"></button>
-                                    </p>
-                                </div>
-                            </div>
-
-                            <label class="mt-4 flex cursor-pointer items-start gap-3 text-sm text-slate-700">
-                                <input type="checkbox" class="mt-0.5" :checked="manual" @change="setManual($event.target.checked)">
-                                <span>
-                                    <span class="font-bold">Sekolah saya tidak ada di daftar</span>
-                                    <span class="block text-xs text-slate-500">Misalnya MA/madrasah, Paket C, atau sekolah baru.</span>
-                                </span>
-                            </label>
-
-                            {{-- Isian manual --}}
-                            <div x-show="manual" x-cloak class="mt-4 grid gap-5 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2">
-                                <div class="md:col-span-2">
-                                    <label for="manual_school_name" class="{{ $label }}">Nama Sekolah {!! $required !!}</label>
-                                    <input id="manual_school_name" type="text" x-model="name" :required="manual" maxlength="255"
-                                           placeholder="Contoh: MAN 1 KOTA BEKASI" class="{{ $field }} uppercase">
-                                </div>
-                                <div>
-                                    <label for="manual_school_type" class="{{ $label }}">Jenis Sekolah {!! $required !!}</label>
-                                    <select id="manual_school_type" x-model="type" :required="manual" class="{{ $field }}">
-                                        <option value="">Pilih</option>
-                                        @foreach($schoolTypes as $schoolType)
-                                            <option value="{{ $schoolType }}">{{ $schoolType }}</option>
-                                        @endforeach
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="manual_school_status" class="{{ $label }}">Status Sekolah {!! $optional !!}</label>
-                                    <select id="manual_school_status" x-model="status" class="{{ $field }}">
-                                        <option value="">Pilih</option>
-                                        <option value="Negeri">Negeri</option>
-                                        <option value="Swasta">Swasta</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label for="manual_school_npsn" class="{{ $label }}">NPSN {!! $optional !!}</label>
-                                    <input id="manual_school_npsn" type="text" x-model="npsn" inputmode="numeric" pattern="[0-9]{8}" maxlength="8"
-                                           placeholder="8 digit" class="{{ $field }}">
-                                </div>
-                            </div>
-                        </div>
+                        @include('camaba.partials.school-picker')
 
                         <div class="grid gap-5 border-t border-slate-200 pt-6 md:grid-cols-2">
                             <div>
@@ -590,165 +485,5 @@
     @endif
 </div>
 
-<script>
-    window.regionPicker = (selected, url) => ({
-        province: selected.province ?? '',
-        regency: '',
-        district: '',
-        regencies: [],
-        districts: [],
-        loading: false,
-
-        async init() {
-            if (this.province) {
-                await this.loadRegions(this.province, 'regencies');
-                await this.$nextTick();
-                this.regency = selected.regency ?? '';
-            }
-
-            if (this.regency) {
-                await this.loadRegions(this.regency, 'districts');
-                await this.$nextTick();
-                this.district = selected.district ?? '';
-            }
-        },
-
-        async loadRegions(parent, target) {
-            this.loading = true;
-
-            try {
-                const response = await fetch(`${url}?parent=${encodeURIComponent(parent)}`, { headers: { Accept: 'application/json' } });
-                this[target] = response.ok ? await response.json() : [];
-            } catch (error) {
-                this[target] = [];
-            } finally {
-                this.loading = false;
-            }
-        },
-
-        async changeProvince() {
-            this.regency = '';
-            this.district = '';
-            this.regencies = [];
-            this.districts = [];
-
-            if (this.province) {
-                await this.loadRegions(this.province, 'regencies');
-            }
-        },
-
-        async changeRegency() {
-            this.district = '';
-            this.districts = [];
-
-            if (this.regency) {
-                await this.loadRegions(this.regency, 'districts');
-            }
-        },
-    });
-
-    // Samakan penulisan "SMA NEGERI 1" dengan "SMAN 1" agar mudah dicari.
-    const normalizeSchoolName = (value) => (value || '')
-        .toUpperCase()
-        .replace(/\b(SMA|SMK)\s+NEGERI\b/g, '$1N')
-        .replace(/\b(SMA|SMK)\s+SWASTA\b/g, '$1S')
-        .replace(/[^A-Z0-9]+/g, ' ')
-        .trim();
-
-    window.schoolPicker = (selected, regionsUrl, schoolsUrl, initial) => {
-        const base = window.regionPicker(selected, regionsUrl);
-
-        return {
-            ...base,
-            schools: [],
-            available: true,
-            loadingSchools: false,
-            showAllDistricts: false,
-            query: '',
-            manual: initial.manual,
-            npsn: initial.npsn ?? '',
-            name: initial.name ?? '',
-            type: initial.type ?? '',
-            status: initial.status ?? '',
-
-            async init() {
-                await base.init.call(this);
-
-                if (this.regency) {
-                    await this.loadSchools();
-                }
-            },
-
-            async changeProvince() {
-                await base.changeProvince.call(this);
-                this.schools = [];
-            },
-
-            async changeRegency() {
-                await base.changeRegency.call(this);
-                await this.loadSchools();
-            },
-
-            async loadSchools() {
-                this.schools = [];
-
-                if (! this.regency) {
-                    return;
-                }
-
-                this.loadingSchools = true;
-
-                try {
-                    const response = await fetch(`${schoolsUrl}?regency=${encodeURIComponent(this.regency)}`, { headers: { Accept: 'application/json' } });
-                    const data = response.ok ? await response.json() : { available: false, schools: [] };
-
-                    this.available = data.available;
-                    this.schools = data.schools.map((school) => ({ ...school, search: normalizeSchoolName(school.name) }));
-                } catch (error) {
-                    this.available = false;
-                } finally {
-                    this.loadingSchools = false;
-                }
-            },
-
-            get filteredSchools() {
-                const tokens = normalizeSchoolName(this.query).split(' ').filter(Boolean);
-
-                let schools = this.schools;
-
-                if (this.district && ! this.showAllDistricts) {
-                    const inDistrict = schools.filter((school) => school.district_id === this.district);
-                    schools = inDistrict.length ? inDistrict : schools;
-                }
-
-                return schools
-                    .filter((school) => tokens.every((token) => school.search.includes(token) || school.npsn.startsWith(token)))
-                    .slice(0, 50);
-            },
-
-            pickSchool(school) {
-                this.npsn = school.npsn;
-                this.name = school.name;
-                this.type = school.type;
-                this.status = school.status;
-
-                if (! this.district) {
-                    this.district = school.district_id;
-                }
-            },
-
-            clearSchool() {
-                this.npsn = '';
-                this.name = '';
-                this.type = '';
-                this.status = '';
-            },
-
-            setManual(manual) {
-                this.manual = manual;
-                this.clearSchool();
-            },
-        };
-    };
-</script>
+@include('camaba.partials.picker-scripts')
 @endsection

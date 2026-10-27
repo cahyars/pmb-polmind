@@ -30,7 +30,12 @@
             </div>
         @endif
 
-        <form action="{{ route('login.store') }}" method="POST" class="mt-8 space-y-5">
+        @php
+            $forgotMessage = 'Halo Admin PMB Polmind, saya lupa kata sandi akun PMB saya.';
+        @endphp
+
+        <form action="{{ route('login.store') }}" method="POST" class="mt-8 space-y-5"
+              x-data="{ email: @js(old('email', '')) }">
             @csrf
 
             <div>
@@ -38,6 +43,7 @@
                 <input type="email"
                        name="email"
                        value="{{ old('email') }}"
+                       x-model="email"
                        required
                        placeholder="email@example.com"
                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
@@ -56,6 +62,20 @@
                 <input type="checkbox" name="remember" value="1" class="rounded border-slate-300">
                 Ingat saya
             </label>
+
+            {{-- Reset kata sandi dibantu admin; email yang diketik ikut dikirim di pesan WA. --}}
+            <p class="flex items-start gap-2 rounded-xl bg-blue-50 px-4 py-3 text-sm leading-6 text-slate-600">
+                <x-icon name="key" class="mt-1 h-4 w-4 shrink-0 text-polmind-blue" stroke-width="2" />
+                <span>
+                    Lupa kata sandi? Silakan
+                    <a href="{{ \App\Services\AdminWhatsApp::url($forgotMessage) }}"
+                       :href="@js(\App\Services\AdminWhatsApp::url(null)) + '?text=' + encodeURIComponent(@js($forgotMessage) + (email.trim() ? ' Email akun: ' + email.trim() : ''))"
+                       target="_blank"
+                       rel="noopener"
+                       class="font-black text-green-700 underline decoration-green-300 underline-offset-2 hover:text-green-800">chat admin</a>
+                    lewat WhatsApp.
+                </span>
+            </p>
 
             <button type="submit"
                     class="w-full rounded-xl bg-polmind-blue px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">

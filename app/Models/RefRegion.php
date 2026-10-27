@@ -32,4 +32,20 @@ class RefRegion extends Model
     {
         return $this->belongsTo(self::class, 'parent_id');
     }
+
+    /**
+     * Provinsi, kab/kota, dan kecamatan terpilih untuk dropdown berjenjang.
+     *
+     * @return array{province: ?string, regency: ?string, district: ?string}
+     */
+    public static function chainFor(?string $districtId): array
+    {
+        $district = $districtId ? self::with('parent')->find($districtId) : null;
+
+        return [
+            'province' => $district?->parent?->parent_id,
+            'regency' => $district?->parent_id,
+            'district' => $district?->id,
+        ];
+    }
 }

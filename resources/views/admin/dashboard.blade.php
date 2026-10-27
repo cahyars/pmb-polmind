@@ -8,14 +8,14 @@
 <div class="space-y-8">
 
     {{-- Hero --}}
-    <div class="overflow-hidden rounded-3xl bg-polmind-blue shadow-xl shadow-blue-900/20">
+    <div class="overflow-hidden rounded-xl bg-polmind-blue shadow-xl shadow-blue-900/20">
         <div class="grid gap-6 p-6 text-white lg:grid-cols-3 lg:p-8">
             <div class="lg:col-span-2">
-                <p class="text-sm font-bold uppercase tracking-wide text-blue-100">
+                <p class="text-sm font-semibold uppercase tracking-wide text-blue-100">
                     Admin PMB Polmind
                 </p>
 
-                <h2 class="mt-3 text-3xl font-black sm:text-4xl">
+                <h2 class="mt-3 text-3xl font-bold sm:text-4xl">
                     Monitoring Penerimaan Mahasiswa Baru
                 </h2>
 
@@ -25,18 +25,19 @@
                 </p>
 
                 <div class="mt-6 flex flex-wrap gap-3">
-                    <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-black text-blue-100">
+                    <span class="rounded-full bg-white/10 px-4 py-2 text-xs font-bold text-blue-100">
                         Tahun PMB: {{ $selectedPmbYear?->name ?? '-' }}
                     </span>
-                    <span class="rounded-full bg-polmind-yellow px-4 py-2 text-xs font-black text-polmind-blue-dark">
-                        Gelombang 2 Aktif
+                    @php $openWave = \App\Models\AdmissionWave::current(); @endphp
+                    <span class="rounded-full bg-polmind-yellow px-4 py-2 text-xs font-bold text-polmind-blue-dark">
+                        {{ $openWave ? $openWave->name . ' Dibuka' : 'Belum ada gelombang dibuka' }}
                     </span>
                 </div>
             </div>
 
-            <div class="rounded-3xl bg-white/10 p-6">
-                <p class="text-sm font-bold text-blue-100">Total Pendaftar</p>
-                <p class="mt-3 text-5xl font-black">{{ $totalApplicants }}</p>
+            <div class="rounded-xl bg-white/10 p-6">
+                <p class="text-sm font-semibold text-blue-100">Total Pendaftar</p>
+                <p class="mt-3 text-4xl font-bold">{{ $totalApplicants }}</p>
 
                 <div class="mt-5 h-3 overflow-hidden rounded-full bg-white/20">
                     <div class="h-full rounded-full bg-polmind-yellow" style="width: {{ min($targetProgress, 100) }}%"></div>
@@ -58,6 +59,7 @@
                 'desc' => 'Semua pendaftar',
                 'url' => '/admin/applicants',
                 'class' => 'bg-blue-100 text-polmind-blue',
+                'accent' => 'border-t-polmind-blue',
             ],
             [
                 'label' => 'Berkas Menunggu',
@@ -65,6 +67,7 @@
                 'desc' => 'Perlu diverifikasi',
                 'url' => '/admin/documents?status=menunggu_verifikasi',
                 'class' => 'bg-yellow-100 text-yellow-700',
+                'accent' => 'border-t-amber-400',
             ],
             [
                 'label' => 'Pembayaran Menunggu',
@@ -72,6 +75,7 @@
                 'desc' => 'Perlu validasi pembayaran',
                 'url' => '/admin/payments?status=waiting_verification',
                 'class' => 'bg-purple-100 text-purple-700',
+                'accent' => 'border-t-purple-500',
             ],
             [
                 'label' => 'Daftar Ulang Valid',
@@ -79,18 +83,19 @@
                 'desc' => 'Siap proses akademik',
                 'url' => '/admin/re-registrations?status=valid',
                 'class' => 'bg-green-100 text-green-700',
+                'accent' => 'border-t-green-500',
             ],
         ] as $card)
             <a href="{{ url($card['url']) }}"
-            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            class="rounded-lg border border-t-[3px] border-slate-200 {{ $card['accent'] }} bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <div class="flex items-start justify-between gap-4">
                     <div>
-                        <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                        <p class="mt-3 text-4xl font-black text-polmind-blue">{{ $card['value'] }}</p>
+                        <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
+                        <p class="mt-3 text-[28px] font-bold leading-tight text-slate-900">{{ $card['value'] }}</p>
                         <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
                     </div>
 
-                    <span class="rounded-full px-3 py-1 text-xs font-black {{ $card['class'] }}">
+                    <span class="rounded-full px-3 py-1 text-xs font-bold {{ $card['class'] }}">
                         Detail
                     </span>
                 </div>
@@ -124,19 +129,19 @@
             ],
         ] as $card)
             <a href="{{ url($card['url']) }}"
-            class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+            class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </a>
         @endforeach
     </div>
 
     {{-- Module Shortcuts --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">
+                <h2 class="text-base font-semibold text-slate-900">
                     Shortcut Modul PMB
                 </h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -145,31 +150,31 @@
             </div>
 
             <a href="{{ url('/admin/reports') }}"
-               class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+               class="rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                 Lihat Laporan
             </a>
         </div>
 
         <div class="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-5">
             @foreach([
-                ['label' => 'Data Camaba', 'desc' => 'Kelola data pendaftar', 'url' => '/admin/applicants', 'icon' => '👤'],
-                ['label' => 'Berkas', 'desc' => 'Validasi dokumen', 'url' => '/admin/documents', 'icon' => '📄'],
-                ['label' => 'Pembayaran', 'desc' => 'Verifikasi bukti bayar', 'url' => '/admin/payments', 'icon' => '💳'],
-                ['label' => 'Seleksi', 'desc' => 'Tetapkan hasil seleksi', 'url' => '/admin/selections', 'icon' => '✅'],
-                ['label' => 'Daftar Ulang', 'desc' => 'Validasi DU camaba', 'url' => '/admin/re-registrations', 'icon' => '🎓'],
-                ['label' => 'Follow Up', 'desc' => 'CRM dan reminder WA', 'url' => '/admin/follow-ups', 'icon' => '💬'],
-                ['label' => 'Laporan', 'desc' => 'Rekap pimpinan', 'url' => '/admin/reports', 'icon' => '📊'],
-                ['label' => 'Master Data', 'desc' => 'Konfigurasi PMB', 'url' => '/admin/master-data', 'icon' => '⚙️'],
-                ['label' => 'Integrasi', 'desc' => 'Sinkron ke SIAKAD', 'url' => '/admin/integrations', 'icon' => '🔄'],
-                ['label' => 'Landing PMB', 'desc' => 'Lihat halaman publik', 'url' => '/', 'icon' => '🌐'],
+                ['label' => 'Data Camaba', 'desc' => 'Kelola data pendaftar', 'url' => '/admin/applicants', 'icon' => 'users'],
+                ['label' => 'Berkas', 'desc' => 'Validasi dokumen', 'url' => '/admin/documents', 'icon' => 'document'],
+                ['label' => 'Pembayaran', 'desc' => 'Verifikasi bukti bayar', 'url' => '/admin/payments', 'icon' => 'card'],
+                ['label' => 'Seleksi', 'desc' => 'Tetapkan hasil seleksi', 'url' => '/admin/selections', 'icon' => 'check'],
+                ['label' => 'Daftar Ulang', 'desc' => 'Validasi DU camaba', 'url' => '/admin/re-registrations', 'icon' => 'cap'],
+                ['label' => 'Follow Up', 'desc' => 'CRM dan reminder WA', 'url' => '/admin/follow-ups', 'icon' => 'chat'],
+                ['label' => 'Laporan', 'desc' => 'Rekap pimpinan', 'url' => '/admin/reports', 'icon' => 'chart'],
+                ['label' => 'Master Data', 'desc' => 'Konfigurasi PMB', 'url' => '/admin/master-data', 'icon' => 'cog'],
+                ['label' => 'Integrasi', 'desc' => 'Sinkron ke SIAKAD', 'url' => '/admin/integrations', 'icon' => 'sync'],
+                ['label' => 'Landing PMB', 'desc' => 'Lihat halaman publik', 'url' => '/', 'icon' => 'computer'],
             ] as $module)
                 <a href="{{ url($module['url']) }}"
-                   class="rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:border-polmind-blue hover:bg-blue-50">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-2xl shadow-sm">
-                        {{ $module['icon'] }}
+                   class="rounded-lg border border-slate-200 bg-slate-50 p-5 transition hover:border-polmind-blue hover:bg-blue-50">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-white text-polmind-blue shadow-sm">
+                        <x-icon :name="$module['icon']" class="h-6 w-6" />
                     </div>
 
-                    <h3 class="mt-4 text-sm font-black text-polmind-blue">
+                    <h3 class="mt-4 text-sm font-bold text-polmind-blue">
                         {{ $module['label'] }}
                     </h3>
 
@@ -187,9 +192,9 @@
         <div class="space-y-8 xl:col-span-2">
 
             {{-- Funnel --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">
+                    <h2 class="text-base font-semibold text-slate-900">
                         Funnel PMB
                     </h2>
                     <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -202,7 +207,7 @@
                         <div>
                             <div class="flex items-center justify-between gap-4">
                                 <div>
-                                    <p class="text-sm font-black text-slate-900">
+                                    <p class="text-sm font-bold text-slate-900">
                                         {{ $item['label'] }}
                                     </p>
                                     <p class="mt-1 text-xs text-slate-500">
@@ -210,7 +215,7 @@
                                     </p>
                                 </div>
 
-                                <p class="text-sm font-black text-polmind-blue">
+                                <p class="text-sm font-bold text-polmind-blue">
                                     {{ $item['percent'] }}%
                                 </p>
                             </div>
@@ -224,10 +229,10 @@
             </div>
 
             {{-- Prodi Distribution --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
                     <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
+                        <h2 class="text-base font-semibold text-slate-900">
                             Sebaran Program Studi
                         </h2>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -236,7 +241,7 @@
                     </div>
 
                     <a href="{{ url('/admin/reports') }}"
-                       class="rounded-xl border border-polmind-blue bg-white px-5 py-3 text-sm font-bold text-polmind-blue transition hover:bg-blue-50">
+                       class="rounded-lg border border-polmind-blue bg-white px-5 py-3 text-sm font-semibold text-polmind-blue transition hover:bg-blue-50">
                         Detail Laporan
                     </a>
                 </div>
@@ -248,10 +253,10 @@
                             $percent = round(($program->re_registered_count / $target) * 100);
                         @endphp
 
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
                             <div class="flex items-start justify-between gap-3">
                                 <div>
-                                    <h3 class="text-xl font-black text-polmind-blue">
+                                    <h3 class="text-base font-semibold text-slate-900">
                                         {{ $program->code }}
                                     </h3>
                                     <p class="mt-1 text-xs leading-5 text-slate-500">
@@ -259,13 +264,13 @@
                                     </p>
                                 </div>
 
-                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+                                <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $program->re_registered_count }}/{{ $program->quota }}
                                 </span>
                             </div>
 
                             <div class="mt-5">
-                                <div class="flex justify-between text-xs font-bold text-slate-600">
+                                <div class="flex justify-between text-xs font-semibold text-slate-600">
                                     <span>Pendaftar: {{ $program->registrants_count }}</span>
                                     <span>{{ $percent }}%</span>
                                 </div>
@@ -280,10 +285,10 @@
             </div>
 
             {{-- Recent Activity --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
                     <div>
-                        <h2 class="text-xl font-black text-polmind-blue">
+                        <h2 class="text-base font-semibold text-slate-900">
                             Aktivitas Terbaru
                         </h2>
                         <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -291,7 +296,7 @@
                         </p>
                     </div>
 
-                    <span class="rounded-full bg-green-100 px-4 py-2 text-xs font-black text-green-700">
+                    <span class="rounded-full bg-green-100 px-4 py-2 text-xs font-bold text-green-700">
                         Real Database
                     </span>
                 </div>
@@ -299,15 +304,15 @@
                 <div class="mt-6 space-y-5">
                     @forelse($latestPayments as $payment)
                         <a href="{{ url('/admin/payments') }}"
-                        class="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
-                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
-                                💳
+                        class="flex gap-4 rounded-lg border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-polmind-blue shadow-sm">
+                                <x-icon name="card" class="h-5 w-5" />
                             </div>
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                                     <div>
-                                        <p class="font-black text-slate-900">
+                                        <p class="font-bold text-slate-900">
                                             Pembayaran {{ $payment->applicant?->full_name ?? '-' }}
                                         </p>
                                         <p class="mt-1 text-sm leading-6 text-slate-600">
@@ -317,29 +322,29 @@
                                         </p>
                                     </div>
 
-                                    <span class="shrink-0 text-xs font-bold text-slate-500">
+                                    <span class="shrink-0 text-xs font-semibold text-slate-500">
                                         {{ $payment->created_at?->diffForHumans() }}
                                     </span>
                                 </div>
                             </div>
                         </a>
                     @empty
-                        <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
+                        <div class="rounded-lg border border-slate-200 bg-slate-50 p-5 text-sm font-semibold text-slate-500">
                             Belum ada aktivitas pembayaran terbaru.
                         </div>
                     @endforelse
 
                     @forelse($latestDocuments->take(3) as $document)
                         <a href="{{ url('/admin/documents') }}"
-                        class="flex gap-4 rounded-2xl border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
-                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-xl shadow-sm">
-                                📄
+                        class="flex gap-4 rounded-lg border border-slate-200 bg-slate-50 p-5 transition hover:bg-blue-50">
+                            <div class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-white text-polmind-blue shadow-sm">
+                                <x-icon name="document" class="h-5 w-5" />
                             </div>
 
                             <div class="min-w-0 flex-1">
                                 <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
                                     <div>
-                                        <p class="font-black text-slate-900">
+                                        <p class="font-bold text-slate-900">
                                             Berkas {{ $document->documentType?->name ?? '-' }}
                                         </p>
                                         <p class="mt-1 text-sm leading-6 text-slate-600">
@@ -348,7 +353,7 @@
                                         </p>
                                     </div>
 
-                                    <span class="shrink-0 text-xs font-bold text-slate-500">
+                                    <span class="shrink-0 text-xs font-semibold text-slate-500">
                                         {{ $document->created_at?->diffForHumans() }}
                                     </span>
                                 </div>
@@ -365,12 +370,12 @@
         <aside class="space-y-6">
 
             {{-- Attention Needed --}}
-            <div class="rounded-3xl border border-red-200 bg-red-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-100 text-2xl">
-                    🔔
+            <div class="rounded-xl border border-red-200 bg-red-50 p-6 shadow-sm">
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 text-red-700">
+                    <x-icon name="bell" class="h-6 w-6" />
                 </div>
 
-                <h3 class="mt-5 text-lg font-black text-red-800">
+                <h3 class="mt-5 text-lg font-bold text-red-800">
                     Perlu Tindak Lanjut
                 </h3>
 
@@ -385,9 +390,9 @@
                         ['label' => 'Siap sinkron SIAKAD', 'value' => $readySyncApplicants, 'url' => '/admin/integrations'],
                     ] as $item)
                         <a href="{{ url($item['url']) }}"
-                           class="flex items-center justify-between rounded-2xl bg-white/70 p-4 transition hover:bg-white">
-                            <span class="text-sm font-bold text-red-800">{{ $item['label'] }}</span>
-                            <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
+                           class="flex items-center justify-between rounded-lg bg-white/70 p-4 transition hover:bg-white">
+                            <span class="text-sm font-semibold text-red-800">{{ $item['label'] }}</span>
+                            <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
                                 {{ $item['value'] }}
                             </span>
                         </a>
@@ -396,12 +401,12 @@
             </div>
 
             {{-- Sync Status --}}
-            <div class="rounded-3xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-100 text-2xl">
-                    🔄
+            <div class="rounded-xl border border-blue-100 bg-blue-50 p-6 shadow-sm">
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-polmind-blue">
+                    <x-icon name="sync" class="h-6 w-6" />
                 </div>
 
-                <h3 class="mt-5 text-lg font-black text-polmind-blue">
+                <h3 class="mt-5 text-base font-semibold text-slate-900">
                     Status Integrasi
                 </h3>
 
@@ -410,33 +415,33 @@
                 </p>
 
                 <div class="mt-5 grid gap-3">
-                    <div class="rounded-2xl bg-white p-4">
-                        <p class="text-xs font-black uppercase tracking-wide text-slate-500">
+                    <div class="rounded-lg bg-white p-4">
+                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">
                             Siap Sinkron
                         </p>
-                        <p class="mt-2 text-3xl font-black text-purple-700">
+                        <p class="mt-2 text-3xl font-bold text-purple-700">
                             {{ $readySyncApplicants }} Data
                         </p>
                     </div>
 
                     <div class="grid grid-cols-3 gap-3">
-                        <div class="rounded-2xl bg-white p-3 text-center">
-                            <p class="text-xs font-bold text-slate-500">Proses</p>
-                            <p class="mt-1 text-xl font-black text-yellow-700">
+                        <div class="rounded-lg bg-white p-3 text-center">
+                            <p class="text-xs font-semibold text-slate-500">Proses</p>
+                            <p class="mt-1 text-xl font-bold text-yellow-700">
                                 {{ $processingSyncApplicants }}
                             </p>
                         </div>
 
-                        <div class="rounded-2xl bg-white p-3 text-center">
-                            <p class="text-xs font-bold text-slate-500">Sukses</p>
-                            <p class="mt-1 text-xl font-black text-green-700">
+                        <div class="rounded-lg bg-white p-3 text-center">
+                            <p class="text-xs font-semibold text-slate-500">Sukses</p>
+                            <p class="mt-1 text-xl font-bold text-green-700">
                                 {{ $syncedApplicants }}
                             </p>
                         </div>
 
-                        <div class="rounded-2xl bg-white p-3 text-center">
-                            <p class="text-xs font-bold text-slate-500">Gagal</p>
-                            <p class="mt-1 text-xl font-black text-red-700">
+                        <div class="rounded-lg bg-white p-3 text-center">
+                            <p class="text-xs font-semibold text-slate-500">Gagal</p>
+                            <p class="mt-1 text-xl font-bold text-red-700">
                                 {{ $failedSyncApplicants }}
                             </p>
                         </div>
@@ -444,14 +449,14 @@
                 </div>
 
                 <a href="{{ url('/admin/integrations') }}"
-                   class="mt-5 inline-flex w-full justify-center rounded-xl bg-polmind-blue px-5 py-3 text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
+                   class="mt-5 inline-flex w-full justify-center rounded-lg bg-polmind-blue px-5 py-3 text-sm font-semibold text-white transition hover:bg-polmind-blue-dark">
                     Buka Integrasi
                 </a>
             </div>
 
             {{-- Quick Report --}}
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-xl font-black text-polmind-blue">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                <h2 class="text-base font-semibold text-slate-900">
                     Laporan Singkat
                 </h2>
 
@@ -459,14 +464,14 @@
                     Ringkasan sementara untuk bahan laporan pimpinan.
                 </p>
 
-                <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
                     <p class="text-sm leading-6 text-slate-700">
-                        Total pendaftar sementara <span class="font-black text-polmind-blue">{{ $totalApplicants }} camaba</span>,
-                        dengan <span class="font-black text-green-700">{{ $acceptedApplicants }} diterima</span>,
-                        <span class="font-black text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>,
-                        dan <span class="font-black text-purple-700">{{ $readySyncApplicants }} siap sinkron SIAKAD</span>.
+                        Total pendaftar sementara <span class="font-bold text-polmind-blue">{{ $totalApplicants }} camaba</span>,
+                        dengan <span class="font-bold text-green-700">{{ $acceptedApplicants }} diterima</span>,
+                        <span class="font-bold text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>,
+                        dan <span class="font-bold text-purple-700">{{ $readySyncApplicants }} siap sinkron SIAKAD</span>.
                         Total pembayaran valid sementara sebesar
-                        <span class="font-black text-green-700">Rp{{ number_format($totalValidPayment, 0, ',', '.') }}</span>.
+                        <span class="font-bold text-green-700">Rp{{ number_format($totalValidPayment, 0, ',', '.') }}</span>.
                     </p>
                 </div>
 
@@ -481,18 +486,18 @@
                 Total pembayaran valid: Rp{{ number_format($totalValidPayment, 0, ',', '.') }}.
 
                 Demikian update sementara yang dapat kami sampaikan. Terima kasih.`); Swal.fire({title: 'Narasi disalin', text: 'Teks laporan singkat sudah disalin ke clipboard.', icon: 'success', confirmButtonColor: '#003B82'})"
-                        class="mt-5 w-full rounded-xl border border-polmind-blue bg-white px-5 py-3 text-sm font-bold text-polmind-blue transition hover:bg-blue-50">
+                        class="mt-5 w-full rounded-lg border border-polmind-blue bg-white px-5 py-3 text-sm font-semibold text-polmind-blue transition hover:bg-blue-50">
                     Copy Narasi Laporan
                 </button>
             </div>
 
             {{-- Admin Notes --}}
-            <div class="rounded-3xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-2xl bg-yellow-100 text-2xl">
-                    📌
+            <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-yellow-800">
+                    <x-icon name="bookmark" class="h-6 w-6" />
                 </div>
 
-                <h3 class="mt-5 text-lg font-black text-yellow-800">
+                <h3 class="mt-5 text-lg font-bold text-yellow-800">
                     Catatan Pengembangan
                 </h3>
 

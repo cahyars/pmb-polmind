@@ -13,7 +13,7 @@ class SelectionStatusController extends Controller
 
         $applicant->load([
             'pmbYear',
-            'admissionWave',
+            'admissionWave.selectionSchedules.component',
             'studyProgram',
             'secondStudyProgram',
             'classType',

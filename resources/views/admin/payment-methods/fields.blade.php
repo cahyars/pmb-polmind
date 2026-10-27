@@ -48,7 +48,7 @@
            class="{{ $input }}">
 </div>
 
-<label class="flex items-center gap-2 self-end rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-bold text-slate-700">
+<label class="flex items-center gap-2 self-end rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
     <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $method?->is_active ?? true))>
     Tampilkan ke camaba
 </label>

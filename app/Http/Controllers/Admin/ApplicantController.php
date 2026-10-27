@@ -41,9 +41,11 @@ class ApplicantController extends Controller
                 'pmbYear',
                 'admissionWave',
                 'studyProgram',
+                'secondStudyProgram',
                 'classType',
                 'education',
                 'reRegistration',
+                'photoDocument',
             ])
             ->when($request->filled('keyword'), function ($query) use ($request) {
                 $keyword = $request->keyword;
@@ -116,5 +118,21 @@ class ApplicantController extends Controller
             ->firstOrFail();
 
         return view('admin.applicants.show', compact('applicant'));
+    }
+
+    /**
+     * Hapus (soft delete) akun peminat yang belum membayar formulir.
+     */
+    public function destroy(string $registration_number)
+    {
+        $applicant = Applicant::where('registration_number', $registration_number)->firstOrFail();
+
+        if (! $applicant->isDeletable()) {
+            return back()->withErrors('Camaba ' . $applicant->full_name . ' tidak dapat dihapus karena pembayaran formulir sudah diproses.');
+        }
+
+        $applicant->delete();
+
+        return back()->with('success', 'Data camaba ' . $applicant->full_name . ' (' . $applicant->registration_number . ') berhasil dihapus.');
     }
 }

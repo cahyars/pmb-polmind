@@ -58,13 +58,13 @@
 <div class="space-y-8">
 
     @if(session('success'))
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+        <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
             {{ session('success') }}
         </div>
     @endif
 
     @if($errors->any())
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+        <div class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
             {{ $errors->first() }}
         </div>
     @endif
@@ -109,18 +109,18 @@
                 'class' => 'text-polmind-blue',
             ],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-3xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-3 text-3xl font-bold {{ $card['class'] }}">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
     </div>
 
     {{-- Filter --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="border-b border-slate-200 pb-5">
-            <h2 class="text-xl font-black text-polmind-blue">Filter Daftar Ulang</h2>
+            <h2 class="text-base font-semibold text-slate-900">Filter Daftar Ulang</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
                 Cari berdasarkan nama, nomor pendaftaran, invoice, NIK, atau asal sekolah.
             </p>
@@ -128,18 +128,18 @@
 
         <form action="{{ route('admin.re-registrations.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
             <div class="xl:col-span-2">
-                <label class="text-sm font-bold text-slate-700">Pencarian</label>
+                <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
                        name="keyword"
                        value="{{ request('keyword') }}"
                        placeholder="Nama, no pendaftaran, invoice, sekolah..."
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                       class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Program Studi</label>
+                <label class="text-sm font-semibold text-slate-700">Program Studi</label>
                 <select name="study_program"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Prodi</option>
                     @foreach($studyPrograms as $program)
                         <option value="{{ $program->id }}" @selected(request('study_program') == $program->id)>
@@ -150,9 +150,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Jalur</label>
+                <label class="text-sm font-semibold text-slate-700">Jalur</label>
                 <select name="registration_path"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Jalur</option>
                     <option value="umum" @selected(request('registration_path') === 'umum')>Umum</option>
                     <option value="prestasi" @selected(request('registration_path') === 'prestasi')>Prestasi</option>
@@ -161,9 +161,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Status DU</label>
+                <label class="text-sm font-semibold text-slate-700">Status DU</label>
                 <select name="status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Status</option>
                     @foreach($statusLabels as $key => $label)
                         <option value="{{ $key }}" @selected(request('status') === $key)>
@@ -174,9 +174,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Status Invoice</label>
+                <label class="text-sm font-semibold text-slate-700">Status Invoice</label>
                 <select name="invoice_status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Invoice</option>
                     @foreach($invoiceStatusLabels as $key => $label)
                         <option value="{{ $key }}" @selected(request('invoice_status') === $key)>
@@ -187,9 +187,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Sync SIAKAD</label>
+                <label class="text-sm font-semibold text-slate-700">Sync SIAKAD</label>
                 <select name="sync_status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Sync</option>
                     <option value="belum_siap" @selected(request('sync_status') === 'belum_siap')>Belum Siap</option>
                     <option value="siap_sinkron" @selected(request('sync_status') === 'siap_sinkron')>Siap Sinkron</option>
@@ -201,12 +201,12 @@
 
             <div class="flex items-end gap-3 xl:col-span-6">
                 <button type="submit"
-                        class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                        class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
                 </button>
 
                 <a href="{{ route('admin.re-registrations.index') }}"
-                   class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                   class="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Reset
                 </a>
             </div>
@@ -214,37 +214,37 @@
     </div>
 
     {{-- Table --}}
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">Data Daftar Ulang</h2>
+                <h2 class="text-base font-semibold text-slate-900">Data Daftar Ulang</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
                     Halaman ini untuk monitoring final daftar ulang. Validasi hanya bisa dilakukan jika pembayaran valid sudah lunas.
                 </p>
             </div>
 
-            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-polmind-blue">
                 {{ $reRegistrations->total() }} Data
             </span>
         </div>
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1550px] text-left text-sm">
-                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
-                        <th class="px-6 py-4">Camaba</th>
-                        <th class="px-6 py-4">Jalur</th>
-                        <th class="px-6 py-4">Program</th>
-                        <th class="px-6 py-4">Invoice DU</th>
-                        <th class="px-6 py-4">Progress Pembayaran</th>
-                        <th class="px-6 py-4">Riwayat Pembayaran</th>
-                        <th class="px-6 py-4">Status DU</th>
-                        <th class="px-6 py-4">Sync SIAKAD</th>
-                        <th class="px-6 py-4 text-right">Aksi</th>
+                        <th class="px-5 py-3.5">Camaba</th>
+                        <th class="px-5 py-3.5">Jalur</th>
+                        <th class="px-5 py-3.5">Program</th>
+                        <th class="px-5 py-3.5">Invoice DU</th>
+                        <th class="px-5 py-3.5">Progress Pembayaran</th>
+                        <th class="px-5 py-3.5">Riwayat Pembayaran</th>
+                        <th class="px-5 py-3.5">Status DU</th>
+                        <th class="px-5 py-3.5">Sync SIAKAD</th>
+                        <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200">
+                <tbody class="table-zebra">
                     @forelse($reRegistrations as $reRegistration)
                         @php
                             $applicant = $reRegistration->applicant;
@@ -289,12 +289,12 @@
                         @endphp
 
                         <tr class="align-top transition hover:bg-slate-50">
-                            <td class="px-6 py-5">
-                                <p class="font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <p class="font-bold text-polmind-blue">
                                     {{ $applicant?->registration_number ?? '-' }}
                                 </p>
 
-                                <p class="mt-1 font-bold text-slate-800">
+                                <p class="mt-1 font-semibold text-slate-800">
                                     {{ $applicant?->full_name ?? '-' }}
                                 </p>
 
@@ -307,14 +307,14 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $applicant?->registration_path_label ?? 'Umum' }}
                                 </span>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $applicant?->studyProgram?->code ?? '-' }}
                                 </span>
 
@@ -323,56 +323,56 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 @if($invoice)
-                                    <p class="font-bold text-slate-800">
+                                    <p class="font-semibold text-slate-800">
                                         {{ $invoice->invoice_number }}
                                     </p>
 
                                     <p class="mt-1 text-xs text-slate-500">
                                         Total:
-                                        <span class="font-black text-slate-700">
+                                        <span class="font-bold text-slate-700">
                                             Rp{{ number_format($totalAmount, 0, ',', '.') }}
                                         </span>
                                     </p>
 
-                                    <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $invoiceStatusClasses[$invoice->status] ?? 'bg-slate-100 text-slate-600' }}">
+                                    <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $invoiceStatusClasses[$invoice->status] ?? 'bg-slate-100 text-slate-600' }}">
                                         {{ $invoiceStatusLabels[$invoice->status] ?? str_replace('_', ' ', ucfirst($invoice->status)) }}
                                     </span>
                                 @else
-                                    <span class="text-xs font-bold text-slate-500">
+                                    <span class="text-xs font-semibold text-slate-500">
                                         Belum ada invoice
                                     </span>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
-                                <div class="w-72 rounded-2xl bg-slate-50 p-4">
+                            <td class="px-5 py-3.5">
+                                <div class="w-72 rounded-lg bg-slate-50 p-4">
                                     <div class="grid grid-cols-2 gap-3 text-xs">
                                         <div>
-                                            <p class="font-bold text-slate-500">Valid</p>
-                                            <p class="mt-1 font-black text-polmind-blue">
+                                            <p class="font-semibold text-slate-500">Valid</p>
+                                            <p class="mt-1 font-bold text-polmind-blue">
                                                 Rp{{ number_format($validPaidAmount, 0, ',', '.') }}
                                             </p>
                                         </div>
 
                                         <div>
-                                            <p class="font-bold text-slate-500">Menunggu</p>
-                                            <p class="mt-1 font-black text-yellow-700">
+                                            <p class="font-semibold text-slate-500">Menunggu</p>
+                                            <p class="mt-1 font-bold text-yellow-700">
                                                 Rp{{ number_format($waitingPaidAmount, 0, ',', '.') }}
                                             </p>
                                         </div>
 
                                         <div>
-                                            <p class="font-bold text-slate-500">Sisa</p>
-                                            <p class="mt-1 font-black text-red-600">
+                                            <p class="font-semibold text-slate-500">Sisa</p>
+                                            <p class="mt-1 font-bold text-red-600">
                                                 Rp{{ number_format($remainingAmount, 0, ',', '.') }}
                                             </p>
                                         </div>
 
                                         <div>
-                                            <p class="font-bold text-slate-500">Progress</p>
-                                            <p class="mt-1 font-black text-slate-700">
+                                            <p class="font-semibold text-slate-500">Progress</p>
+                                            <p class="mt-1 font-bold text-slate-700">
                                                 {{ $progressPercentage }}%
                                             </p>
                                         </div>
@@ -384,22 +384,22 @@
                                     </div>
 
                                     @if($isFullyPaid)
-                                        <p class="mt-3 rounded-xl bg-green-50 p-3 text-xs font-bold text-green-700">
+                                        <p class="mt-3 rounded-lg bg-green-50 p-3 text-xs font-semibold text-green-700">
                                             Pembayaran valid sudah lunas.
                                         </p>
                                     @elseif($waitingPaidAmount > 0)
-                                        <p class="mt-3 rounded-xl bg-yellow-50 p-3 text-xs font-bold text-yellow-700">
+                                        <p class="mt-3 rounded-lg bg-yellow-50 p-3 text-xs font-semibold text-yellow-700">
                                             Masih ada pembayaran menunggu verifikasi.
                                         </p>
                                     @else
-                                        <p class="mt-3 rounded-xl bg-blue-50 p-3 text-xs font-bold text-polmind-blue">
+                                        <p class="mt-3 rounded-lg bg-blue-50 p-3 text-xs font-semibold text-polmind-blue">
                                             Menunggu pelunasan daftar ulang.
                                         </p>
                                     @endif
                                 </div>
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 @if($payments->count())
                                     <div class="max-h-48 w-72 space-y-3 overflow-y-auto pr-1">
                                         @foreach($payments as $payment)
@@ -423,10 +423,10 @@
                                                     : null;
                                             @endphp
 
-                                            <div class="rounded-2xl border border-slate-200 bg-white p-3">
+                                            <div class="rounded-lg border border-slate-200 bg-white p-3">
                                                 <div class="flex items-start justify-between gap-3">
                                                     <div>
-                                                        <p class="text-xs font-black text-polmind-blue">
+                                                        <p class="text-xs font-bold text-polmind-blue">
                                                             {{ $payment->payment_number }}
                                                         </p>
 
@@ -434,12 +434,12 @@
                                                             {{ $payment->sender_name ?? '-' }} · {{ $payment->sender_bank ?? '-' }}
                                                         </p>
 
-                                                        <p class="mt-1 text-sm font-black text-slate-800">
+                                                        <p class="mt-1 text-sm font-bold text-slate-800">
                                                             Rp{{ number_format($payment->amount, 0, ',', '.') }}
                                                         </p>
                                                     </div>
 
-                                                    <span class="rounded-full px-2 py-1 text-[10px] font-black {{ $paymentBadgeClass }}">
+                                                    <span class="rounded-full px-2 py-1 text-[10px] font-bold {{ $paymentBadgeClass }}">
                                                         {{ $paymentLabel }}
                                                     </span>
                                                 </div>
@@ -452,7 +452,7 @@
                                                     @if($proofUrl)
                                                         <a href="{{ $proofUrl }}"
                                                            @click.prevent="$store.preview.show($el.href, @js(basename($payment->proof_file_path)))"
-                                                           class="text-[11px] font-black text-polmind-blue hover:underline">
+                                                           class="text-[11px] font-bold text-polmind-blue hover:underline">
                                                             Bukti
                                                         </a>
                                                     @endif
@@ -461,14 +461,14 @@
                                         @endforeach
                                     </div>
                                 @else
-                                    <span class="text-xs font-bold text-slate-500">
+                                    <span class="text-xs font-semibold text-slate-500">
                                         Belum ada pembayaran
                                     </span>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$reRegistration->status] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $statusClasses[$reRegistration->status] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $statusLabels[$reRegistration->status] ?? $reRegistration->status }}
                                 </span>
 
@@ -485,15 +485,15 @@
                                 @endif
 
                                 @if($reRegistration->admin_note)
-                                    <div class="mt-3 max-w-64 rounded-xl border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
-                                        <p class="font-black">Catatan Admin</p>
+                                    <div class="mt-3 max-w-64 rounded-lg border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
+                                        <p class="font-bold">Catatan Admin</p>
                                         <p class="mt-1">{{ $reRegistration->admin_note }}</p>
                                     </div>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $syncStatusClasses[$syncStatus] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $syncStatusClasses[$syncStatus] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ str_replace('_', ' ', ucfirst($syncStatus)) }}
                                 </span>
 
@@ -504,16 +504,16 @@
                                 @endif
 
                                 @if($applicant?->nim)
-                                    <p class="mt-2 text-xs font-black text-green-700">
+                                    <p class="mt-2 text-xs font-bold text-green-700">
                                         NIM: {{ $applicant->nim }}
                                     </p>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ url('/admin/applicants/' . $applicant?->registration_number) }}"
-                                       class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
                                         Detail
                                     </a>
 
@@ -525,7 +525,7 @@
                                             @method('PATCH')
 
                                             <button type="submit"
-                                                    class="rounded-xl bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700">
+                                                    class="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700">
                                                 Valid DU
                                             </button>
                                         </form>
@@ -539,7 +539,7 @@
                                             @method('PATCH')
 
                                             <button type="submit"
-                                                    class="rounded-xl bg-purple-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-purple-700">
+                                                    class="rounded-lg bg-purple-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-purple-700">
                                                 Siap Sync
                                             </button>
                                         </form>
@@ -548,13 +548,13 @@
                                     @if($canReject)
                                         <button type="button"
                                                 onclick="document.getElementById('reject-rereg-form-{{ $reRegistration->id }}').classList.toggle('hidden')"
-                                                class="rounded-xl bg-red-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-red-700">
+                                                class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700">
                                             Tolak
                                         </button>
                                     @endif
 
                                     @if(! $canValidate && ! $canReadySync && ! $canReject)
-                                        <span class="rounded-xl bg-slate-100 px-3 py-2 text-xs font-bold text-slate-500">
+                                        <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
                                             Tidak Ada Aksi
                                         </span>
                                     @endif
@@ -564,7 +564,7 @@
                                     <form id="reject-rereg-form-{{ $reRegistration->id }}"
                                           action="{{ route('admin.re-registrations.reject', $reRegistration) }}"
                                           method="POST"
-                                          class="mt-3 hidden rounded-2xl border border-red-200 bg-red-50 p-3">
+                                          class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 p-3">
                                         @csrf
                                         @method('PATCH')
 
@@ -572,17 +572,17 @@
                                                   rows="3"
                                                   required
                                                   placeholder="Tulis alasan penolakan daftar ulang..."
-                                                  class="w-full rounded-xl border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100">{{ old('admin_note') }}</textarea>
+                                                  class="w-full rounded-lg border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100">{{ old('admin_note') }}</textarea>
 
                                         <div class="mt-2 flex justify-end gap-2">
                                             <button type="button"
                                                     onclick="document.getElementById('reject-rereg-form-{{ $reRegistration->id }}').classList.add('hidden')"
-                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
                                                 Batal
                                             </button>
 
                                             <button type="submit"
-                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white">
+                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white">
                                                 Simpan Tolak
                                             </button>
                                         </div>
@@ -593,7 +593,7 @@
                     @empty
                         <tr>
                             <td colspan="9" class="px-6 py-12 text-center">
-                                <p class="text-sm font-bold text-slate-600">
+                                <p class="text-sm font-semibold text-slate-600">
                                     Data daftar ulang tidak ditemukan.
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">

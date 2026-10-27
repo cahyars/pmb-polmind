@@ -18,11 +18,12 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RegistersApplicants;
 use Tests\TestCase;
 
 class SiakadBiodataTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, RegistersApplicants;
 
     protected function setUp(): void
     {
@@ -35,24 +36,179 @@ class SiakadBiodataTest extends TestCase
         AdmissionWave::where('code', 'GEL1')->update(['is_active' => true, 'status' => 'open']);
     }
 
-    public function test_register_only_creates_account(): void
+    public function test_register_saves_nik_school_program_and_class(): void
     {
-        $this->post('/register', [
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('Reguler A')
+            ->assertSee('Senin-Jumat, pagi-sore')
+            ->assertSee('Perkuliahan tatap muka penuh di kampus');
+
+        $this->post('/register', $this->registrationData([
             'full_name' => 'Ammar Musyaffa Firdaus',
-            'email' => 'ammar@example.com',
-            'phone' => '081234567890',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertRedirect('/camaba/dashboard');
+            'nik' => '2171 0116 0307 0001',
+            'school_name' => 'smk negeri 1 batam',
+        ]))->assertRedirect('/camaba/dashboard');
 
         $applicant = Applicant::firstOrFail();
 
         $this->assertSame('AMMAR MUSYAFFA FIRDAUS', $applicant->full_name);
-        $this->assertSame('TMP20270001', $applicant->registration_number);
-        $this->assertNull($applicant->study_program_id);
+        $this->assertSame('2171011603070001', $applicant->nik);
+        $this->assertSame('A120270001', $applicant->registration_number);
+        $this->assertSame('TRPL', $applicant->studyProgram->code);
+        $this->assertSame('REG_A', $applicant->classType->code);
         $this->assertSame('GEL1', $applicant->admissionWave->code);
+        $this->assertSame('SMK NEGERI 1 BATAM', $applicant->education->school_name);
+        $this->assertSame('11001234', $applicant->education->school_npsn);
+        $this->assertSame('316101', $applicant->education->school_region_id);
         $this->assertSame('300000.00', (string) $applicant->registrationInvoice->total_amount);
         $this->assertSame('INV/PMB/2027/00001', $applicant->registrationInvoice->invoice_number);
+    }
+
+    public function test_admin_sets_class_scheme_shown_on_registration(): void
+    {
+        $classB = ClassType::where('code', 'REG_B')->firstOrFail();
+
+        $this->actingAs(User::factory()->create(), 'web')
+            ->put(route('admin.master-data.class-types.update', $classB), [
+                'code' => 'REG_B',
+                'registration_code' => 'B',
+                'name' => 'Reguler B',
+                'description' => 'Untuk karyawan.',
+                'schedule' => 'Sabtu-Minggu, 08.00-17.00',
+                'scheme' => "- Kuliah akhir pekan\n\n• Bisa sambil bekerja",
+                'is_active' => 1,
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame(['Kuliah akhir pekan', 'Bisa sambil bekerja'], $classB->refresh()->scheme_points);
+
+        $this->get('/register')
+            ->assertOk()
+            ->assertSee('Sabtu-Minggu, 08.00-17.00')
+            ->assertSee('Kuliah akhir pekan')
+            ->assertSee('Bisa sambil bekerja');
+    }
+
+    public function test_registration_path_is_chosen_at_register_and_preselected_from_landing(): void
+    {
+        // Kartu jalur di landing page mengarah ke form registrasi dengan jalur terpilih.
+        $this->get('/')
+            ->assertOk()
+            ->assertSee(route('register', ['jalur' => 'prestasi']), false)
+            ->assertSee(route('register', ['jalur' => 'undangan']), false);
+
+        $this->assertMatchesRegularExpression(
+            '/<input[^>]*value="prestasi"[^>]*\bchecked\b[^>]*>/',
+            $this->get('/register?jalur=prestasi')->assertOk()->getContent()
+        );
+
+        // Jalur tidak dikenal diabaikan: tidak ada yang terpilih.
+        $this->assertDoesNotMatchRegularExpression(
+            '/<input[^>]*name="registration_path"[^>]*\bchecked\b[^>]*>/',
+            $this->get('/register?jalur=sembarang')->assertOk()->getContent()
+        );
+
+        $applicant = $this->registerApplicant(['registration_path' => 'prestasi']);
+
+        $this->assertSame('prestasi', $applicant->registration_path);
+    }
+
+    public function test_pages_use_line_icons_instead_of_colored_emoji(): void
+    {
+        // Emoji bergambar (mis. 💳 🎓 💻) diganti ikon garis <x-icon> seperti panel admin.
+        $emoji = '/[\x{1F300}-\x{1FAFF}\x{2600}-\x{26FF}\x{2B50}\x{2705}\x{23F0}-\x{23FA}\x{2197}]/u';
+
+        foreach (['/', '/register', '/login'] as $url) {
+            $this->assertDoesNotMatchRegularExpression($emoji, $this->get($url)->assertOk()->getContent(), $url);
+        }
+
+        $applicant = $this->registeredApplicant();
+
+        foreach (['/camaba/dashboard', '/camaba/biodata', '/camaba/upload-berkas', '/camaba/pembayaran', '/camaba/status-seleksi', '/camaba/pengumuman', '/camaba/daftar-ulang'] as $url) {
+            $content = $this->actingAs($applicant, 'applicant')->get($url)->assertOk()->getContent();
+
+            $this->assertDoesNotMatchRegularExpression($emoji, $content, $url);
+            $this->assertStringContainsString('stroke-linejoin="round"', $content, $url);
+        }
+    }
+
+    public function test_whatsapp_button_and_forgot_password_note(): void
+    {
+        foreach (['/', '/register', '/login'] as $url) {
+            $this->get($url)->assertOk()->assertSee('Chat admin PMB lewat WhatsApp')->assertSee('rel="apple-touch-icon"', false);
+        }
+
+        // Favicon juga ada di panel admin.
+        $this->actingAs(User::factory()->create(), 'web')
+            ->get('/admin/dashboard')
+            ->assertOk()
+            ->assertSee(asset('favicon.ico') . '?v=', false);
+
+        $this->get('/login')
+            ->assertSee('Lupa kata sandi? Silakan')
+            ->assertSee('chat admin')
+            ->assertSee('https://wa.me/6282113296897?text=' . rawurlencode('Halo Admin PMB Polmind, saya lupa kata sandi akun PMB saya.'), false);
+
+        $applicant = $this->registeredApplicant();
+
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/biodata?step=pribadi')
+            ->assertOk()
+            ->assertSee(rawurlencode('saya AMMAR (' . $applicant->registration_number . ')'), false)
+            ->assertSee('bottom-32 sm:bottom-28')
+            ->assertSee('rel="apple-touch-icon"', false);
+    }
+
+    public function test_register_requires_nik_program_class_and_school(): void
+    {
+        $this->post('/register', $this->registrationData([
+            'nik' => '12345',
+            'study_program_id' => '',
+            'class_type_id' => '',
+            'registration_path' => '',
+            'school_region_id' => '',
+            'school_npsn' => '',
+            'school_name' => '',
+            'school_type' => '',
+        ]))->assertSessionHasErrors(['nik', 'study_program_id', 'class_type_id', 'registration_path', 'school_region_id', 'school_npsn', 'school_name', 'school_type']);
+
+        $this->assertSame(0, Applicant::count());
+    }
+
+    public function test_nik_registers_once_per_wave_but_again_in_another_wave(): void
+    {
+        $nik = '2171011603070001';
+
+        $first = $this->registerApplicant(['nik' => $nik, 'email' => 'gel1@example.com']);
+
+        // Gelombang sama: ditolak.
+        $this->post('/register', $this->registrationData(['nik' => $nik, 'email' => 'lagi@example.com']))
+            ->assertSessionHasErrors(['nik' => 'NIK ini sudah terdaftar di Gelombang 1. Satu NIK hanya bisa mendaftar satu kali per gelombang. Silakan login dengan akun yang sudah dibuat.']);
+
+        $this->assertSame(1, Applicant::where('nik', $nik)->count());
+
+        // Gelombang berbeda: boleh mendaftar lagi.
+        AdmissionWave::where('code', 'GEL1')->update(['is_active' => false, 'status' => 'closed']);
+        AdmissionWave::where('code', 'GEL2')->update(['is_active' => true, 'status' => 'open']);
+
+        $second = $this->registerApplicant(['nik' => $nik, 'email' => 'gel2@example.com']);
+
+        $this->assertSame('GEL2', $second->admissionWave->code);
+        $this->assertSame('A220270002', $second->registration_number);
+        $this->assertNotSame($first->id, $second->id);
+    }
+
+    public function test_biodata_rejects_nik_used_by_another_applicant_in_same_wave(): void
+    {
+        $this->registerApplicant(['nik' => '2171011603070001', 'email' => 'lain@example.com']);
+        $applicant = $this->registeredApplicant();
+
+        $this->actingAs($applicant, 'applicant')
+            ->put('/camaba/biodata', ['step' => 'pribadi'] + $this->biodata())
+            ->assertSessionHasErrors('nik');
+
+        $this->assertNotSame('2171011603070001', $applicant->refresh()->nik);
     }
 
     public function test_unpaid_applicant_cannot_open_biodata_or_documents(): void
@@ -83,21 +239,20 @@ class SiakadBiodataTest extends TestCase
         $numbers = [];
 
         foreach ([$classA, $classA, $classB, $classA] as $index => $classId) {
-            $applicant = $this->registeredApplicant(email: "camaba{$index}@example.com");
+            $applicant = $this->registerApplicant(['email' => "camaba{$index}@example.com", 'class_type_id' => $classId]);
 
-            $this->actingAs($applicant, 'applicant')
-                ->put('/camaba/biodata', ['step' => 'prodi'] + array_merge($this->biodata(), ['class_type_id' => $classId]))
-                ->assertSessionHasNoErrors()
-                ->assertRedirect(route('camaba.biodata.edit', ['step' => 'alamat']));
-
-            $numbers[] = $applicant->refresh()->registration_number;
+            $numbers[] = $applicant->registration_number;
         }
 
         $this->assertSame(['A120270001', 'A120270002', 'B120270001', 'A120270003'], $numbers);
 
-        // Kelas terkunci setelah nomor final dibuat.
+        // Kelas terkunci sejak registrasi; prodi dan jalur masih bisa diperbarui di biodata.
+        $applicant->update(['payment_status' => 'valid']);
+
         $this->actingAs($applicant, 'applicant')
-            ->put('/camaba/biodata', ['step' => 'prodi'] + array_merge($this->biodata(), ['class_type_id' => $classB]));
+            ->put('/camaba/biodata', ['step' => 'prodi'] + array_merge($this->biodata(), ['class_type_id' => $classB]))
+            ->assertSessionHasNoErrors()
+            ->assertRedirect(route('camaba.biodata.edit', ['step' => 'alamat']));
 
         $this->assertSame('A120270003', $applicant->refresh()->registration_number);
         $this->assertSame($classA, $applicant->class_type_id);
@@ -222,14 +377,62 @@ class SiakadBiodataTest extends TestCase
 
         $admin = User::factory()->create();
 
-        foreach (['/admin/dashboard', '/admin/applicants', '/admin/applicants/' . $applicant->registration_number, '/admin/integrations', '/admin/reports', '/admin/master-data'] as $url) {
+        foreach (['/admin/dashboard', '/admin/applicants', '/admin/applicants/' . $applicant->registration_number, '/admin/integrations', '/admin/reports'] as $url) {
             $this->actingAs($admin, 'web')->get($url)->assertOk();
+        }
+
+        // Master Data dipecah menjadi submenu; halaman induk mengarah ke submenu pertama.
+        $this->actingAs($admin, 'web')->get('/admin/master-data')->assertRedirect(route('admin.master-data.show', 'tahun-pmb'));
+
+        foreach (array_keys(\App\Http\Controllers\Admin\MasterDataController::SECTIONS) as $section) {
+            $this->actingAs($admin, 'web')->get(route('admin.master-data.show', $section))->assertOk();
         }
 
         $this->actingAs($admin, 'web')
             ->get('/admin/applicants/' . $applicant->registration_number)
             ->assertSee('Kec. Tanjung Pinang Barat')
             ->assertSee('SMA/SMK');
+    }
+
+    public function test_upload_page_is_single_list_with_rules_and_toast(): void
+    {
+        Storage::fake('local');
+
+        DocumentType::where('code', 'KK')->update(['description' => 'Scan Kartu Keluarga terbaru.']);
+        $identity = DocumentType::where('code', 'IDENTITAS')->firstOrFail();
+        $applicant = $this->registeredApplicant();
+
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/upload-berkas')
+            ->assertOk()
+            ->assertSeeInOrder(['Berkas Pendukung', 'Pas Foto', 'Kartu Keluarga', 'Ketentuan Upload'])
+            ->assertSee('Scan Kartu Keluarga terbaru.')
+            ->assertSee('Unggah');
+
+        // Format salah ditolak dengan pesan yang jelas.
+        $this->actingAs($applicant, 'applicant')
+            ->from('/camaba/upload-berkas')
+            ->post('/camaba/upload-berkas', ['document_type_id' => $identity->id, 'file' => UploadedFile::fake()->create('ktp.exe', 10)])
+            ->assertSessionHasErrors(['file' => 'Format file ' . $identity->name . ' harus ' . strtoupper(implode(', ', $identity->allowed_extensions)) . '.']);
+
+        $this->actingAs($applicant, 'applicant')
+            ->from('/camaba/upload-berkas')
+            ->post('/camaba/upload-berkas', ['document_type_id' => $identity->id, 'file' => UploadedFile::fake()->image('ktp.jpg')])
+            ->assertRedirect('/camaba/upload-berkas')
+            ->assertSessionHas('success', 'Unggah berkas ' . $identity->name . ' berhasil disimpan.');
+
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/upload-berkas')
+            ->assertSee('Unggah berkas ' . $identity->name . ' berhasil disimpan.')
+            ->assertSee('Menunggu')
+            ->assertSee('Ubah');
+
+        // Berkas yang sudah diterima terkunci.
+        ApplicantDocument::where('document_type_id', $identity->id)->update(['status' => 'diterima']);
+
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/upload-berkas')
+            ->assertSee('Berkas sudah diterima admin dan tidak dapat diubah');
     }
 
     public function test_uploaded_documents_are_private(): void
@@ -292,8 +495,8 @@ class SiakadBiodataTest extends TestCase
 
         $applicant = $this->registeredApplicant();
 
-        $this->actingAs($applicant, 'applicant')
-            ->getJson('/referensi/sekolah?regency=316000')
+        // Bisa diakses tamu karena sekolah dipilih di form registrasi.
+        $this->getJson('/referensi/sekolah?regency=316000')
             ->assertOk()
             ->assertJsonPath('available', true)
             ->assertJsonCount(2, 'schools')
@@ -336,17 +539,7 @@ class SiakadBiodataTest extends TestCase
 
     private function registeredApplicant(bool $paid = true, string $email = 'ammar@example.com'): Applicant
     {
-        $this->post('/register', [
-            'full_name' => 'Ammar',
-            'email' => $email,
-            'phone' => '081234567890',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertSessionHasNoErrors();
-
-        auth('applicant')->logout();
-
-        $applicant = Applicant::where('email', $email)->firstOrFail();
+        $applicant = $this->registerApplicant(['email' => $email]);
 
         if ($paid) {
             $applicant->update(['payment_status' => 'valid']);

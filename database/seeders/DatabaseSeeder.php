@@ -17,6 +17,7 @@ class DatabaseSeeder extends Seeder
         $this->call([
             ReferenceSeeder::class,
             PmbMasterSeeder::class,
+            SelectionScheduleSeeder::class,
             AdminUserSeeder::class,
         ]);
     }

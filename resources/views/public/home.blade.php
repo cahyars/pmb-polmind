@@ -5,94 +5,209 @@
 
 @section('content')
 
+@php
+    $academicYear = $pmbYear ? 'TA ' . $pmbYear->year . '/' . ($pmbYear->year + 1) : null;
+    $admissionName = 'Pendaftaran Mahasiswa Baru' . ($pmbYear ? ' ' . $pmbYear->year : '');
+
+    $openingText = match (true) {
+        (bool) $currentWave => "{$admissionName} {$currentWave->name} telah dibuka. Daftarkan diri Anda sekarang!",
+        (bool) $nextWave?->start_date => "{$admissionName} {$nextWave->name} dibuka mulai " . $nextWave->start_date->translatedFormat('j F Y') . '. Siapkan diri Anda dan daftar sejak hari pertama!',
+        default => "{$admissionName} Politeknik Mitra Industri. Pantau jadwal gelombang pendaftaran di bawah.",
+    };
+
+    $heroSlides = [
+        [
+            'title' => 'Raih Impian Anda Bersama Polmind',
+            'text' => $openingText,
+            'image' => 'object-[50%_45%] scale-100',
+        ],
+        [
+            'title' => 'Kuliah Vokasi, Langsung Terhubung Industri',
+            'text' => 'Belajar dengan konsep Teaching Factory dan magang industri di kawasan MM2100 sejak awal perkuliahan.',
+            'image' => 'object-[30%_40%] scale-110',
+        ],
+        [
+            'title' => 'Pilih Kelas Sesuai Kebutuhan Anda',
+            'text' => 'Tersedia kelas reguler untuk lulusan baru dan kelas karyawan dengan jadwal yang menyesuaikan jam kerja.',
+            'image' => 'object-[70%_40%] scale-105',
+        ],
+    ];
+
+    $heroWave = $currentWave ?? $nextWave;
+@endphp
+
 {{-- HERO --}}
-<section class="relative overflow-hidden bg-polmind-bg">
-    <div class="absolute inset-0 opacity-50">
-        <div class="absolute -right-20 top-20 h-72 w-72 rounded-full bg-blue-100 blur-3xl"></div>
-        <div class="absolute -left-24 bottom-0 h-72 w-72 rounded-full bg-yellow-100 blur-3xl"></div>
-    </div>
+<section class="relative isolate overflow-hidden bg-polmind-blue-dark"
+         x-data="heroSlider({{ count($heroSlides) }})"
+         @mouseenter="stop()"
+         @mouseleave="start()"
+         @focusin="stop()"
+         aria-roledescription="carousel"
+         aria-label="Informasi PMB Polmind">
+    <picture>
+        <source srcset="{{ asset('images/kampus-polmind.webp') }}" type="image/webp">
+        <img src="{{ asset('images/kampus-polmind.jpg') }}"
+             alt="Gedung kampus Politeknik Mitra Industri"
+             fetchpriority="high"
+             class="absolute inset-0 -z-20 h-full w-full object-cover transition-all duration-[1600ms] ease-out"
+             :class="@js(array_column($heroSlides, 'image'))[active]">
+    </picture>
 
-    <div class="relative mx-auto grid max-w-7xl items-center gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:px-8 lg:py-20">
-        <div>
-            <span class="inline-flex items-center rounded-full border border-blue-100 bg-white px-4 py-2 text-xs font-bold tracking-wide text-polmind-blue shadow-sm">
-                PMB 2027 · TA 2027/2028
-            </span>
+    <div class="absolute inset-0 -z-10 bg-gradient-to-r from-polmind-blue-dark/95 via-polmind-blue-dark/65 to-polmind-blue-dark/10"></div>
+    <div class="absolute inset-x-0 bottom-0 -z-10 h-40 bg-gradient-to-t from-polmind-blue-dark/70 to-transparent"></div>
 
-            <h1 class="mt-6 max-w-xl text-4xl font-black leading-tight tracking-tight text-polmind-blue sm:text-5xl lg:text-6xl">
-                Pendaftaran Mahasiswa Baru Politeknik Mitra Industri
-            </h1>
+    <div class="mx-auto flex min-h-[560px] max-w-7xl flex-col justify-center px-4 py-20 sm:px-6 lg:min-h-[640px] lg:px-8">
+        <div class="max-w-2xl">
+            @if($pmbYear)
+                <span class="inline-flex items-center gap-2 rounded-full bg-white/15 px-4 py-2 text-xs font-bold tracking-wide text-white ring-1 ring-white/25 backdrop-blur">
+                    <span class="h-2 w-2 rounded-full {{ $currentWave ? 'bg-green-400' : 'bg-polmind-yellow' }}"></span>
+                    {{ $pmbYear->name }}{{ $academicYear ? ' · ' . $academicYear : '' }}
+                </span>
+            @endif
 
-            <p class="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg">
-                Inkubator talenta global dengan konsep Teaching Factory, magang industri,
-                dan peluang karier di dalam maupun luar negeri. Perkuliahan dimulai 13 September 2027.
-            </p>
+            {{-- Teks slide ditumpuk di satu sel grid agar tinggi tidak melompat saat berganti. --}}
+            <div class="mt-6 grid">
+                @foreach($heroSlides as $index => $slide)
+                    <div class="[grid-area:1/1] transition duration-700"
+                         :class="active === {{ $index }} ? 'opacity-100 translate-y-0' : 'pointer-events-none opacity-0 translate-y-3'"
+                         :aria-hidden="active !== {{ $index }}"
+                         role="group"
+                         aria-roledescription="slide"
+                         aria-label="{{ $index + 1 }} dari {{ count($heroSlides) }}"
+                         @if($index > 0) x-cloak @endif>
+                        @if($index === 0)
+                            <h1 class="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">{{ $slide['title'] }}</h1>
+                        @else
+                            <p class="text-4xl font-black leading-tight tracking-tight text-white sm:text-5xl lg:text-6xl">{{ $slide['title'] }}</p>
+                        @endif
+                        <p class="mt-5 max-w-xl text-base leading-7 text-blue-50 sm:text-lg">{{ $slide['text'] }}</p>
+                    </div>
+                @endforeach
+            </div>
 
             <div class="mt-8 flex flex-col gap-3 sm:flex-row">
                 <a href="{{ url('/register') }}"
-                   class="inline-flex items-center justify-center rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                   class="inline-flex items-center justify-center rounded-xl bg-polmind-yellow px-6 py-3.5 text-sm font-black text-polmind-blue-dark shadow-lg shadow-black/20 transition hover:brightness-95">
                     Daftar Sekarang
-                    <span class="ml-2">→</span>
+                    <span class="ml-2" aria-hidden="true">→</span>
                 </a>
-
-                <a href="https://wa.me/6282113296897"
+                <a href="{{ \App\Services\AdminWhatsApp::url() }}"
                    target="_blank"
-                   class="inline-flex items-center justify-center rounded-xl border border-polmind-border bg-white px-6 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-slate-50">
+                   rel="noopener"
+                   class="inline-flex items-center justify-center rounded-xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur transition hover:bg-white/20">
                     Konsultasi WA
                 </a>
             </div>
-
-            <div class="mt-8 grid max-w-lg grid-cols-3 gap-3">
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-2xl font-black text-polmind-blue">3</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Program studi Sarjana Terapan (D4)</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-2xl font-black text-polmind-blue">4</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Gelombang pendaftaran</p>
-                </div>
-                <div class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <p class="text-2xl font-black text-polmind-blue">TA 2027/28</p>
-                    <p class="mt-1 text-xs leading-5 text-slate-500">Semester Ganjil</p>
-                </div>
-            </div>
         </div>
 
-        <div class="relative">
-            <div class="relative overflow-hidden rounded-3xl border border-slate-200 bg-polmind-blue p-6 shadow-2xl shadow-blue-900/20">
-                <div class="absolute inset-0 bg-gradient-to-br from-blue-800 via-polmind-blue to-blue-950"></div>
+        <div class="mt-12 flex items-center gap-3">
+            <button type="button"
+                    @click="prev()"
+                    aria-label="Slide sebelumnya"
+                    class="flex h-11 w-11 items-center justify-center rounded-full bg-white text-polmind-blue shadow-lg transition hover:scale-105">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M12.79 5.23a.75.75 0 0 1-.02 1.06L8.83 10l3.94 3.71a.75.75 0 1 1-1.04 1.08l-4.5-4.25a.75.75 0 0 1 0-1.08l4.5-4.25a.75.75 0 0 1 1.06.02Z" clip-rule="evenodd"/></svg>
+            </button>
+            <button type="button"
+                    @click="next()"
+                    aria-label="Slide berikutnya"
+                    class="flex h-11 w-11 items-center justify-center rounded-full bg-polmind-blue text-white shadow-lg ring-1 ring-white/30 transition hover:scale-105">
+                <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 0 1 .02-1.06L11.17 10 7.23 6.29a.75.75 0 1 1 1.04-1.08l4.5 4.25a.75.75 0 0 1 0 1.08l-4.5 4.25a.75.75 0 0 1-1.06-.02Z" clip-rule="evenodd"/></svg>
+            </button>
 
-                <div class="relative flex aspect-[4/3] items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
-                    <div>
-                        <div class="mx-auto flex h-20 w-20 items-center justify-center rounded-3xl bg-white/10 text-4xl">
-                            🏭
-                        </div>
-                        <h2 class="mt-6 text-2xl font-black text-white">
-                            Vokasi Berbasis Industri
-                        </h2>
-                        <p class="mx-auto mt-3 max-w-sm text-sm leading-6 text-blue-100">
-                            Pembelajaran praktis, project nyata, dan orientasi kesiapan kerja sejak awal perkuliahan.
-                        </p>
-                    </div>
-                </div>
+            <div class="ml-2 flex items-center gap-2">
+                @foreach($heroSlides as $index => $slide)
+                    <button type="button"
+                            @click="go({{ $index }})"
+                            :aria-current="active === {{ $index }}"
+                            aria-label="Tampilkan slide {{ $index + 1 }}"
+                            class="h-2 rounded-full transition-all"
+                            :class="active === {{ $index }} ? 'w-8 bg-polmind-yellow' : 'w-2 bg-white/50 hover:bg-white/80'"></button>
+                @endforeach
             </div>
+        </div>
+    </div>
 
-            <div class="absolute -bottom-6 left-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-xl">
-                <div class="flex items-center gap-4">
-                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-yellow-100 text-xl">
-                        🎓
+    @if($heroWave)
+        <div class="absolute bottom-28 right-8 hidden w-72 rounded-2xl bg-white/15 p-5 text-white ring-1 ring-white/25 backdrop-blur-md xl:block">
+            <p class="text-[11px] font-black uppercase tracking-[0.2em] text-polmind-yellow">
+                {{ $currentWave ? 'Gelombang Dibuka' : 'Gelombang Berikutnya' }}
+            </p>
+            <p class="mt-2 text-xl font-black">{{ $heroWave->name }}</p>
+            @if($heroWave->start_date && $heroWave->end_date)
+                <p class="mt-1 text-sm text-blue-50">
+                    {{ $heroWave->start_date->translatedFormat('j M Y') }} – {{ $heroWave->end_date->translatedFormat('j M Y') }}
+                </p>
+            @endif
+            @if($registrationFee)
+                <p class="mt-4 border-t border-white/20 pt-4 text-xs text-blue-50">
+                    Biaya formulir <span class="block text-lg font-black text-white">Rp{{ number_format($registrationFee, 0, ',', '.') }}</span>
+                </p>
+            @endif
+        </div>
+    @endif
+</section>
+
+{{-- JALUR MASUK --}}
+<section id="jalur-masuk" class="scroll-mt-20 bg-white py-20">
+    <div class="mx-auto grid max-w-7xl gap-10 px-4 sm:px-6 lg:grid-cols-3 lg:px-8">
+        <div>
+            <h2 class="text-3xl font-black leading-tight tracking-tight text-polmind-blue sm:text-4xl">
+                Jalur Masuk Pendaftaran Kuliah
+            </h2>
+            <p class="mt-4 text-sm leading-6 text-slate-600">
+                Berikut jalur masuk pendaftaran mahasiswa baru Politeknik Mitra Industri. Jalur dipilih saat melengkapi biodata.
+            </p>
+
+            @if($brochureUrl)
+                <a href="{{ $brochureUrl }}"
+                   download
+                   class="mt-8 inline-flex items-center gap-2 rounded-xl border border-polmind-border bg-white px-5 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-blue-50">
+                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.03 8.22a.75.75 0 0 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 1 0-1.06-1.06l-3.22 3.22V2.75Z"/><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"/></svg>
+                    Download Brosur
+                </a>
+            @else
+                <a href="https://polmind.ac.id/pmb"
+                   target="_blank"
+                   rel="noopener"
+                   class="mt-8 inline-flex items-center gap-2 rounded-xl border border-polmind-border bg-white px-5 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-blue-50">
+                    Info Lengkap PMB
+                    <x-icon name="arrow-up-right" class="h-4 w-4" stroke-width="2" />
+                </a>
+            @endif
+        </div>
+
+        <div class="grid gap-4 sm:grid-cols-2 lg:col-span-2">
+            @foreach(\App\Models\Applicant::REGISTRATION_PATHS as $key => $path)
+                {{-- Membuka form registrasi dengan jalur ini sudah terpilih. --}}
+                <a href="{{ route('register', ['jalur' => $key]) }}"
+                   class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-polmind-blue hover:shadow-lg">
+                    <p class="text-sm font-black text-polmind-blue">{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</p>
+                    <div class="mt-2 flex items-center justify-between gap-3">
+                        <h3 class="text-lg font-black text-slate-900 transition group-hover:text-polmind-blue">Jalur {{ $path['label'] }}</h3>
+                        <span class="text-lg font-black text-polmind-yellow opacity-0 transition group-hover:opacity-100" aria-hidden="true">»</span>
                     </div>
-                    <div>
-                        <p class="text-sm font-black text-polmind-blue">Kampus Vokasi</p>
-                        <p class="text-xs text-slate-500">Siap kerja, siap berkarya</p>
-                    </div>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">{{ $path['description'] }}</p>
+                    <p class="mt-4 text-xs font-black text-polmind-blue opacity-0 transition group-hover:opacity-100">Daftar lewat jalur ini →</p>
+                </a>
+            @endforeach
+
+            <a href="{{ \App\Services\AdminWhatsApp::url() }}"
+               target="_blank"
+               rel="noopener"
+               class="group flex flex-col justify-between rounded-2xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-polmind-blue-dark">
+                <p class="text-sm font-black text-polmind-yellow">04</p>
+                <div>
+                    <h3 class="mt-2 text-lg font-black">Belum yakin jalur yang cocok?</h3>
+                    <p class="mt-2 text-sm leading-6 text-blue-100">Konsultasi gratis dengan admin PMB lewat WhatsApp.</p>
                 </div>
-            </div>
+                <span class="mt-4 text-sm font-black text-polmind-yellow">Chat Admin PMB →</span>
+            </a>
         </div>
     </div>
 </section>
 
 {{-- ALUR PENDAFTARAN --}}
-<section id="alur" class="bg-white py-20">
+<section id="alur" class="scroll-mt-20 bg-polmind-bg py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-black tracking-tight text-polmind-blue sm:text-4xl">
@@ -103,33 +218,81 @@
             </p>
         </div>
 
-        <div class="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-6">
-            @foreach([
-                ['title' => 'Daftar', 'desc' => 'Registrasi akun pada portal PMB Polmind.', 'icon' => '👤'],
-                ['title' => 'Bayar', 'desc' => 'Bayar biaya formulir' . ($registrationFee ? ' Rp' . number_format($registrationFee, 0, ',', '.') : '') . '.', 'icon' => '💳'],
-                ['title' => 'Biodata', 'desc' => 'Lengkapi data diri dan riwayat pendidikan.', 'icon' => '📝'],
-                ['title' => 'Berkas', 'desc' => 'Unggah dokumen pendukung wajib.', 'icon' => '📁'],
-                ['title' => 'Seleksi', 'desc' => 'Ikuti proses seleksi sesuai ketentuan.', 'icon' => '✅'],
-                ['title' => 'Daftar Ulang', 'desc' => 'Finalisasi administrasi mahasiswa baru.', 'icon' => '🎉'],
-            ] as $index => $step)
-                <div class="group rounded-2xl border border-slate-200 bg-white p-5 text-center shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                    <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-xl transition group-hover:bg-polmind-blue group-hover:text-white">
-                        {{ $step['icon'] }}
+        @php
+            // Warna tiap tahap; garis penghubung bergradasi ke warna tahap berikutnya.
+            $steps = [
+                [
+                    'title' => 'Pendaftaran',
+                    'desc' => 'Buat akun dengan NIK, sekolah asal, jalur, serta pilihan prodi dan kelas.',
+                    'circle' => 'bg-blue-600 ring-blue-100 shadow-blue-600/30',
+                    'title_class' => 'text-blue-700',
+                    'line' => 'from-blue-600 to-sky-500',
+                ],
+                [
+                    'title' => 'Bayar',
+                    'desc' => 'Bayar biaya formulir' . ($registrationFee ? ' Rp' . number_format($registrationFee, 0, ',', '.') : '') . ' lalu unggah bukti transfer.',
+                    'circle' => 'bg-sky-500 ring-sky-100 shadow-sky-500/30',
+                    'title_class' => 'text-sky-700',
+                    'line' => 'from-sky-500 to-emerald-500',
+                ],
+                [
+                    'title' => 'Biodata',
+                    'desc' => 'Lengkapi data diri, alamat, sekolah asal, dan data orang tua.',
+                    'circle' => 'bg-emerald-500 ring-emerald-100 shadow-emerald-500/30',
+                    'title_class' => 'text-emerald-700',
+                    'line' => 'from-emerald-500 to-amber-500',
+                ],
+                [
+                    'title' => 'Berkas',
+                    'desc' => 'Unggah dokumen persyaratan dan tunggu verifikasi admin PMB.',
+                    'circle' => 'bg-amber-500 ring-amber-100 shadow-amber-500/30',
+                    'title_class' => 'text-amber-700',
+                    'line' => 'from-amber-500 to-violet-500',
+                ],
+                [
+                    'title' => 'Seleksi',
+                    'desc' => 'Ikuti tes seleksi sesuai jadwal gelombang, lalu pantau pengumuman.',
+                    'circle' => 'bg-violet-500 ring-violet-100 shadow-violet-500/30',
+                    'title_class' => 'text-violet-700',
+                    'line' => 'from-violet-500 to-rose-500',
+                ],
+                [
+                    'title' => 'Daftar Ulang',
+                    'desc' => 'Selesaikan daftar ulang untuk resmi menjadi mahasiswa Polmind.',
+                    'circle' => 'bg-rose-500 ring-rose-100 shadow-rose-500/30',
+                    'title_class' => 'text-rose-700',
+                    'line' => null,
+                ],
+            ];
+        @endphp
+
+        {{-- Stepper: vertikal di HP, horizontal di desktop (struktur sama). --}}
+        <ol class="mx-auto mt-14 max-w-xl lg:grid lg:max-w-none lg:grid-cols-6">
+            @foreach($steps as $step)
+                <li class="group relative flex gap-5 pb-10 last:pb-0 lg:flex-col lg:items-center lg:gap-0 lg:px-3 lg:pb-0 lg:text-center">
+                    @if($step['line'])
+                        {{-- Garis ke tahap berikutnya: turun di HP, ke kanan di desktop. --}}
+                        <span aria-hidden="true"
+                              class="absolute left-7 top-14 bottom-0 w-1 -translate-x-1/2 rounded-full bg-gradient-to-b {{ $step['line'] }}
+                                     lg:left-[calc(50%+2.25rem)] lg:right-[calc(-50%+2.25rem)] lg:top-7 lg:bottom-auto lg:h-1 lg:w-auto lg:translate-x-0 lg:-translate-y-1/2 lg:bg-gradient-to-r"></span>
+                    @endif
+
+                    <span class="relative z-10 flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-xl font-black text-white shadow-lg ring-8 transition duration-300 group-hover:scale-110 {{ $step['circle'] }}">
+                        {{ $loop->iteration }}
+                    </span>
+
+                    <div class="min-w-0 pt-2.5 lg:mt-6 lg:pt-0">
+                        <h3 class="text-lg font-black {{ $step['title_class'] }}">{{ $step['title'] }}</h3>
+                        <p class="mt-1.5 text-sm leading-6 text-slate-600">{{ $step['desc'] }}</p>
                     </div>
-                    <p class="mt-4 text-xs font-black text-polmind-blue">
-                        {{ str_pad($index + 1, 2, '0', STR_PAD_LEFT) }}. {{ $step['title'] }}
-                    </p>
-                    <p class="mt-2 text-xs leading-5 text-slate-500">
-                        {{ $step['desc'] }}
-                    </p>
-                </div>
+                </li>
             @endforeach
-        </div>
+        </ol>
     </div>
 </section>
 
 {{-- PROGRAM STUDI --}}
-<section id="program-studi" class="bg-polmind-bg py-20">
+<section id="program-studi" class="scroll-mt-20 bg-white py-20">
     <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
             <div>
@@ -137,54 +300,72 @@
                     Program Studi Unggulan
                 </h2>
                 <p class="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                    Program Sarjana Terapan (D4). Kuota penerimaan terbatas.
+                    @php
+                        $degreeNames = ['D3' => 'Diploma Tiga (D3)', 'D4' => 'Sarjana Terapan (D4)', 'S1' => 'Sarjana (S1)'];
+                        $degrees = $studyPrograms->pluck('degree')->unique()->map(fn ($degree) => $degreeNames[$degree] ?? $degree);
+                    @endphp
+                    {{ $degrees->isNotEmpty() ? 'Program ' . $degrees->implode(', ') . '.' : '' }} Kuota penerimaan terbatas.
                 </p>
             </div>
 
             <a href="https://polmind.ac.id/pmb" target="_blank" class="text-sm font-bold text-polmind-blue hover:underline">
-                Info Lengkap ↗
+                Info Lengkap <x-icon name="arrow-up-right" class="inline h-4 w-4 align-[-2px]" stroke-width="2" />
             </a>
         </div>
 
-        <div class="mt-10 grid gap-6 md:grid-cols-3">
-            @foreach([
-                [
-                    'name' => 'D4 Teknologi Rekayasa Perangkat Lunak',
-                    'desc' => 'Pengembangan perangkat lunak dengan konsep Teaching Factory.',
-                    'tags' => ['Teaching Factory', 'Magang Industri'],
-                    'icon' => '💻'
-                ],
-                [
-                    'name' => 'D4 Bisnis Digital',
-                    'desc' => 'Bisnis berbasis teknologi digital dengan orientasi kesiapan industri.',
-                    'tags' => ['Bisnis Digital', 'Magang Industri'],
-                    'icon' => '📊'
-                ],
-                [
-                    'name' => 'D4 Teknologi Rekayasa Manufaktur',
-                    'desc' => 'Teknologi rekayasa manufaktur untuk kebutuhan industri di kawasan MM2100.',
-                    'tags' => ['Manufaktur', 'Magang Industri'],
-                    'icon' => '🤖'
-                ],
-            ] as $prodi)
-                <article class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-                    <div class="relative flex h-48 items-center justify-center bg-gradient-to-br from-blue-900 to-blue-950">
-                        <div class="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-[10px] font-black text-polmind-blue">
-                            JENJANG D4
+        @php
+            // Hiasan kartu per kode prodi; isi utama (nama, jenjang, deskripsi, kuota) dari Master Data.
+            $programDecor = [
+                'TRPL' => ['icon' => 'computer', 'tags' => ['Teaching Factory', 'Magang Industri']],
+                'BD' => ['icon' => 'presentation', 'tags' => ['Bisnis Digital', 'Magang Industri']],
+                'TRM' => ['icon' => 'wrench', 'tags' => ['Manufaktur', 'Magang Industri']],
+            ];
+        @endphp
+
+        <div class="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            @forelse($studyPrograms as $program)
+                @php
+                    $decor = $programDecor[$program->code] ?? ['icon' => 'cap', 'tags' => ['Magang Industri']];
+                    // Foto prodi: public/images/prodi/{kode}.webp, contoh bd.webp. Tanpa foto, tampil ikon.
+                    $photo = 'images/prodi/' . strtolower($program->code) . '.webp';
+                    $hasPhoto = file_exists(public_path($photo));
+                @endphp
+                <article id="prodi-{{ strtolower($program->code) }}" class="group scroll-mt-28 overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
+                    <div class="relative flex h-52 items-center justify-center overflow-hidden bg-gradient-to-br from-blue-900 to-blue-950">
+                        @if($hasPhoto)
+                            <img src="{{ asset($photo) }}"
+                                 alt="Kegiatan mahasiswa {{ $program->degree }} {{ $program->name }} Polmind"
+                                 loading="lazy"
+                                 width="1280"
+                                 height="853"
+                                 class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-105">
+                            <div class="absolute inset-0 bg-gradient-to-t from-blue-950/50 via-transparent to-transparent"></div>
+                        @else
+                            <x-icon :name="$decor['icon']" class="h-20 w-20 text-white/90" stroke-width="1" />
+                        @endif
+
+                        <div class="absolute right-4 top-4 rounded-full bg-white px-3 py-1 text-[10px] font-black text-polmind-blue shadow-sm">
+                            JENJANG {{ $program->degree }}
                         </div>
-                        <div class="text-6xl">{{ $prodi['icon'] }}</div>
                     </div>
 
                     <div class="p-6">
                         <h3 class="text-lg font-black leading-6 text-polmind-blue">
-                            {{ $prodi['name'] }}
+                            {{ $program->degree }} {{ $program->name }}
                         </h3>
-                        <p class="mt-3 text-sm leading-6 text-slate-600">
-                            {{ $prodi['desc'] }}
-                        </p>
+                        @if($program->description)
+                            <p class="mt-3 text-sm leading-6 text-slate-600">
+                                {{ $program->description }}
+                            </p>
+                        @endif
 
                         <div class="mt-5 flex flex-wrap gap-2">
-                            @foreach($prodi['tags'] as $tag)
+                            @if($program->quota > 0)
+                                <span class="rounded-full bg-polmind-yellow/30 px-3 py-1 text-xs font-bold text-polmind-blue-dark">
+                                    Kuota {{ $program->quota }} mahasiswa
+                                </span>
+                            @endif
+                            @foreach($decor['tags'] as $tag)
                                 <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $tag }}
                                 </span>
@@ -192,46 +373,118 @@
                         </div>
                     </div>
                 </article>
-            @endforeach
+            @empty
+                <p class="rounded-2xl border border-dashed border-slate-300 p-8 text-center text-sm text-slate-500 md:col-span-2 lg:col-span-3">
+                    Informasi program studi segera diumumkan.
+                </p>
+            @endforelse
         </div>
     </div>
 </section>
 
+{{-- PILIHAN KELAS (skema diatur admin di Master Data) --}}
+@if($classTypes->isNotEmpty())
+<section id="kelas" class="scroll-mt-20 bg-polmind-bg py-20">
+    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div class="text-center">
+            <h2 class="text-3xl font-black tracking-tight text-polmind-blue sm:text-4xl">
+                Pilihan Kelas
+            </h2>
+            <p class="mx-auto mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Pilih kelas yang sesuai dengan kondisi Anda saat registrasi. Kelas tidak dapat diubah setelah mendaftar.
+            </p>
+        </div>
+
+        <div class="mx-auto mt-10 grid max-w-5xl gap-6 md:grid-cols-2">
+            @foreach($classTypes as $classType)
+                <article class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+                    <div class="flex items-start justify-between gap-4">
+                        <div>
+                            <h3 class="text-2xl font-black text-polmind-blue">{{ $classType->name }}</h3>
+                            @if($classType->description)
+                                <p class="mt-2 text-sm leading-6 text-slate-600">{{ $classType->description }}</p>
+                            @endif
+                        </div>
+                        <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-polmind-yellow text-lg font-black text-polmind-blue-dark">
+                            {{ $classType->registration_code ?? mb_substr($classType->name, -1) }}
+                        </span>
+                    </div>
+
+                    @if($classType->schedule)
+                        <p class="mt-5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-xs font-black text-polmind-blue">
+                            <x-icon name="clock" class="h-4 w-4" stroke-width="2" /> {{ $classType->schedule }}
+                        </p>
+                    @endif
+
+                    @if($classType->scheme_points)
+                        <ul class="mt-5 space-y-2 text-sm leading-6 text-slate-600">
+                            @foreach($classType->scheme_points as $point)
+                                <li class="flex gap-3">
+                                    <span class="font-black text-green-600" aria-hidden="true">✓</span>
+                                    <span>{{ $point }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </article>
+            @endforeach
+        </div>
+    </div>
+</section>
+@endif
+
 {{-- JADWAL & BIAYA --}}
-<section id="biaya" class="bg-polmind-blue py-20">
+<section id="biaya" class="scroll-mt-20 bg-polmind-blue py-20">
     <div class="mx-auto grid max-w-7xl gap-8 px-4 sm:px-6 lg:grid-cols-2 lg:px-8">
         <div class="rounded-3xl bg-white/10 p-6 shadow-xl ring-1 ring-white/10 sm:p-8">
             <h2 class="text-2xl font-black text-white">Jadwal Gelombang</h2>
 
+            @php
+                $waveStatus = [
+                    'open' => ['Dibuka', 'bg-green-400 text-green-950'],
+                    'upcoming' => ['Akan Datang', 'bg-white/15 text-blue-50'],
+                    'closed' => ['Ditutup', 'bg-white/5 text-blue-200'],
+                ];
+            @endphp
+
             <div class="mt-6 space-y-4">
-                @foreach([
-                    ['name' => 'Gelombang I', 'date' => '2 Nov 2026 – 29 Jan 2027', 'desc' => 'Ujian 30 Jan · Pengumuman 2 Feb · Daftar ulang 2–12 Feb 2027', 'status' => 'Akan Datang'],
-                    ['name' => 'Gelombang II', 'date' => '1 Feb – 2 Apr 2027', 'desc' => 'Ujian 3 Apr · Pengumuman 6 Apr · Daftar ulang 6–16 Apr 2027', 'status' => 'Akan Datang'],
-                    ['name' => 'Gelombang III', 'date' => '5 Apr – 4 Jun 2027', 'desc' => 'Ujian 5 Jun · Pengumuman 9 Jun · Daftar ulang 9–18 Jun 2027', 'status' => 'Akan Datang'],
-                    ['name' => 'Gelombang IV', 'date' => '7 Jun – 30 Jul 2027', 'desc' => 'Ujian 31 Jul · Pengumuman 3 Agu · Daftar ulang 3–13 Agu 2027', 'status' => 'Akan Datang'],
-                ] as $wave)
-                    <div class="rounded-2xl border border-white/20 bg-white/10 p-5 text-white">
-                        <div class="flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
-                            <div>
-                                <h3 class="font-black">{{ $wave['name'] }}</h3>
-                                <p class="mt-1 text-sm text-blue-100">{{ $wave['desc'] }}</p>
-                            </div>
-                            <div class="text-left sm:text-right">
-                                <p class="text-sm font-bold">{{ $wave['date'] }}</p>
-                                <span class="mt-2 inline-flex rounded-full bg-white/10 px-3 py-1 text-[10px] font-black uppercase tracking-wide text-blue-100">
-                                    {{ $wave['status'] }}
-                                </span>
-                            </div>
+                @forelse($waves as $wave)
+                    @php
+                        $status = $wave->publicStatus($currentWave);
+                        [$statusLabel, $statusClass] = $waveStatus[$status];
+                    @endphp
+                    <div @class([
+                        'rounded-2xl border p-5 text-white',
+                        'border-green-300/60 bg-white/15 ring-2 ring-green-300/40' => $status === 'open',
+                        'border-white/20 bg-white/10' => $status === 'upcoming',
+                        'border-white/10 bg-white/5 opacity-70' => $status === 'closed',
+                    ])>
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="font-black">{{ $wave->name }}</h3>
+                            <span class="shrink-0 rounded-full px-3 py-1 text-[10px] font-black uppercase tracking-wide {{ $statusClass }}">
+                                {{ $statusLabel }}
+                            </span>
                         </div>
+
+                        <dl class="mt-3 grid gap-x-6 gap-y-1.5 text-sm sm:grid-cols-2">
+                            @foreach($wave->timeline() as $row)
+                                <div class="flex justify-between gap-3 sm:block">
+                                    <dt class="text-blue-200">{{ $row['label'] }}</dt>
+                                    <dd class="text-right font-bold sm:text-left">{{ $row['value'] }}</dd>
+                                </div>
+                            @endforeach
+                        </dl>
                     </div>
-                @endforeach
+                @empty
+                    <p class="rounded-2xl border border-white/20 bg-white/10 p-5 text-sm text-blue-100">Jadwal gelombang pendaftaran segera diumumkan.</p>
+                @endforelse
             </div>
         </div>
 
         <div class="rounded-3xl bg-polmind-yellow p-6 shadow-xl sm:p-8">
             <h2 class="text-2xl font-black text-polmind-blue-dark">Rincian Biaya</h2>
             <p class="mt-3 text-sm leading-6 text-polmind-blue-dark/80">
-                Rincian biaya perkuliahan TA 2027/2028 akan diperbarui setelah penetapan resmi pimpinan institusi.
+                Rincian biaya perkuliahan{{ $pmbYear ? ' TA ' . $pmbYear->year . '/' . ($pmbYear->year + 1) : '' }} sesuai ketetapan institusi.
             </p>
 
             @if($registrationFee)
@@ -242,27 +495,28 @@
                 </div>
             @endif
 
-            <div class="mt-8 space-y-5">
-                <div class="flex justify-between border-b border-yellow-500/40 pb-4">
-                    <span class="font-semibold text-polmind-blue-dark">SPI</span>
-                    <span class="font-black text-polmind-blue-dark">Segera diumumkan</span>
-                </div>
-                <div class="flex justify-between">
-                    <span class="font-semibold text-polmind-blue-dark">UKT</span>
-                    <span class="font-black text-polmind-blue-dark">Segera diumumkan</span>
-                </div>
+            <div class="mt-8 divide-y divide-yellow-500/40">
+                @forelse($reRegistrationFees as $fee)
+                    <div class="flex items-baseline justify-between gap-4 py-4 first:pt-0 last:pb-0">
+                        <span class="font-semibold text-polmind-blue-dark">{{ $fee->name }}</span>
+                        <span class="shrink-0 font-black text-polmind-blue-dark">
+                            {{ $fee->amount > 0 ? 'Rp' . number_format($fee->amount, 0, ',', '.') : 'Segera diumumkan' }}
+                        </span>
+                    </div>
+                @empty
+                    <p class="text-sm font-semibold text-polmind-blue-dark">Rincian SPI dan UKT segera diumumkan.</p>
+                @endforelse
             </div>
 
             <p class="mt-8 rounded-2xl bg-white/40 p-4 text-xs leading-5 text-polmind-blue-dark">
                 SPI dan UKT dibayar setelah dinyatakan diterima sebagai mahasiswa baru. Tersedia keringanan biaya SPI bagi pendaftar gelombang awal.
             </p>
         </div>
-        </div>
     </div>
 </section>
 
 {{-- FAQ --}}
-<section id="faq" class="bg-polmind-bg py-20">
+<section id="faq" class="scroll-mt-20 bg-polmind-bg py-20">
     <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <div class="text-center">
             <h2 class="text-3xl font-black text-polmind-blue sm:text-4xl">
@@ -276,8 +530,11 @@
         <div class="mt-10 space-y-4" x-data="{ active: 1 }">
             @foreach([
                 ['q' => 'Siapa yang dapat mendaftar?', 'a' => 'Lulusan SMA/SMK/MA atau sederajat.'],
-                ['q' => 'Dokumen apa saja yang harus disiapkan?', 'a' => 'Pas foto formal terbaru, scan KTP, scan Kartu Keluarga, scan ijazah atau SKL, scan transkrip nilai/rapor, dan scan sertifikat penghargaan (jika ada).'],
-                ['q' => 'Kapan pembayaran SPI dan UKT dilakukan?', 'a' => 'SPI dan UKT dibayar setelah pendaftar dinyatakan diterima sebagai mahasiswa baru. Rincian biayanya akan diumumkan setelah ditetapkan secara resmi.'],
+                ['q' => 'Dokumen apa saja yang harus disiapkan?', 'a' => $documentTypes->isEmpty()
+                    ? 'Daftar dokumen akan diinformasikan setelah Anda membuat akun.'
+                    : 'Wajib: ' . $documentTypes->where('is_required', true)->pluck('name')->implode(', ') . '.'
+                        . ($documentTypes->where('is_required', false)->isNotEmpty() ? ' Opsional: ' . $documentTypes->where('is_required', false)->pluck('name')->implode(', ') . '.' : '')],
+                ['q' => 'Kapan pembayaran SPI dan UKT dilakukan?', 'a' => 'SPI dan UKT dibayar setelah pendaftar dinyatakan diterima sebagai mahasiswa baru. Nominalnya tercantum di bagian Rincian Biaya.'],
                 ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Tersedia program keringanan biaya SPI untuk pendaftar gelombang awal. Hubungi admin PMB untuk detailnya.'],
             ] as $index => $faq)
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -313,7 +570,7 @@
                    class="rounded-xl bg-polmind-yellow px-7 py-3 text-sm font-black text-polmind-blue-dark transition hover:brightness-95">
                     Daftar Sekarang
                 </a>
-                <a href="https://wa.me/6282113296897"
+                <a href="{{ \App\Services\AdminWhatsApp::url() }}"
                    target="_blank"
                    class="rounded-xl border border-white/20 bg-white/10 px-7 py-3 text-sm font-black text-white transition hover:bg-white/20">
                     Konsultasi Admin PMB
@@ -322,5 +579,45 @@
         </div>
     </div>
 </section>
+
+<script>
+    // Slider hero: berganti otomatis tiap 6 detik, berhenti saat disentuh/di-hover,
+    // dan tidak berjalan otomatis jika pengguna memilih mengurangi animasi.
+    window.heroSlider = (count) => ({
+        active: 0,
+        timer: null,
+
+        init() {
+            this.start();
+        },
+
+        start() {
+            this.stop();
+
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                return;
+            }
+
+            this.timer = setInterval(() => this.next(), 6000);
+        },
+
+        stop() {
+            clearInterval(this.timer);
+            this.timer = null;
+        },
+
+        next() {
+            this.active = (this.active + 1) % count;
+        },
+
+        prev() {
+            this.active = (this.active - 1 + count) % count;
+        },
+
+        go(index) {
+            this.active = index;
+        },
+    });
+</script>
 
 @endsection

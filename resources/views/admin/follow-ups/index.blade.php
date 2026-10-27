@@ -8,13 +8,13 @@
 <div class="space-y-8">
 
     @if(session('success'))
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
+        <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
             {{ session('success') }}
         </div>
     @endif
 
     @if($errors->any())
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
+        <div class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
             {{ $errors->first() }}
         </div>
     @endif
@@ -53,18 +53,18 @@
                 'class' => 'text-yellow-700',
             ],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
     </div>
 
     {{-- Filter --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="border-b border-slate-200 pb-5">
-            <h2 class="text-xl font-black text-polmind-blue">Filter Follow Up</h2>
+            <h2 class="text-base font-semibold text-slate-900">Filter Follow Up</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
                 Cari camaba berdasarkan nama, nomor pendaftaran, nomor HP, NIK, atau asal sekolah.
             </p>
@@ -72,18 +72,18 @@
 
         <form action="{{ route('admin.follow-ups.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
             <div class="xl:col-span-2">
-                <label class="text-sm font-bold text-slate-700">Pencarian</label>
+                <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
                        name="keyword"
                        value="{{ request('keyword') }}"
                        placeholder="Nama, no pendaftaran, HP, NIK, sekolah..."
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                       class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Program Studi</label>
+                <label class="text-sm font-semibold text-slate-700">Program Studi</label>
                 <select name="study_program"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Prodi</option>
                     @foreach($studyPrograms as $program)
                         <option value="{{ $program->id }}" @selected(request('study_program') == $program->id)>
@@ -94,9 +94,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Status</label>
+                <label class="text-sm font-semibold text-slate-700">Status</label>
                 <select name="status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Status</option>
                     @foreach([
                         'belum_dihubungi' => 'Belum Dihubungi',
@@ -116,9 +116,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Prioritas</label>
+                <label class="text-sm font-semibold text-slate-700">Prioritas</label>
                 <select name="priority"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Prioritas</option>
                     @foreach([
                         'tinggi' => 'Tinggi',
@@ -134,12 +134,12 @@
 
             <div class="flex items-end gap-3 xl:col-span-5">
                 <button type="submit"
-                        class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                        class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
                 </button>
 
                 <a href="{{ route('admin.follow-ups.index') }}"
-                   class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                   class="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Reset
                 </a>
             </div>
@@ -147,16 +147,16 @@
     </div>
 
     {{-- Main Table --}}
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">Daftar Follow Up Camaba</h2>
+                <h2 class="text-base font-semibold text-slate-900">Daftar Follow Up Camaba</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
                     Catatan komunikasi tersimpan di tabel follow_ups.
                 </p>
             </div>
 
-            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-black text-polmind-blue">
+            <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-polmind-blue">
                 {{ $applicants->total() }} Data
             </span>
         </div>
@@ -193,19 +193,19 @@
 
         <div class="overflow-x-auto">
             <table class="w-full min-w-[1250px] text-left text-sm">
-                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
-                        <th class="px-6 py-4">Camaba</th>
-                        <th class="px-6 py-4">Program</th>
-                        <th class="px-6 py-4">Kontak</th>
-                        <th class="px-6 py-4">Status Terakhir</th>
-                        <th class="px-6 py-4">Catatan Terakhir</th>
-                        <th class="px-6 py-4">Jadwal Berikutnya</th>
-                        <th class="px-6 py-4 text-right">Aksi</th>
+                        <th class="px-5 py-3.5">Camaba</th>
+                        <th class="px-5 py-3.5">Program</th>
+                        <th class="px-5 py-3.5">Kontak</th>
+                        <th class="px-5 py-3.5">Status Terakhir</th>
+                        <th class="px-5 py-3.5">Catatan Terakhir</th>
+                        <th class="px-5 py-3.5">Jadwal Berikutnya</th>
+                        <th class="px-5 py-3.5 text-right">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200">
+                <tbody class="table-zebra">
                     @forelse($applicants as $applicant)
                         @php
                             $latest = $applicant->latestFollowUp;
@@ -228,11 +228,11 @@
                         @endphp
 
                         <tr class="transition hover:bg-slate-50">
-                            <td class="px-6 py-5">
-                                <p class="font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <p class="font-bold text-polmind-blue">
                                     {{ $applicant->registration_number }}
                                 </p>
-                                <p class="mt-1 font-bold text-slate-800">
+                                <p class="mt-1 font-semibold text-slate-800">
                                     {{ $applicant->full_name }}
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">
@@ -240,8 +240,8 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $applicant->studyProgram?->code ?? '-' }}
                                 </span>
                                 <p class="mt-2 text-xs text-slate-500">
@@ -252,8 +252,8 @@
                                 </p>
                             </td>
 
-                            <td class="px-6 py-5">
-                                <p class="font-bold text-slate-800">
+                            <td class="px-5 py-3.5">
+                                <p class="font-semibold text-slate-800">
                                     {{ $applicant->phone ?? '-' }}
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">
@@ -263,18 +263,18 @@
                                 @if($waPhone)
                                     <a href="https://wa.me/{{ $waPhone }}?text={{ $waMessage }}"
                                        target="_blank"
-                                       class="mt-3 inline-flex rounded-xl bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700">
+                                       class="mt-3 inline-flex rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700">
                                         Chat WA
                                     </a>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' }}">
+                            <td class="px-5 py-3.5">
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' }}">
                                     {{ $statusLabels[$status] ?? $status }}
                                 </span>
 
-                                <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-black {{ $priorityClasses[$priority] ?? 'bg-slate-100 text-slate-600' }}">
+                                <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $priorityClasses[$priority] ?? 'bg-slate-100 text-slate-600' }}">
                                     Prioritas {{ ucfirst($priority) }}
                                 </span>
 
@@ -291,7 +291,7 @@
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 @if($latest)
                                     <p class="max-w-[300px] text-sm leading-6 text-slate-700">
                                         {{ $latest->note }}
@@ -306,28 +306,28 @@
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 @if($latest?->next_follow_up_date)
-                                    <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-black text-yellow-700">
+                                    <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
                                         {{ $latest->next_follow_up_date->format('d M Y') }}
                                     </span>
                                 @else
-                                    <span class="text-xs font-bold text-slate-500">
+                                    <span class="text-xs font-semibold text-slate-500">
                                         Belum dijadwalkan
                                     </span>
                                 @endif
                             </td>
 
-                            <td class="px-6 py-5">
+                            <td class="px-5 py-3.5">
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ url('/admin/applicants/' . $applicant->registration_number) }}"
-                                       class="rounded-xl border border-slate-300 px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50">
+                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
                                         Detail
                                     </a>
 
                                     <button type="button"
                                             onclick="document.getElementById('follow-up-form-{{ $applicant->id }}').classList.toggle('hidden')"
-                                            class="rounded-xl bg-polmind-blue px-3 py-2 text-xs font-bold text-white transition hover:bg-polmind-blue-dark">
+                                            class="rounded-lg bg-polmind-blue px-3 py-2 text-xs font-semibold text-white transition hover:bg-polmind-blue-dark">
                                         Catat FU
                                     </button>
                                 </div>
@@ -335,15 +335,15 @@
                                 <form id="follow-up-form-{{ $applicant->id }}"
                                       action="{{ route('admin.follow-ups.store', $applicant) }}"
                                       method="POST"
-                                      class="mt-3 hidden rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                                      class="mt-3 hidden rounded-lg border border-slate-200 bg-slate-50 p-4">
                                     @csrf
 
                                     <div class="grid gap-3 md:grid-cols-2">
                                         <div>
-                                            <label class="text-xs font-bold text-slate-600">Status</label>
+                                            <label class="text-xs font-semibold text-slate-600">Status</label>
                                             <select name="status"
                                                     required
-                                                    class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                                    class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                                                 @foreach([
                                                     'sudah_dihubungi' => 'Sudah Dihubungi',
                                                     'tertarik' => 'Tertarik',
@@ -361,10 +361,10 @@
                                         </div>
 
                                         <div>
-                                            <label class="text-xs font-bold text-slate-600">Prioritas</label>
+                                            <label class="text-xs font-semibold text-slate-600">Prioritas</label>
                                             <select name="priority"
                                                     required
-                                                    class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                                    class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                                                 @foreach([
                                                     'tinggi' => 'Tinggi',
                                                     'sedang' => 'Sedang',
@@ -378,10 +378,10 @@
                                         </div>
 
                                         <div>
-                                            <label class="text-xs font-bold text-slate-600">Metode Kontak</label>
+                                            <label class="text-xs font-semibold text-slate-600">Metode Kontak</label>
                                             <select name="contact_method"
                                                     required
-                                                    class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                                    class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                                                 @foreach([
                                                     'whatsapp' => 'WhatsApp',
                                                     'phone' => 'Telepon',
@@ -396,32 +396,32 @@
                                         </div>
 
                                         <div>
-                                            <label class="text-xs font-bold text-slate-600">Follow Up Berikutnya</label>
+                                            <label class="text-xs font-semibold text-slate-600">Follow Up Berikutnya</label>
                                             <input type="date"
                                                    name="next_follow_up_date"
                                                    value="{{ $latest?->next_follow_up_date?->format('Y-m-d') }}"
-                                                   class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                                                   class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                                         </div>
                                     </div>
 
                                     <div class="mt-3">
-                                        <label class="text-xs font-bold text-slate-600">Catatan</label>
+                                        <label class="text-xs font-semibold text-slate-600">Catatan</label>
                                         <textarea name="note"
                                                   rows="4"
                                                   required
                                                   placeholder="Contoh: Sudah dihubungi via WhatsApp, camaba tertarik namun menunggu diskusi dengan orang tua."
-                                                  class="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
+                                                  class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
                                     </div>
 
                                     <div class="mt-3 flex justify-end gap-2">
                                         <button type="button"
                                                 onclick="document.getElementById('follow-up-form-{{ $applicant->id }}').classList.add('hidden')"
-                                                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700">
+                                                class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
                                             Batal
                                         </button>
 
                                         <button type="submit"
-                                                class="rounded-lg bg-polmind-blue px-3 py-2 text-xs font-bold text-white">
+                                                class="rounded-lg bg-polmind-blue px-3 py-2 text-xs font-semibold text-white">
                                             Simpan Follow Up
                                         </button>
                                     </div>
@@ -431,7 +431,7 @@
                     @empty
                         <tr>
                             <td colspan="7" class="px-6 py-12 text-center">
-                                <p class="text-sm font-bold text-slate-600">
+                                <p class="text-sm font-semibold text-slate-600">
                                     Data camaba tidak ditemukan.
                                 </p>
                                 <p class="mt-1 text-xs text-slate-500">

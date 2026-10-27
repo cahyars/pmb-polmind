@@ -1,6 +1,6 @@
 <?php
 
-use App\Models\FeeComponent;
+use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MasterDataController;
+use App\Http\Controllers\Admin\SelectionScheduleController;
 use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SchoolController;
@@ -28,14 +29,11 @@ use App\Http\Controllers\Camaba\ReRegistrationController as CamabaReRegistration
 use App\Http\Middleware\EnsureRegistrationPaid;
 use App\Http\Middleware\SelectAdminPmbYear;
 
-Route::get('/', function () {
-    return view('public.home', [
-        'registrationFee' => FeeComponent::registrationFee()?->amount,
-    ]);
-});
+Route::get('/', [HomeController::class, 'index'])->name('home');
 
+// Terbuka untuk tamu karena sekolah asal dipilih saat registrasi.
 Route::get('/referensi/sekolah', [SchoolController::class, 'index'])
-    ->middleware(['auth:applicant', 'throttle:60,1'])
+    ->middleware('throttle:60,1')
     ->name('schools.index');
 
 Route::get('/referensi/wilayah', [RegionController::class, 'index'])
@@ -94,6 +92,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
     Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
+    Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
 
     Route::get('/documents', [DocumentVerificationController::class, 'index'])->name('documents.index');
     Route::get('/documents/{document}/file', [AdminFileController::class, 'document'])->name('documents.file');
@@ -129,6 +128,19 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
         ->name('reports.export-applicants');
 
     Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
+    Route::get('/master-data/{section}', [MasterDataController::class, 'show'])
+        ->whereIn('section', array_keys(MasterDataController::SECTIONS))
+        ->name('master-data.show');
+
+    Route::post('/master-data/selection-components', [SelectionScheduleController::class, 'storeComponent'])->name('master-data.selection-components.store');
+    Route::put('/master-data/selection-components/{selectionComponent}', [SelectionScheduleController::class, 'updateComponent'])->name('master-data.selection-components.update');
+    Route::patch('/master-data/selection-components/{selectionComponent}/toggle', [SelectionScheduleController::class, 'toggleComponent'])->name('master-data.selection-components.toggle');
+
+    Route::post('/master-data/selection-schedules', [SelectionScheduleController::class, 'storeSchedule'])->name('master-data.selection-schedules.store');
+    Route::put('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('master-data.selection-schedules.update');
+    Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
+    Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
+    Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
 
     Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
     Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');

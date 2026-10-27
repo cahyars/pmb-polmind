@@ -94,10 +94,68 @@
         </div>
     </div>
 
-    <div class="grid gap-8 xl:grid-cols-[1fr_380px]">
+    <div class="grid gap-8 xl:grid-cols-[minmax(0,1fr)_380px]">
 
         {{-- Main --}}
-        <div class="space-y-8">
+        <div class="min-w-0 space-y-8">
+
+            {{-- Jadwal Seleksi (diatur admin di Master Data > Jadwal Seleksi) --}}
+            @php
+                $wave = $applicant->admissionWave;
+                $schedules = $wave?->selectionSchedules ?? collect();
+            @endphp
+            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+                <div class="border-b border-slate-200 pb-5">
+                    <h2 class="text-xl font-black text-polmind-blue">Jadwal Seleksi {{ $wave?->name }}</h2>
+                    <p class="mt-2 text-sm leading-6 text-slate-600">
+                        Ikuti setiap tes sesuai jadwal. Perubahan jadwal akan diinformasikan oleh panitia PMB.
+                    </p>
+                </div>
+
+                @if($schedules->isEmpty())
+                    <p class="mt-6 rounded-2xl bg-slate-50 p-5 text-sm text-slate-600">Jadwal tes untuk gelombang Anda belum diumumkan.</p>
+                @else
+                    <ul class="mt-6 space-y-3">
+                        @foreach($schedules as $schedule)
+                            <li class="flex gap-4 rounded-2xl border border-slate-200 p-4">
+                                <div class="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-xl bg-blue-50 text-polmind-blue">
+                                    <span class="text-lg font-black leading-none">{{ $schedule->test_date->format('d') }}</span>
+                                    <span class="mt-0.5 text-[11px] font-bold uppercase">{{ $schedule->test_date->translatedFormat('M') }}</span>
+                                </div>
+                                <div class="min-w-0">
+                                    <p class="font-black text-slate-900">{{ $schedule->component?->name ?? 'Tes Seleksi' }}</p>
+                                    <p class="mt-0.5 text-sm text-slate-600">
+                                        {{ $schedule->test_date->translatedFormat('l, j F Y') }} · {{ $schedule->time_range ?? 'Jam menyusul' }}
+                                    </p>
+                                    <p class="mt-1 flex items-center gap-1 text-xs text-slate-500"><x-icon name="map-pin" class="h-3.5 w-3.5 shrink-0" /> {{ $schedule->location ?? 'Lokasi menyusul' }}</p>
+                                    @if($schedule->notes)
+                                        <p class="mt-1 flex items-center gap-1 text-xs text-slate-500"><x-icon name="document-text" class="h-3.5 w-3.5 shrink-0" /> {{ $schedule->notes }}</p>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                @if($wave?->announcement_date || $wave?->re_registration_start_date)
+                    <dl class="mt-4 grid gap-3 sm:grid-cols-2">
+                        @if($wave->announcement_date)
+                            <div class="rounded-2xl bg-slate-50 p-4">
+                                <dt class="text-xs font-bold text-slate-500">Pengumuman Hasil</dt>
+                                <dd class="mt-1 font-black text-slate-900">{{ $wave->announcement_date->translatedFormat('j F Y') }}</dd>
+                            </div>
+                        @endif
+                        @if($wave->re_registration_start_date)
+                            <div class="rounded-2xl bg-slate-50 p-4">
+                                <dt class="text-xs font-bold text-slate-500">Daftar Ulang</dt>
+                                <dd class="mt-1 font-black text-slate-900">
+                                    {{ $wave->re_registration_start_date->translatedFormat('j M') }}{{ $wave->re_registration_end_date ? ' – ' . $wave->re_registration_end_date->translatedFormat('j M Y') : '' }}
+                                </dd>
+                            </div>
+                        @endif
+                    </dl>
+                @endif
+            </div>
 
             {{-- Nilai Seleksi --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">

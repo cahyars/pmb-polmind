@@ -6,10 +6,29 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Validation\Rule;
 
 class Applicant extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Jalur pendaftaran yang dipilih camaba saat registrasi.
+     */
+    public const REGISTRATION_PATHS = [
+        'umum' => [
+            'label' => 'Umum',
+            'description' => 'Untuk lulusan SMA/SMK/MA atau sederajat. Mengikuti ujian seleksi sesuai jadwal gelombang.',
+        ],
+        'prestasi' => [
+            'label' => 'Prestasi',
+            'description' => 'Untuk pendaftar dengan prestasi akademik maupun non-akademik. Lampirkan sertifikat penghargaan.',
+        ],
+        'undangan' => [
+            'label' => 'Undangan',
+            'description' => 'Untuk siswa yang mendapat rekomendasi atau undangan dari sekolah asal.',
+        ],
+    ];
 
     protected $fillable = [
         'pmb_year_id',
@@ -67,6 +86,40 @@ class Applicant extends Authenticatable
         'password' => 'hashed',
     ];
 
+    /**
+     * 1 NIK hanya boleh mendaftar sekali dalam satu gelombang,
+     * tetapi boleh mendaftar lagi di gelombang berbeda.
+     */
+    public static function nikRules(?int $admissionWaveId, ?int $ignoreId = null): array
+    {
+        return [
+            'required',
+            'digits:16',
+            Rule::unique('applicants', 'nik')
+                ->where('admission_wave_id', $admissionWaveId)
+                ->ignore($ignoreId),
+        ];
+    }
+
+    public static function nikMessages(?AdmissionWave $wave): array
+    {
+        return [
+            'nik.digits' => 'NIK harus 16 digit angka sesuai KTP/KK.',
+            'nik.unique' => 'NIK ini sudah terdaftar di ' . ($wave?->name ?? 'gelombang ini')
+                . '. Satu NIK hanya bisa mendaftar satu kali per gelombang. Silakan login dengan akun yang sudah dibuat.',
+        ];
+    }
+
+    /**
+     * Hanya peminat (belum bayar atau bukti bayar ditolak) yang boleh dihapus admin,
+     * agar data yang sudah punya pembayaran atau proses lanjutan tidak hilang.
+     */
+    public function isDeletable(): bool
+    {
+        return in_array($this->payment_status, ['belum_bayar', 'ditolak', null], true)
+            && blank($this->nim);
+    }
+
     public function getGenderLabelAttribute(): string
     {
         return match ($this->gender) {
@@ -83,12 +136,7 @@ class Applicant extends Authenticatable
 
     public function getRegistrationPathLabelAttribute(): string
     {
-        return match ($this->registration_path) {
-            'umum' => 'Umum',
-            'prestasi' => 'Prestasi',
-            'undangan' => 'Undangan',
-            default => 'Umum',
-        };
+        return self::REGISTRATION_PATHS[$this->registration_path]['label'] ?? self::REGISTRATION_PATHS['umum']['label'];
     }
 
     public function pmbYear()

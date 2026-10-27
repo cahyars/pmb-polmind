@@ -8,51 +8,94 @@ use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
 use App\Models\PmbYear;
+use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class MasterDataController extends Controller
 {
+    /**
+     * Submenu Master Data: slug URL => judul dan keterangan halaman.
+     */
+    public const SECTIONS = [
+        'tahun-pmb' => ['label' => 'Tahun PMB', 'description' => 'Periode penerimaan mahasiswa baru dan tahun akademik.'],
+        'gelombang' => ['label' => 'Gelombang', 'description' => 'Periode pendaftaran tiap gelombang dan biaya formulir.'],
+        'jadwal-seleksi' => ['label' => 'Jadwal Seleksi', 'description' => 'Jadwal tes, pengumuman, dan daftar ulang tiap gelombang.'],
+        'komponen-tes' => ['label' => 'Komponen Tes', 'description' => 'Jenis tes yang diikuti camaba saat seleksi.'],
+        'pic-tes' => ['label' => 'PIC Tes Seleksi', 'description' => 'Dosen penanggung jawab setiap jadwal tes seleksi.'],
+        'prodi' => ['label' => 'Program Studi', 'description' => 'Program studi, kuota, dan kode PDDikti/SIAKAD.'],
+        'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
+        'berkas' => ['label' => 'Jenis Berkas', 'description' => 'Dokumen yang wajib atau opsional diunggah camaba.'],
+        'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI, UKT, dan komponen daftar ulang.'],
+    ];
+
     public function index()
+    {
+        return redirect()->route('admin.master-data.show', array_key_first(self::SECTIONS));
+    }
+
+    public function show(Request $request, string $section)
     {
         $activePmbYear = PmbYear::where('is_active', true)->first();
 
-        $pmbYears = PmbYear::query()
-            ->orderByDesc('year')
+        $data = match ($section) {
+            'tahun-pmb' => [
+                'pmbYears' => PmbYear::orderByDesc('year')->get(),
+            ],
+            'gelombang' => [
+                'pmbYears' => PmbYear::orderByDesc('year')->get(),
+                'admissionWaves' => AdmissionWave::with('pmbYear')->orderByDesc('id')->get(),
+            ],
+            'jadwal-seleksi', 'pic-tes' => $this->scheduleData($request),
+            'komponen-tes' => [
+                'selectionComponents' => SelectionComponent::withCount('schedules')->orderBy('sort_order')->orderBy('name')->get(),
+            ],
+            'prodi' => [
+                'studyPrograms' => StudyProgram::orderBy('code')->get(),
+            ],
+            'kelas' => [
+                'classTypes' => ClassType::orderBy('code')->get(),
+            ],
+            'berkas' => [
+                'documentTypes' => DocumentType::orderBy('sort_order')->get(),
+            ],
+            'biaya' => [
+                'feeComponents' => FeeComponent::orderBy('type')->orderBy('sort_order')->get(),
+            ],
+        };
+
+        return view('admin.master-data.show', $data + [
+            'section' => $section,
+            'sections' => self::SECTIONS,
+            'activePmbYear' => $activePmbYear,
+        ]);
+    }
+
+    /**
+     * Gelombang (Tahun PMB terpilih) beserta jadwal tesnya. Gelombang yang ditampilkan
+     * dipilih lewat ?gelombang=, default gelombang yang sedang dibuka atau terdekat.
+     */
+    private function scheduleData(Request $request): array
+    {
+        $waves = AdmissionWave::with(['selectionSchedules.component'])
+            ->orderBy('start_date')
+            ->orderBy('id')
             ->get();
 
-        $admissionWaves = AdmissionWave::query()
-            ->with('pmbYear')
-            ->orderByDesc('id')
-            ->get();
+        $current = AdmissionWave::current();
 
-        $studyPrograms = StudyProgram::query()
-            ->orderBy('code')
-            ->get();
+        $selectedWave = $waves->firstWhere('id', (int) $request->query('gelombang'))
+            ?? $waves->firstWhere('id', $current?->id)
+            ?? $waves->first(fn (AdmissionWave $wave) => $wave->end_date?->gte(now()->startOfDay()))
+            ?? $waves->last();
 
-        $classTypes = ClassType::query()
-            ->orderBy('code')
-            ->get();
-
-        $documentTypes = DocumentType::query()
-            ->orderBy('sort_order')
-            ->get();
-
-        $feeComponents = FeeComponent::query()
-            ->orderBy('type')
-            ->orderBy('sort_order')
-            ->get();
-
-        return view('admin.master-data.index', compact(
-            'activePmbYear',
-            'pmbYears',
-            'admissionWaves',
-            'studyPrograms',
-            'classTypes',
-            'documentTypes',
-            'feeComponents'
-        ));
+        return [
+            'waves' => $waves,
+            'selectedWave' => $selectedWave,
+            'currentWave' => $current,
+            'selectionComponents' => SelectionComponent::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+        ];
     }
 
     public function storeStudyProgram(Request $request)
@@ -336,7 +379,9 @@ class MasterDataController extends Controller
             'code' => ['required', 'string', 'max:50', 'unique:class_types,code'],
             'registration_code' => ['required', 'alpha', 'size:1', Rule::unique('class_types', 'registration_code')],
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'schedule' => ['nullable', 'string', 'max:255'],
+            'scheme' => ['nullable', 'string', 'max:2000'],
         ]);
 
         ClassType::create([
@@ -344,6 +389,8 @@ class MasterDataController extends Controller
             'registration_code' => strtoupper($validated['registration_code']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'schedule' => $validated['schedule'] ?? null,
+            'scheme' => $validated['scheme'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -356,7 +403,9 @@ class MasterDataController extends Controller
             'code' => ['required', 'string', 'max:50', 'unique:class_types,code,' . $classType->id],
             'registration_code' => ['required', 'alpha', 'size:1', Rule::unique('class_types', 'registration_code')->ignore($classType->id)],
             'name' => ['required', 'string', 'max:255'],
-            'description' => ['nullable', 'string', 'max:1000'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'schedule' => ['nullable', 'string', 'max:255'],
+            'scheme' => ['nullable', 'string', 'max:2000'],
         ]);
 
         $classType->update([
@@ -364,6 +413,8 @@ class MasterDataController extends Controller
             'registration_code' => strtoupper($validated['registration_code']),
             'name' => $validated['name'],
             'description' => $validated['description'] ?? null,
+            'schedule' => $validated['schedule'] ?? null,
+            'scheme' => $validated['scheme'] ?? null,
             'is_active' => $request->boolean('is_active'),
         ]);
 
@@ -384,6 +435,7 @@ class MasterDataController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:document_types,code'],
             'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:500'],
             'allowed_extensions' => ['nullable', 'string', 'max:255'],
             'max_size_kb' => ['required', 'integer', 'min:1'],
             'sort_order' => ['required', 'integer', 'min:0'],
@@ -392,6 +444,7 @@ class MasterDataController extends Controller
         DocumentType::create([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'is_required' => $request->boolean('is_required'),
             'allowed_extensions' => $this->parseExtensions($validated['allowed_extensions'] ?? null),
             'max_size_kb' => $validated['max_size_kb'],
@@ -407,6 +460,7 @@ class MasterDataController extends Controller
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:50', 'unique:document_types,code,' . $documentType->id],
             'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:500'],
             'allowed_extensions' => ['nullable', 'string', 'max:255'],
             'max_size_kb' => ['required', 'integer', 'min:1'],
             'sort_order' => ['required', 'integer', 'min:0'],
@@ -415,6 +469,7 @@ class MasterDataController extends Controller
         $documentType->update([
             'code' => strtoupper($validated['code']),
             'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
             'is_required' => $request->boolean('is_required'),
             'allowed_extensions' => $this->parseExtensions($validated['allowed_extensions'] ?? null),
             'max_size_kb' => $validated['max_size_kb'],

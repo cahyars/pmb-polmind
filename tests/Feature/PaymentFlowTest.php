@@ -17,11 +17,12 @@ use Database\Seeders\ReferenceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\RegistersApplicants;
 use Tests\TestCase;
 
 class PaymentFlowTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshDatabase, RegistersApplicants;
 
     protected function setUp(): void
     {
@@ -179,21 +180,12 @@ class PaymentFlowTest extends TestCase
 
         $this->artisan('pmb:finalisasi-nomor')->assertSuccessful();
 
-        $this->assertSame('A120270001', $applicant->refresh()->registration_number);
+        // A120270001 sudah terpakai saat registrasi, sehingga nomor berikutnya yang dipakai.
+        $this->assertSame('A120270002', $applicant->refresh()->registration_number);
     }
 
     private function register(string $email = 'ammar@example.com'): Applicant
     {
-        $this->post('/register', [
-            'full_name' => 'Ammar',
-            'email' => $email,
-            'phone' => '081234567890',
-            'password' => 'rahasia123',
-            'password_confirmation' => 'rahasia123',
-        ])->assertSessionHasNoErrors();
-
-        auth('applicant')->logout();
-
-        return Applicant::where('email', $email)->firstOrFail();
+        return $this->registerApplicant(['email' => $email]);
     }
 }

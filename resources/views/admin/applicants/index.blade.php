@@ -7,6 +7,18 @@
 @section('content')
 <div class="space-y-8">
 
+    @if(session('success'))
+        <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
     {{-- Summary Cards --}}
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
@@ -15,9 +27,9 @@
             ['label' => 'Belum Lengkap', 'value' => $incompleteApplicants, 'desc' => 'Perlu follow up'],
             ['label' => 'Daftar Ulang Valid', 'value' => $validReRegistrations, 'desc' => 'Siap sinkron akademik'],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-4xl font-black text-polmind-blue">{{ $card['value'] }}</p>
+                <p class="mt-3 text-[28px] font-bold leading-tight text-polmind-blue">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
@@ -45,19 +57,19 @@
                 'class' => 'text-purple-700',
             ],
         ] as $card)
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-4xl font-black {{ $card['class'] }}">{{ $card['value'] }}</p>
+                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
                 <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
             </div>
         @endforeach
     </div>
 
     {{-- Filter Section --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">
+                <h2 class="text-base font-semibold text-slate-900">
                     Filter Data Camaba
                 </h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -72,25 +84,25 @@
                         icon: 'info',
                         confirmButtonColor: '#003B82'
                     })"
-                    class="rounded-xl bg-polmind-yellow px-5 py-3 text-sm font-black text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                    class="rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                 Export Excel
             </button>
         </div>
 
         <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
             <div class="xl:col-span-2">
-                <label class="text-sm font-bold text-slate-700">Pencarian</label>
+                <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
                        name="keyword"
                        value="{{ request('keyword') }}"
                        placeholder="Nama, NIK, NISN, No. Pendaftaran, atau Sekolah"
-                       class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                       class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Gelombang</label>
+                <label class="text-sm font-semibold text-slate-700">Gelombang</label>
                 <select name="wave"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Gelombang</option>
                     @foreach($waves as $wave)
                         <option value="{{ $wave->id }}" @selected(request('wave') == $wave->id)>
@@ -101,9 +113,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Program Studi</label>
+                <label class="text-sm font-semibold text-slate-700">Program Studi</label>
                 <select name="study_program"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Prodi</option>
                     @foreach($studyPrograms as $program)
                         <option value="{{ $program->id }}" @selected(request('study_program') == $program->id)>
@@ -114,9 +126,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Status</label>
+                <label class="text-sm font-semibold text-slate-700">Status</label>
                 <select name="status"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Status</option>
                     @foreach([
                         'registrasi_awal' => 'Registrasi Awal',
@@ -134,9 +146,9 @@
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Jalur Pendaftaran</label>
+                <label class="text-sm font-semibold text-slate-700">Jalur Pendaftaran</label>
                 <select name="registration_path"
-                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Jalur</option>
                     <option value="umum" @selected(request('registration_path') === 'umum')>
                         Umum
@@ -152,12 +164,12 @@
 
             <div class="flex items-end gap-3 xl:col-span-6">
                 <button type="submit"
-                        class="rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
+                        class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
                 </button>
 
                 <a href="{{ url('/admin/applicants') }}"
-                   class="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-50">
+                   class="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
                     Reset
                 </a>
             </div>
@@ -165,10 +177,10 @@
     </div>
 
     {{-- Table --}}
-    <div class="rounded-3xl border border-slate-200 bg-white shadow-sm">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
             <div>
-                <h2 class="text-xl font-black text-polmind-blue">
+                <h2 class="text-base font-semibold text-slate-900">
                     Daftar Calon Mahasiswa
                 </h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
@@ -176,7 +188,7 @@
                 </p>
             </div>
 
-            <div class="flex items-center gap-2 text-xs font-bold">
+            <div class="flex items-center gap-2 text-xs font-semibold">
                 <span class="rounded-full bg-blue-100 px-3 py-1 text-polmind-blue">
                     {{ $applicants->total() }} Data
                 </span>
@@ -187,154 +199,168 @@
         </div>
 
         @php
-            $statusLabels = [
-                'registrasi_awal' => 'Registrasi Awal',
-                'biodata_lengkap' => 'Biodata Lengkap',
-                'berkas_menunggu_verifikasi' => 'Berkas Menunggu',
-                'pembayaran_pendaftaran_valid' => 'Pembayaran Valid',
-                'diterima' => 'Diterima',
-                'daftar_ulang_valid' => 'Daftar Ulang Valid',
-            ];
+            // Ringkasan tampilan per camaba, dipakai tabel (desktop) dan kartu (HP/tablet).
+            $avatarColors = ['bg-polmind-blue', 'bg-red-800', 'bg-emerald-800', 'bg-indigo-800', 'bg-amber-700', 'bg-slate-700', 'bg-purple-800', 'bg-teal-800'];
 
-            $statusClasses = [
-                'registrasi_awal' => 'bg-slate-100 text-slate-600',
-                'biodata_lengkap' => 'bg-blue-100 text-polmind-blue',
-                'berkas_menunggu_verifikasi' => 'bg-yellow-100 text-yellow-700',
-                'pembayaran_pendaftaran_valid' => 'bg-green-100 text-green-700',
-                'diterima' => 'bg-purple-100 text-purple-700',
-                'daftar_ulang_valid' => 'bg-emerald-100 text-emerald-700',
-            ];
+            $present = function ($applicant) use ($avatarColors) {
+                $accepted = $applicant->selection_status === 'diterima';
+                $decided = in_array($applicant->selection_status, ['diterima', 'cadangan', 'ditolak'], true);
 
-            $registrationPathClasses = [
-                'umum' => 'bg-blue-50 text-polmind-blue',
-                'prestasi' => 'bg-green-100 text-green-700',
-                'undangan' => 'bg-purple-100 text-purple-700',
-            ];
+                $badges = [];
+
+                if (! $decided) {
+                    $badges[] = match ($applicant->payment_status) {
+                        'valid' => ['Formulir Lunas', 'bg-green-100 text-green-700'],
+                        'menunggu_verifikasi' => ['Bayar Diverifikasi', 'bg-yellow-100 text-yellow-800'],
+                        'ditolak' => ['Bukti Bayar Ditolak', 'bg-red-100 text-red-700'],
+                        default => ['Belum Bayar (Peminat)', 'bg-red-100 text-red-700'],
+                    };
+                    $badges[] = $applicant->registration_status === 'biodata_lengkap'
+                        ? ['Biodata Lengkap', 'bg-green-100 text-green-700']
+                        : ['Biodata Belum Lengkap', 'bg-red-100 text-red-700'];
+                }
+
+                $badges[] = match ($applicant->selection_status) {
+                    'diterima' => ['Lulus', 'bg-green-100 text-green-700'],
+                    'cadangan' => ['Cadangan', 'bg-yellow-100 text-yellow-800'],
+                    'ditolak' => ['Tidak Lulus', 'bg-red-100 text-red-700'],
+                    default => ['Belum Diseleksi', 'bg-amber-100 text-amber-800'],
+                };
+
+                if ($accepted) {
+                    $badges[] = match ($applicant->re_registration_status) {
+                        'daftar_ulang_valid' => ['Sudah Daftar Ulang', 'bg-green-100 text-green-700'],
+                        'menunggu_verifikasi' => ['Daftar Ulang Diverifikasi', 'bg-yellow-100 text-yellow-800'],
+                        default => ['Belum Daftar Ulang', 'bg-red-100 text-red-700'],
+                    };
+                }
+
+                if ($applicant->nim) {
+                    $badges[] = ['Sudah Memiliki NIM', 'bg-green-100 text-green-700'];
+                }
+
+                $phone = preg_replace('/\D/', '', (string) $applicant->phone);
+
+                return [
+                    'url' => route('admin.applicants.show', $applicant->registration_number),
+                    'photo' => $applicant->photoDocument ? route('admin.documents.file', $applicant->photoDocument) : null,
+                    'initials' => collect(preg_split('/\s+/', trim($applicant->full_name)))->filter()->take(2)->map(fn ($word) => mb_substr($word, 0, 1))->implode(''),
+                    'color' => $avatarColors[crc32($applicant->registration_number) % count($avatarColors)],
+                    'wave' => trim(($applicant->pmbYear?->name ?? '') . ' - ' . ($applicant->admissionWave?->name ?? '-'), ' -'),
+                    'pathClass' => $applicant->registration_path_label . ($applicant->classType ? ' - ' . $applicant->classType->name : ''),
+                    'programs' => array_values(array_filter([
+                        $applicant->studyProgram ? ['label' => $applicant->studyProgram->degree . ' - ' . $applicant->studyProgram->name, 'accepted' => $accepted] : null,
+                        $applicant->secondStudyProgram ? ['label' => $applicant->secondStudyProgram->degree . ' - ' . $applicant->secondStudyProgram->name, 'accepted' => false] : null,
+                    ])),
+                    'badges' => $badges,
+                    'whatsapp' => $phone ? 'https://wa.me/' . (str_starts_with($phone, '0') ? '62' . substr($phone, 1) : $phone) : null,
+                    'deletable' => $applicant->isDeletable(),
+                ];
+            };
         @endphp
 
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[1000px] text-left text-sm">
-                <thead class="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
+        @if($applicants->isEmpty())
+            <div class="px-6 py-12 text-center">
+                <p class="text-sm font-semibold text-slate-600">Data camaba tidak ditemukan.</p>
+                <p class="mt-1 text-xs text-slate-500">Coba ubah kata kunci atau reset filter.</p>
+            </div>
+        @else
+            {{-- Desktop (>= 1280px): tabel dengan lebar kolom tetap, tanpa scroll horizontal --}}
+            <table class="hidden w-full table-fixed text-left text-sm xl:table">
+                <colgroup>
+                    <col class="w-[84px]">
+                    <col class="w-[16%]">
+                    <col class="w-[14%]">
+                    <col class="w-[19%]">
+                    <col class="w-[16%]">
+                    <col>
+                    <col class="w-[88px]">
+                </colgroup>
+                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
-                        <th class="px-6 py-4">No. Pendaftaran</th>
-                        <th class="px-6 py-4">Nama Camaba</th>
-                        <th class="px-6 py-4">NIK / NISN</th>
-                        <th class="px-6 py-4">Asal Sekolah</th>
-                        <th class="px-6 py-4">Prodi</th>
-                        <th class="px-6 py-4">Gelombang</th>
-                        <th class="px-6 py-4">Jalur</th>
-                        <th class="px-6 py-4">Status</th>
-                        <th class="px-6 py-4">Tanggal</th>
-                        <th class="px-6 py-4 text-right">Aksi</th>
+                        <th class="px-4 py-3.5">Foto</th>
+                        <th class="px-3 py-3.5">Nama &amp; Kode Pendaftar</th>
+                        <th class="px-3 py-3.5">Jalur Pendaftaran</th>
+                        <th class="px-3 py-3.5">Program Studi</th>
+                        <th class="px-3 py-3.5">Status Pendaftar</th>
+                        <th class="px-3 py-3.5">Kontak</th>
+                        <th class="px-4 py-3.5 text-center">Aksi</th>
                     </tr>
                 </thead>
 
-                <tbody class="divide-y divide-slate-200 bg-white">
-                    @forelse($applicants as $applicant)
-                        @php
-                            $initials = collect(explode(' ', $applicant->full_name))
-                                ->map(fn($name) => mb_substr($name, 0, 1))
-                                ->take(2)
-                                ->implode('');
-
-                            $status = $applicant->registration_status;
-                        @endphp
-
-                        <tr class="transition hover:bg-slate-50">
-                            <td class="px-6 py-5">
-                                <p class="font-black text-polmind-blue">
-                                    {{ $applicant->registration_number }}
-                                </p>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <div class="flex items-center gap-3">
-                                    <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">
-                                        {{ $initials }}
-                                    </div>
-                                    <div>
-                                        <p class="font-bold text-slate-900">
-                                            {{ $applicant->full_name }}
-                                        </p>
-                                        <p class="mt-1 text-xs text-slate-500">
-                                            {{ $applicant->email }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <p class="font-semibold text-slate-700">
-                                    {{ $applicant->nik ?? '-' }}
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    NISN: {{ $applicant->nisn ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <p class="font-semibold text-slate-700">
-                                    {{ $applicant->education?->school_name ?? '-' }}
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $applicant->education?->major ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-polmind-blue">
-                                    {{ $applicant->studyProgram?->code ?? '-' }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <span class="font-semibold text-slate-700">
-                                    {{ $applicant->admissionWave?->name ?? '-' }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                @php
-                                    $registrationPath = $applicant->registration_path ?? 'umum';
-                                @endphp
-
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $applicant->registration_path_label }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-5">
-                                <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $statusLabels[$status] ?? str_replace('_', ' ', ucfirst($status)) }}
-                                </span>
-                            </td>
-
-                            <td class="px-6 py-5 text-slate-600">
-                                {{ $applicant->created_at?->format('d M Y') }}
-                            </td>
-
-                            <td class="px-6 py-5 text-right">
-                                <a href="{{ url('/admin/applicants/' . $applicant->registration_number) }}"
-                                   class="rounded-xl bg-polmind-blue px-4 py-2 text-xs font-bold text-white transition hover:bg-polmind-blue-dark">
-                                    Detail
-                                </a>
-                            </td>
-                        </tr>
-                    @empty
+                <tbody class="table-zebra bg-white align-top">
+                    @foreach($applicants as $applicant)
+                        @php $row = $present($applicant); @endphp
                         <tr>
-                            <td colspan="10" class="px-6 py-12 text-center">
-                                <p class="text-sm font-bold text-slate-600">
-                                    Data camaba tidak ditemukan.
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    Coba reset filter atau jalankan seeder data dummy.
-                                </p>
+                            <td class="px-4 py-3.5">
+                                @include('admin.applicants.partials.avatar', ['row' => $row, 'size' => 'h-16 w-14 text-lg'])
+                            </td>
+                            <td class="px-3 py-3.5">
+                                <a href="{{ $row['url'] }}" class="font-semibold uppercase leading-5 text-polmind-blue hover:underline">{{ $applicant->full_name }}</a>
+                                <p class="mt-1 text-xs text-slate-500">{{ $applicant->registration_number }}</p>
+                            </td>
+                            <td class="px-3 py-3.5">
+                                <p class="font-semibold leading-5 text-slate-800">{{ $row['wave'] }}</p>
+                                <p class="mt-1 text-xs text-slate-500">{{ $row['pathClass'] }}</p>
+                            </td>
+                            <td class="px-3 py-3.5">
+                                @include('admin.applicants.partials.programs', ['row' => $row])
+                            </td>
+                            <td class="px-3 py-3.5">
+                                @include('admin.applicants.partials.badges', ['row' => $row])
+                            </td>
+                            <td class="px-3 py-3.5">
+                                @include('admin.applicants.partials.contacts', ['applicant' => $applicant, 'row' => $row])
+                            </td>
+                            <td class="px-4 py-3.5">
+                                @include('admin.applicants.partials.actions', ['applicant' => $applicant, 'row' => $row])
                             </td>
                         </tr>
-                    @endforelse
+                    @endforeach
                 </tbody>
             </table>
-        </div>
+
+            {{-- HP & tablet: kartu per camaba --}}
+            <ul class="divide-y divide-slate-100 xl:hidden">
+                @foreach($applicants as $applicant)
+                    @php $row = $present($applicant); @endphp
+                    <li class="p-4 sm:p-5">
+                        <div class="flex gap-4">
+                            @include('admin.applicants.partials.avatar', ['row' => $row, 'size' => 'h-16 w-14 text-lg'])
+
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-3">
+                                    <div class="min-w-0">
+                                        <a href="{{ $row['url'] }}" class="font-semibold uppercase leading-5 text-polmind-blue hover:underline">{{ $applicant->full_name }}</a>
+                                        <p class="mt-0.5 text-xs text-slate-500">{{ $applicant->registration_number }}</p>
+                                    </div>
+                                    @include('admin.applicants.partials.actions', ['applicant' => $applicant, 'row' => $row])
+                                </div>
+
+                                <p class="mt-2 text-xs text-slate-600">
+                                    <span class="font-semibold text-slate-800">{{ $row['wave'] }}</span> · {{ $row['pathClass'] }}
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="mt-4 grid gap-4 sm:grid-cols-3">
+                            <div class="min-w-0">
+                                <p class="mb-1.5 text-[11px] font-medium text-slate-400">Program Studi</p>
+                                @include('admin.applicants.partials.programs', ['row' => $row])
+                            </div>
+                            <div class="min-w-0">
+                                <p class="mb-1.5 text-[11px] font-medium text-slate-400">Status</p>
+                                @include('admin.applicants.partials.badges', ['row' => $row])
+                            </div>
+                            <div class="min-w-0">
+                                <p class="mb-1.5 text-[11px] font-medium text-slate-400">Kontak</p>
+                                @include('admin.applicants.partials.contacts', ['applicant' => $applicant, 'row' => $row])
+                            </div>
+                        </div>
+                    </li>
+                @endforeach
+            </ul>
+        @endif
 
         {{-- Pagination --}}
         <div class="border-t border-slate-200 p-6">

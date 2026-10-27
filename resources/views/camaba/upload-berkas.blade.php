@@ -6,245 +6,216 @@
 
 @section('content')
 @php
-    $statusLabels = [
-        'belum_upload' => 'Belum Upload',
-        'menunggu_verifikasi' => 'Menunggu Verifikasi',
-        'diterima' => 'Diterima',
-        'ditolak' => 'Ditolak',
+    $statuses = [
+        'belum_upload' => ['Belum', 'bg-slate-100 text-slate-600'],
+        'menunggu_verifikasi' => ['Menunggu', 'bg-yellow-100 text-yellow-800'],
+        'diterima' => ['Diterima', 'bg-green-600 text-white'],
+        'ditolak' => ['Ditolak', 'bg-red-600 text-white'],
     ];
 
-    $statusClasses = [
-        'belum_upload' => 'bg-slate-100 text-slate-600',
-        'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-700',
-        'diterima' => 'bg-green-100 text-green-700',
-        'ditolak' => 'bg-red-100 text-red-700',
-    ];
+    $formatSize = fn (int $kb) => $kb >= 1024 ? rtrim(rtrim(number_format($kb / 1024, 1, ',', '.'), '0'), ',') . ' MB' : number_format($kb, 0, ',', '.') . ' KB';
+
+    $toast = session('success')
+        ? ['type' => 'success', 'message' => session('success')]
+        : ($errors->any() ? ['type' => 'error', 'message' => $errors->first()] : null);
 @endphp
 
-<div class="space-y-8">
-
-    @if(session('success'))
-        <div class="rounded-2xl border border-green-200 bg-green-50 px-5 py-4 text-sm font-bold text-green-700">
-            {{ session('success') }}
+{{-- Notifikasi hasil unggah (kanan atas) --}}
+@if($toast)
+    <div x-data="{ open: true }"
+         x-init="setTimeout(() => open = false, 8000)"
+         x-show="open"
+         x-transition.opacity.duration.300ms
+         role="status"
+         aria-live="polite"
+         class="fixed right-4 top-20 z-50 w-[calc(100%-2rem)] max-w-md overflow-hidden rounded-xl text-white shadow-2xl sm:right-6 {{ $toast['type'] === 'success' ? 'bg-green-600 shadow-green-900/30' : 'bg-red-600 shadow-red-900/30' }}">
+        <div class="flex items-start gap-4 px-5 py-4">
+            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-lg font-black" aria-hidden="true">
+                {{ $toast['type'] === 'success' ? '✓' : '!' }}
+            </span>
+            <p class="pt-1.5 text-sm font-bold leading-6">{{ $toast['message'] }}</p>
         </div>
-    @endif
-
-    @if($errors->any())
-        <div class="rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm font-bold text-red-700">
-            {{ $errors->first() }}
+        <div class="flex justify-end border-t border-white/20 px-5 py-2.5">
+            <button type="button" @click="open = false" class="text-xs font-black uppercase tracking-wider hover:underline">Tutup</button>
         </div>
-    @endif
+    </div>
+@endif
 
-    {{-- Header --}}
-    <div class="rounded-3xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
-        <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+<div class="space-y-6">
+
+    {{-- Berkas Pendukung --}}
+    <section class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm" aria-labelledby="berkas-title">
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 px-5 py-5 sm:flex-row sm:items-center sm:px-6">
             <div>
-                <p class="text-sm font-bold text-blue-100">Nomor Pendaftaran</p>
-                <h1 class="mt-2 text-3xl font-black">{{ $applicant->registration_number }}</h1>
-                <p class="mt-3 text-sm leading-6 text-blue-100">
-                    Upload seluruh dokumen yang diwajibkan. Berkas akan diverifikasi oleh admin PMB.
-                </p>
+                <h2 id="berkas-title" class="text-xl font-black text-slate-900">Berkas Pendukung</h2>
+                <p class="mt-1 text-sm text-slate-500">Dokumen yang harus dilengkapi.</p>
             </div>
 
-            <div class="rounded-2xl bg-white/10 p-5 lg:w-80">
-                <div class="flex items-center justify-between">
-                    <p class="text-sm font-bold text-blue-100">Progress Berkas</p>
-                    <p class="text-2xl font-black text-polmind-yellow">{{ $documentProgress }}%</p>
+            <div class="sm:w-64">
+                <div class="flex items-baseline justify-between text-xs font-bold text-slate-500">
+                    <span>Berkas wajib diterima</span>
+                    <span class="text-sm font-black text-polmind-blue">{{ $acceptedRequiredCount }}/{{ $requiredCount }}</span>
                 </div>
-
-                <div class="mt-4 h-3 overflow-hidden rounded-full bg-white/20">
-                    <div class="h-full rounded-full bg-polmind-yellow" style="width: {{ min($documentProgress, 100) }}%"></div>
+                <div class="mt-2 h-2 overflow-hidden rounded-full bg-slate-100">
+                    <div class="h-full rounded-full bg-green-600" style="width: {{ min($documentProgress, 100) }}%"></div>
                 </div>
-
-                <p class="mt-3 text-xs text-blue-100">
-                    {{ $acceptedRequiredCount }} dari {{ $requiredCount }} berkas wajib diterima
-                </p>
             </div>
         </div>
-    </div>
 
-    {{-- Info --}}
-    <div class="rounded-3xl border border-blue-200 bg-blue-50 p-6">
-        <h2 class="text-lg font-black text-polmind-blue">Ketentuan Upload</h2>
-        <div class="mt-3 grid gap-3 text-sm leading-6 text-slate-700 md:grid-cols-3">
-            <p>Pastikan file jelas dan terbaca.</p>
-            <p>Format mengikuti ketentuan masing-masing berkas.</p>
-            <p>Jika ditolak admin, upload ulang file yang sesuai.</p>
-        </div>
-    </div>
+        <ul class="divide-y divide-slate-100">
+            @forelse($documentTypes as $documentType)
+                @php
+                    $document = $documents->get($documentType->id);
+                    $hasFile = filled($document?->file_path);
+                    $status = $hasFile ? ($document->status ?? 'menunggu_verifikasi') : 'belum_upload';
+                    [$statusLabel, $statusClass] = $statuses[$status] ?? $statuses['belum_upload'];
+                    $extensions = array_map('strtolower', $documentType->allowed_extensions ?? []);
+                    $locked = $status === 'diterima';
+                @endphp
 
-    {{-- Document List --}}
-    <div class="grid gap-6">
-        @forelse($documentTypes as $documentType)
-            @php
-                $document = $documents->get($documentType->id);
-                $status = $document?->status ?? 'belum_upload';
-                $extensions = implode(', ', $documentType->allowed_extensions ?? []);
-                $fileUrl = $document?->file_path ? route('camaba.documents.file', $document) : null;
-            @endphp
-
-            <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-start">
-                    <div class="flex-1">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <h2 class="text-xl font-black text-polmind-blue">
-                                {{ $documentType->name }}
-                            </h2>
-
-                            @if($documentType->is_required)
-                                <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-black text-red-700">
-                                    Wajib
-                                </span>
-                            @else
-                                <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-600">
-                                    Opsional
-                                </span>
-                            @endif
-
-                            <span class="rounded-full px-3 py-1 text-xs font-black {{ $statusClasses[$status] ?? 'bg-slate-100 text-slate-600' }}">
-                                {{ $statusLabels[$status] ?? $status }}
+                <li class="grid gap-4 px-5 py-5 sm:px-6 md:grid-cols-[minmax(0,1fr)_6.5rem_auto] md:items-center"
+                    x-data="documentUpload(@js($extensions), {{ (int) $documentType->max_size_kb }}, @js($documentType->name))">
+                    {{-- Nama & keterangan --}}
+                    <div class="min-w-0">
+                        <p class="text-base font-black text-slate-900">
+                            {{ $documentType->name }}
+                            <span class="ml-1 align-middle text-[11px] font-bold {{ $documentType->is_required ? 'text-red-600' : 'text-slate-400' }}">
+                                {{ $documentType->is_required ? 'Wajib' : 'Opsional' }}
                             </span>
-                        </div>
+                        </p>
+                        <p class="mt-1 text-sm leading-6 text-slate-600">
+                            {{ $documentType->description ?: ($documentType->code === 'PAS_FOTO'
+                                ? 'Foto formal terbaru, latar polos, wajah terlihat jelas. Otomatis menjadi foto profil Anda.'
+                                : 'Scan berkas dan unggah di sini.') }}
+                        </p>
+                        <p class="mt-1 text-xs text-slate-400">
+                            Format {{ $extensions ? strtoupper(implode(', ', $extensions)) : 'bebas' }} · Maks. {{ $formatSize((int) $documentType->max_size_kb) }}
+                            @if($hasFile)
+                                · <span class="text-slate-500">{{ $document->file_name ?? basename($document->file_path) }}</span>
+                            @endif
+                        </p>
 
-                        @if($documentType->code === 'PAS_FOTO')
-                            <p class="mt-2 text-xs leading-5 text-slate-500">
-                                📷 Pas foto otomatis menjadi foto profil Anda. Gunakan foto formal terbaru, latar polos, wajah terlihat jelas.
+                        @if($status === 'ditolak' && $document?->admin_note)
+                            <p class="mt-2 rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold leading-5 text-red-700">
+                                Catatan admin: {{ $document->admin_note }}
                             </p>
-                        @endif
-
-                        <div class="mt-4 grid gap-3 text-sm text-slate-600 md:grid-cols-3">
-                            <p>
-                                <span class="font-bold text-slate-700">Kode:</span>
-                                {{ $documentType->code }}
-                            </p>
-                            <p>
-                                <span class="font-bold text-slate-700">Format:</span>
-                                {{ $extensions ?: '-' }}
-                            </p>
-                            <p>
-                                <span class="font-bold text-slate-700">Maks:</span>
-                                {{ number_format($documentType->max_size_kb) }} KB
-                            </p>
-                        </div>
-
-                        @if($document?->file_path)
-                            <div class="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                                <p class="text-sm font-black text-slate-800">File Saat Ini</p>
-                                <p class="mt-1 text-sm text-slate-600">
-                                    {{ $document->file_name ?? basename($document->file_path) }}
-                                </p>
-
-                                <div class="mt-3 flex flex-wrap gap-3">
-                                    @if($fileUrl)
-                                        <a href="{{ $fileUrl }}"
-                                           @click.prevent="$store.preview.show($el.href, @js(basename($document->file_path)))"
-                                           class="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-bold text-polmind-blue transition hover:bg-blue-100">
-                                            Lihat File
-                                        </a>
-                                    @endif
-
-                                    @if($status !== 'diterima')
-                                        <form action="{{ route('camaba.documents.destroy', $document) }}"
-                                              method="POST"
-                                              onsubmit="return confirm('Hapus berkas ini?')">
-                                            @csrf
-                                            @method('DELETE')
-
-                                            <button type="submit"
-                                                    class="rounded-xl border border-red-200 bg-red-50 px-4 py-2 text-xs font-bold text-red-700 transition hover:bg-red-100">
-                                                Hapus File
-                                            </button>
-                                        </form>
-                                    @endif
-                                </div>
-                            </div>
-                        @endif
-
-                        @if($document?->admin_note)
-                            <div class="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4">
-                                <p class="text-sm font-black text-red-700">Catatan Admin</p>
-                                <p class="mt-1 text-sm leading-6 text-red-700">
-                                    {{ $document->admin_note }}
-                                </p>
-                            </div>
                         @endif
                     </div>
 
-                    <div class="w-full lg:w-96">
-                        @if($status === 'diterima')
-                            <div class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                <div class="flex items-start gap-3">
-                                    <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-green-100 text-sm font-black text-green-700">
-                                        ✓
-                                    </div>
+                    {{-- Status --}}
+                    <div class="flex items-center gap-2 md:block">
+                        <p class="text-xs text-slate-500">Status</p>
+                        <span class="inline-flex rounded-md px-2 py-0.5 text-xs font-bold md:mt-1 {{ $statusClass }}">{{ $statusLabel }}</span>
+                    </div>
 
-                                    <div>
-                                        <p class="text-sm font-black text-slate-800">
-                                            Berkas Diterima
-                                        </p>
-                                        <p class="mt-1 text-xs leading-5 text-slate-500">
-                                            Dokumen sudah valid. Upload ulang tidak diperlukan.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
+                    {{-- Aksi --}}
+                    <div class="flex flex-wrap gap-2 md:justify-end">
+                        <form x-ref="form" action="{{ route('camaba.documents.store') }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            <input type="hidden" name="document_type_id" value="{{ $documentType->id }}">
+                            <input x-ref="file"
+                                   type="file"
+                                   name="file"
+                                   class="sr-only"
+                                   tabindex="-1"
+                                   @if($extensions) accept="{{ collect($extensions)->map(fn ($ext) => '.' . $ext)->implode(',') }}" @endif
+                                   @change="submit($event)">
+
+                            <button type="button"
+                                    @click="$refs.file.click()"
+                                    :disabled="uploading || @js($locked)"
+                                    @disabled($locked)
+                                    title="{{ $locked ? 'Berkas sudah diterima admin dan tidak dapat diubah' : '' }}"
+                                    class="inline-flex min-w-36 items-center justify-center gap-2 rounded-lg px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white shadow-sm transition disabled:cursor-not-allowed
+                                    {{ $locked ? 'bg-slate-300' : 'bg-emerald-500 hover:bg-emerald-600 disabled:opacity-70' }}">
+                                <svg x-show="! uploading" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="{{ $hasFile ? 'm16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Z' : 'M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5' }}"/>
+                                </svg>
+                                <svg x-show="uploading" x-cloak class="h-4 w-4 animate-spin" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+                                    <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="3" class="opacity-30"/>
+                                    <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+                                </svg>
+                                <span x-text="uploading ? 'Mengunggah...' : @js($hasFile ? 'Ubah' : 'Unggah')">{{ $hasFile ? 'Ubah' : 'Unggah' }}</span>
+                            </button>
+                        </form>
+
+                        @if($hasFile)
+                            <a href="{{ route('camaba.documents.file', $document) }}"
+                               @click.prevent="$store.preview.show($el.href, @js($document->file_name ?? basename($document->file_path)))"
+                               class="inline-flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-white shadow-sm transition hover:bg-blue-600">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                </svg>
+                                Lihat
+                            </a>
                         @else
-                            <form action="{{ route('camaba.documents.store') }}"
-                                  method="POST"
-                                  enctype="multipart/form-data"
-                                  class="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                                @csrf
-
-                                <input type="hidden" name="document_type_id" value="{{ $documentType->id }}">
-
-                                <label class="text-sm font-bold text-slate-700">
-                                    Upload File
-                                </label>
-
-                                <input type="file"
-                                       name="file"
-                                       required
-                                       class="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition file:mr-4 file:rounded-lg file:border-0 file:bg-polmind-blue file:px-4 file:py-2 file:text-xs file:font-bold file:text-white hover:file:bg-polmind-blue-dark focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-
-                                <p class="mt-3 text-xs leading-5 text-slate-500">
-                                    Format: {{ $extensions ?: 'sesuai ketentuan' }}.
-                                    Maksimal {{ number_format($documentType->max_size_kb) }} KB.
-                                </p>
-
-                                <button type="submit"
-                                        class="mt-4 w-full rounded-xl bg-polmind-blue px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
-                                    {{ $document?->file_path ? 'Upload Ulang' : 'Upload Berkas' }}
-                                </button>
-                            </form>
+                            <span class="inline-flex cursor-not-allowed items-center gap-2 rounded-lg bg-slate-100 px-4 py-2.5 text-xs font-black uppercase tracking-wide text-slate-400" title="Belum ada berkas">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="2.2" stroke="currentColor" aria-hidden="true">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                                </svg>
+                                Lihat
+                            </span>
                         @endif
                     </div>
-                </div>
-            </div>
-        @empty
-            <div class="rounded-3xl border border-slate-200 bg-white p-10 text-center shadow-sm">
-                <p class="text-sm font-bold text-slate-600">
-                    Belum ada master jenis berkas aktif.
-                </p>
-                <p class="mt-1 text-xs text-slate-500">
-                    Silakan hubungi admin PMB.
-                </p>
-            </div>
-        @endforelse
-    </div>
+                </li>
+            @empty
+                <li class="px-6 py-10 text-center">
+                    <p class="text-sm font-bold text-slate-600">Belum ada jenis berkas yang perlu diunggah.</p>
+                    <p class="mt-1 text-xs text-slate-500">Silakan hubungi admin PMB.</p>
+                </li>
+            @endforelse
+        </ul>
+    </section>
 
-    {{-- Bottom Action --}}
-    <div class="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="flex flex-col justify-between gap-3 md:flex-row md:items-center">
-            <p class="text-sm font-semibold text-slate-600">
-                Setelah upload, tunggu verifikasi dari admin PMB.
-            </p>
+    {{-- Ketentuan Upload --}}
+    <section class="rounded-3xl border border-blue-100 bg-blue-50/60 p-5 sm:p-6" aria-labelledby="ketentuan-title">
+        <h2 id="ketentuan-title" class="text-lg font-black text-polmind-blue">Ketentuan Upload</h2>
 
-            <a href="{{ route('camaba.dashboard') }}"
-               class="rounded-xl bg-polmind-blue px-5 py-3 text-center text-sm font-bold text-white transition hover:bg-polmind-blue-dark">
-                Kembali ke Dashboard
-            </a>
-        </div>
-    </div>
-
+        <ol class="mt-4 grid gap-x-8 gap-y-3 text-sm leading-6 text-slate-700 md:grid-cols-2">
+            @foreach([
+                'Pastikan file jelas, tidak buram, dan seluruh bagian dokumen terlihat.',
+                'Format dan ukuran file mengikuti ketentuan yang tertulis di bawah nama setiap berkas.',
+                'Berkas bertanda Wajib harus diunggah agar dapat mengikuti proses seleksi.',
+                'Setelah diunggah, berkas akan diverifikasi oleh admin PMB.',
+                'Jika berkas ditolak, baca catatan admin lalu klik Ubah untuk mengunggah ulang.',
+                'Berkas yang sudah diterima tidak dapat diubah. Hubungi admin PMB jika perlu perubahan.',
+            ] as $rule)
+                <li class="flex gap-3">
+                    <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">{{ $loop->iteration }}</span>
+                    <span>{{ $rule }}</span>
+                </li>
+            @endforeach
+        </ol>
+    </section>
 </div>
+
+<script>
+    // Unggah langsung setelah file dipilih; cek format & ukuran dulu di browser.
+    window.documentUpload = (extensions, maxSizeKb, name) => ({
+        uploading: false,
+
+        submit(event) {
+            const file = event.target.files[0];
+
+            if (! file) {
+                return;
+            }
+
+            const extension = file.name.split('.').pop().toLowerCase();
+            const problem = extensions.length && ! extensions.includes(extension)
+                ? `Format file ${name} harus ${extensions.join(', ').toUpperCase()}.`
+                : (file.size > maxSizeKb * 1024 ? `Ukuran file ${name} maksimal ${maxSizeKb.toLocaleString('id-ID')} KB.` : null);
+
+            if (problem) {
+                event.target.value = '';
+                window.Swal.fire({ icon: 'error', title: 'File tidak sesuai', text: problem, confirmButtonColor: '#003B82' });
+
+                return;
+            }
+
+            this.uploading = true;
+            this.$refs.form.submit();
+        },
+    });
+</script>
 @endsection
