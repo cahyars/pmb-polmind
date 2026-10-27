@@ -10,6 +10,7 @@ use App\Models\RegistrationSequence;
 use App\Models\ReRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -127,57 +128,59 @@ class PaymentController extends Controller
         $folder = 'payment-proofs/' . $applicant->registration_number;
 
         $safeInvoiceNumber = Str::slug(str_replace('/', '-', $invoice->invoice_number));
-
-        $filename = $safeInvoiceNumber . '_' . now()->format('YmdHis') . '.' . $file->getClientOriginalExtension();
+        $extension = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension()));
+        $filename = $safeInvoiceNumber . '_' . now()->format('YmdHis') . '_' . Str::random(6) . '.' . $extension;
 
         $filePath = $file->storeAs($folder, $filename, 'local');
 
-        $paymentData = [
-            'applicant_id' => $applicant->id,
-            'invoice_id' => $invoice->id,
-            'payment_method_id' => $validated['payment_method_id'] ?? null,
-            'payment_number' => $existingPayment?->payment_number ?? $this->generatePaymentNumber($invoice),
-            'transfer_date' => $validated['transfer_date'],
-            'sender_name' => $validated['sender_name'],
-            'sender_bank' => $validated['sender_bank'],
-            'amount' => $validated['amount'],
-            'proof_file_name' => $file->getClientOriginalName(),
-            'proof_file_path' => $filePath,
-            'status' => 'waiting_verification',
-            'admin_note' => null,
-            'verified_at' => null,
-            'verified_by_name' => null,
-        ];
+        DB::transaction(function () use ($applicant, $invoice, $validated, $existingPayment, $filePath, $file) {
+            $paymentData = [
+                'applicant_id' => $applicant->id,
+                'invoice_id' => $invoice->id,
+                'payment_method_id' => $validated['payment_method_id'] ?? null,
+                'payment_number' => $existingPayment?->payment_number ?? $this->generatePaymentNumber($invoice),
+                'transfer_date' => $validated['transfer_date'],
+                'sender_name' => $validated['sender_name'],
+                'sender_bank' => $validated['sender_bank'],
+                'amount' => $validated['amount'],
+                'proof_file_name' => $file->getClientOriginalName(),
+                'proof_file_path' => $filePath,
+                'status' => 'waiting_verification',
+                'admin_note' => null,
+                'verified_at' => null,
+                'verified_by_name' => null,
+            ];
 
-        Payment::create($paymentData);
+            Payment::create($paymentData);
 
-        $invoice->update([
-            'status' => 'waiting_verification',
-            'note' => 'Bukti pembayaran sudah diupload dan menunggu verifikasi admin.',
-        ]);
-
-        if ($invoice->type === 'registration') {
-            $applicant->update([
-                'payment_status' => 'menunggu_verifikasi',
-            ]);
-        }
-
-        if ($invoice->type === 're_registration') {
-            $applicant->update([
-                're_registration_status' => 'menunggu_verifikasi',
-                'sync_status' => 'belum_siap',
+            $invoice->update([
+                'status' => 'waiting_verification',
+                'note' => 'Bukti pembayaran sudah diupload dan menunggu verifikasi admin.',
             ]);
 
-            ReRegistration::updateOrCreate(
-                ['applicant_id' => $applicant->id],
-                [
-                    'invoice_id' => $invoice->id,
-                    'status' => 'menunggu_verifikasi',
-                    'admin_note' => null,
-                    'ready_sync_at' => null,
-                ]
-            );
-        }
+            if ($invoice->type === 'registration') {
+                $applicant->update([
+                    'payment_status' => 'menunggu_verifikasi',
+                ]);
+            }
+
+            if ($invoice->type === 're_registration') {
+                $applicant->update([
+                    're_registration_status' => 'menunggu_verifikasi',
+                    'sync_status' => 'belum_siap',
+                ]);
+
+                ReRegistration::updateOrCreate(
+                    ['applicant_id' => $applicant->id],
+                    [
+                        'invoice_id' => $invoice->id,
+                        'status' => 'menunggu_verifikasi',
+                        'admin_note' => null,
+                        'ready_sync_at' => null,
+                    ]
+                );
+            }
+        });
 
         return back()->with('payment_submitted', true);
     }

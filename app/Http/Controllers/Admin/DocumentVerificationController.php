@@ -8,6 +8,7 @@ use App\Models\ApplicantDocument;
 use App\Models\DocumentType;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class DocumentVerificationController extends Controller
@@ -92,14 +93,16 @@ class DocumentVerificationController extends Controller
             return back()->withErrors('File berkas tidak ditemukan di storage. Berkas tidak dapat diterima.');
         }
 
-        $document->update([
-            'status' => 'diterima',
-            'admin_note' => null,
-            'verified_at' => now(),
-            'verified_by_name' => 'Admin PMB',
-        ]);
+        DB::transaction(function () use ($document) {
+            $document->update([
+                'status' => 'diterima',
+                'admin_note' => null,
+                'verified_at' => now(),
+                'verified_by_name' => 'Admin PMB',
+            ]);
 
-        $this->refreshApplicantDocumentStatus($document->applicant);
+            $this->refreshApplicantDocumentStatus($document->applicant);
+        });
 
         return back()->with('success', 'Berkas berhasil diterima.');
     }
@@ -118,14 +121,16 @@ class DocumentVerificationController extends Controller
             'admin_note' => ['required', 'string', 'max:1000'],
         ]);
 
-        $document->update([
-            'status' => 'ditolak',
-            'admin_note' => $validated['admin_note'],
-            'verified_at' => now(),
-            'verified_by_name' => 'Admin PMB',
-        ]);
+        DB::transaction(function () use ($document, $validated) {
+            $document->update([
+                'status' => 'ditolak',
+                'admin_note' => $validated['admin_note'],
+                'verified_at' => now(),
+                'verified_by_name' => 'Admin PMB',
+            ]);
 
-        $this->refreshApplicantDocumentStatus($document->applicant);
+            $this->refreshApplicantDocumentStatus($document->applicant);
+        });
 
         return back()->with('success', 'Berkas berhasil ditolak dengan catatan.');
     }

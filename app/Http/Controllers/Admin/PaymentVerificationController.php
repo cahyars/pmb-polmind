@@ -8,6 +8,7 @@ use App\Models\Payment;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class PaymentVerificationController extends Controller
 {
@@ -93,16 +94,18 @@ class PaymentVerificationController extends Controller
             return back()->withErrors('Hanya pembayaran dengan status menunggu verifikasi yang dapat divalidasi.');
         }
 
-        $payment->load(['invoice', 'applicant']);
+        DB::transaction(function () use ($payment) {
+            $payment->load(['invoice', 'applicant']);
 
-        $payment->update([
-            'status' => 'valid',
-            'admin_note' => null,
-            'verified_at' => now(),
-            'verified_by_name' => 'Admin PMB',
-        ]);
+            $payment->update([
+                'status' => 'valid',
+                'admin_note' => null,
+                'verified_at' => now(),
+                'verified_by_name' => 'Admin PMB',
+            ]);
 
-        $this->refreshPaymentStatus($payment);
+            $this->refreshPaymentStatus($payment);
+        });
 
         $payment->refresh();
         $payment->load('invoice');
@@ -131,16 +134,18 @@ class PaymentVerificationController extends Controller
             'admin_note' => ['required', 'string', 'max:1000'],
         ]);
 
-        $payment->load(['invoice', 'applicant']);
+        DB::transaction(function () use ($payment, $validated) {
+            $payment->load(['invoice', 'applicant']);
 
-        $payment->update([
-            'status' => 'rejected',
-            'admin_note' => $validated['admin_note'],
-            'verified_at' => now(),
-            'verified_by_name' => 'Admin PMB',
-        ]);
+            $payment->update([
+                'status' => 'rejected',
+                'admin_note' => $validated['admin_note'],
+                'verified_at' => now(),
+                'verified_by_name' => 'Admin PMB',
+            ]);
 
-        $this->refreshPaymentStatus($payment, $validated['admin_note']);
+            $this->refreshPaymentStatus($payment, $validated['admin_note']);
+        });
 
         return back()->with('success', 'Pembayaran berhasil ditolak dengan catatan.');
     }

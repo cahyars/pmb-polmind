@@ -41,10 +41,14 @@ Route::get('/referensi/wilayah', [RegionController::class, 'index'])
     ->name('regions.index');
 
 Route::get('/login', [CamabaAuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [CamabaAuthController::class, 'login'])->name('login.store');
+Route::post('/login', [CamabaAuthController::class, 'login'])
+    ->middleware('throttle:15,1')
+    ->name('login.store');
 
 Route::get('/register', [CamabaAuthController::class, 'showRegister'])->name('register');
-Route::post('/register', [CamabaAuthController::class, 'register'])->name('register.store');
+Route::post('/register', [CamabaAuthController::class, 'register'])
+    ->middleware('throttle:20,1')
+    ->name('register.store');
 
 Route::post('/logout', [CamabaAuthController::class, 'logout'])->name('logout');
 
@@ -55,7 +59,9 @@ Route::middleware('auth:applicant')
         Route::get('/dashboard', [CamabaDashboardController::class, 'index'])->name('dashboard');
 
         Route::get('/pembayaran', [CamabaPaymentController::class, 'index'])->name('payments.index');
-        Route::post('/pembayaran/{invoice}/upload-proof', [CamabaPaymentController::class, 'uploadProof'])->name('payments.upload-proof');
+        Route::post('/pembayaran/{invoice}/upload-proof', [CamabaPaymentController::class, 'uploadProof'])
+            ->middleware('throttle:15,1')
+            ->name('payments.upload-proof');
         Route::get('/pembayaran/bukti/{payment}', [CamabaFileController::class, 'paymentProof'])->name('payments.proof');
 
         Route::get('/upload-berkas/{document}/file', [CamabaFileController::class, 'document'])->name('documents.file');
@@ -66,7 +72,9 @@ Route::middleware('auth:applicant')
             Route::put('/biodata', [CamabaBiodataController::class, 'update'])->name('biodata.update');
 
             Route::get('/upload-berkas', [CamabaDocumentController::class, 'index'])->name('documents.index');
-            Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])->name('documents.store');
+            Route::post('/upload-berkas', [CamabaDocumentController::class, 'store'])
+                ->middleware('throttle:30,1')
+                ->name('documents.store');
             Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
 
             Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
@@ -79,7 +87,9 @@ Route::middleware('auth:applicant')
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::middleware('guest:web')->group(function () {
         Route::get('/login', [AdminAuthController::class, 'showLogin'])->name('login');
-        Route::post('/login', [AdminAuthController::class, 'login'])->name('login.store');
+        Route::post('/login', [AdminAuthController::class, 'login'])
+            ->middleware('throttle:10,1')
+            ->name('login.store');
     });
 });
 

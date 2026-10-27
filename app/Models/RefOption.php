@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Cache;
 
 /**
  * Referensi SIAKAD (kode Neo Feeder PDDikti) yang dipakai biodata camaba.
@@ -38,10 +39,14 @@ class RefOption extends Model
      */
     public static function optionsFor(string $group): Collection
     {
-        return self::$cache[$group] ??= self::query()
-            ->where('group', $group)
-            ->orderBy('sort_order')
-            ->pluck('name', 'code');
+        return self::$cache[$group] ??= Cache::remember(
+            'ref_options.group.' . $group,
+            now()->addDays(7),
+            fn () => self::query()
+                ->where('group', $group)
+                ->orderBy('sort_order')
+                ->pluck('name', 'code')
+        );
     }
 
     /**
@@ -64,5 +69,17 @@ class RefOption extends Model
     public static function flushCache(): void
     {
         self::$cache = [];
+        foreach ([
+            self::AGAMA,
+            self::PENDIDIKAN,
+            self::PEKERJAAN,
+            self::PENGHASILAN,
+            self::JENIS_TINGGAL,
+            self::ALAT_TRANSPORTASI,
+            self::KEBUTUHAN_KHUSUS,
+            self::KEWARGANEGARAAN,
+        ] as $group) {
+            Cache::forget('ref_options.group.' . $group);
+        }
     }
 }

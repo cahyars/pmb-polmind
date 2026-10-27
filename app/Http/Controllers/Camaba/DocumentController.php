@@ -8,7 +8,9 @@ use App\Models\ApplicantDocument;
 use App\Models\DocumentType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class DocumentController extends Controller
@@ -63,7 +65,12 @@ class DocumentController extends Controller
 
         $documentType = DocumentType::findOrFail($validated['document_type_id']);
 
-        $allowedExtensions = $documentType->allowed_extensions ?? [];
+        // Batasi ekstensi berkas secara ketat hanya format dokumen/gambar yang aman.
+        $safeExtensions = ['pdf', 'jpg', 'jpeg', 'png'];
+        $allowedExtensions = ! empty($documentType->allowed_extensions)
+            ? array_values(array_intersect(array_map('strtolower', (array) $documentType->allowed_extensions), $safeExtensions))
+            : $safeExtensions;
+
         $maxSizeKb = $documentType->max_size_kb ?? 2048;
 
         $rules = [
@@ -71,12 +78,9 @@ class DocumentController extends Controller
                 'required',
                 'file',
                 'max:' . $maxSizeKb,
+                'mimes:' . implode(',', $allowedExtensions),
             ],
         ];
-
-        if (! empty($allowedExtensions)) {
-            $rules['file'][] = 'mimes:' . implode(',', $allowedExtensions);
-        }
 
         $request->validate($rules, [
             'file.max' => 'Ukuran file ' . $documentType->name . ' maksimal ' . number_format($maxSizeKb, 0, ',', '.') . ' KB.',
@@ -95,31 +99,33 @@ class DocumentController extends Controller
 
         $folder = 'applicant-documents/' . $applicant->registration_number;
 
-        $extension = $file->getClientOriginalExtension();
-
-        $filename = $documentType->code . '_' . now()->format('YmdHis') . '.' . $extension;
+        $extension = strtolower((string) ($file->guessExtension() ?: $file->getClientOriginalExtension()));
+        $safeCode = Str::slug($documentType->code, '_');
+        $filename = $safeCode . '_' . now()->format('YmdHis') . '_' . Str::random(6) . '.' . $extension;
 
         $filePath = $file->storeAs($folder, $filename, 'local');
 
-        ApplicantDocument::updateOrCreate(
-            [
-                'applicant_id' => $applicant->id,
-                'document_type_id' => $documentType->id,
-            ],
-            [
-                'file_name' => $file->getClientOriginalName(),
-                'file_path' => $filePath,
-                'file_extension' => $extension,
-                'file_size_kb' => ceil($file->getSize() / 1024),
-                'status' => 'menunggu_verifikasi',
-                'admin_note' => null,
-                'uploaded_at' => now(),
-                'verified_at' => null,
-                'verified_by_name' => null,
-            ]
-        );
+        DB::transaction(function () use ($applicant, $documentType, $file, $filePath, $extension) {
+            ApplicantDocument::updateOrCreate(
+                [
+                    'applicant_id' => $applicant->id,
+                    'document_type_id' => $documentType->id,
+                ],
+                [
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_path' => $filePath,
+                    'file_extension' => $extension,
+                    'file_size_kb' => ceil($file->getSize() / 1024),
+                    'status' => 'menunggu_verifikasi',
+                    'admin_note' => null,
+                    'uploaded_at' => now(),
+                    'verified_at' => null,
+                    'verified_by_name' => null,
+                ]
+            );
 
-        $this->refreshApplicantDocumentStatus($applicant);
+            $this->refreshApplicantDocumentStatus($applicant);
+        });
 
         return back()->with('success', 'Unggah berkas ' . $documentType->name . ' berhasil disimpan.');
     }
@@ -134,19 +140,21 @@ class DocumentController extends Controller
             Storage::disk('local')->delete($document->file_path);
         }
 
-        $document->update([
-            'file_name' => null,
-            'file_path' => null,
-            'file_extension' => null,
-            'file_size_kb' => null,
-            'status' => 'belum_upload',
-            'admin_note' => null,
-            'uploaded_at' => null,
-            'verified_at' => null,
-            'verified_by_name' => null,
-        ]);
+        DB::transaction(function () use ($document, $applicant) {
+            $document->update([
+                'file_name' => null,
+                'file_path' => null,
+                'file_extension' => null,
+                'file_size_kb' => null,
+                'status' => 'belum_upload',
+                'admin_note' => null,
+                'uploaded_at' => null,
+                'verified_at' => null,
+                'verified_by_name' => null,
+            ]);
 
-        $this->refreshApplicantDocumentStatus($applicant);
+            $this->refreshApplicantDocumentStatus($applicant);
+        });
 
         return back()->with('success', 'Berkas berhasil dihapus.');
     }
