@@ -23,12 +23,12 @@
         ],
         [
             'title' => 'Kuliah Vokasi, Langsung Terhubung Industri',
-            'text' => 'Belajar dengan konsep Teaching Factory dan magang industri di kawasan MM2100 sejak awal perkuliahan.',
+            'text' => 'Belajar dengan konsep Project-based Learning melalui Teaching Factory dan langsung mengerjakan proyek riil dari industri sejak awal perkuliahan.',
             'image' => 'object-[30%_40%] scale-110',
         ],
         [
             'title' => 'Pilih Kelas Sesuai Kebutuhan Anda',
-            'text' => 'Tersedia kelas reguler untuk lulusan baru dan kelas karyawan dengan jadwal yang menyesuaikan jam kerja.',
+            'text' => 'Tersedia kelas reguler untuk lulusan baru dan kelas khusus karyawan dengan jadwal yang menyesuaikan jam kerja.',
             'image' => 'object-[70%_40%] scale-105',
         ],
     ];
@@ -316,7 +316,7 @@
         @php
             // Hiasan kartu per kode prodi; isi utama (nama, jenjang, deskripsi, kuota) dari Master Data.
             $programDecor = [
-                'TRPL' => ['icon' => 'computer', 'tags' => ['Teaching Factory', 'Magang Industri']],
+                'TRPL' => ['icon' => 'computer', 'tags' => ['IT', 'Magang Industri']],
                 'BD' => ['icon' => 'presentation', 'tags' => ['Bisnis Digital', 'Magang Industri']],
                 'TRM' => ['icon' => 'wrench', 'tags' => ['Manufaktur', 'Magang Industri']],
             ];
@@ -360,11 +360,7 @@
                         @endif
 
                         <div class="mt-5 flex flex-wrap gap-2">
-                            @if($program->quota > 0)
-                                <span class="rounded-full bg-polmind-yellow/30 px-3 py-1 text-xs font-bold text-polmind-blue-dark">
-                                    Kuota {{ $program->quota }} mahasiswa
-                                </span>
-                            @endif
+                            {{-- Kuota di card program studi di-hide sementara --}}
                             @foreach($decor['tags'] as $tag)
                                 <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
                                     {{ $tag }}
