@@ -117,6 +117,74 @@
         @endforeach
     </div>
 
+    {{-- Pembubuhan NIM --}}
+    <div x-data="{ showList: false }" class="rounded-xl border border-slate-200 bg-white shadow-sm">
+        <div class="flex flex-col justify-between gap-4 p-6 md:flex-row md:items-center">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900">Pembubuhan NIM</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Camaba diterima yang sudah membayar daftar ulang (UKT, SPI, atau keduanya) dan belum memiliki NIM.
+                    Nomor urut mengikuti tanggal daftar ulang paling awal. Contoh format: <span class="font-mono font-semibold text-slate-800">{{ $nimExample }}</span>
+                    · <a href="{{ route('admin.master-data.show', 'penomoran') }}" class="font-semibold text-polmind-blue hover:underline">Atur format</a>
+                </p>
+            </div>
+
+            <div class="flex shrink-0 items-center gap-3">
+                @if($nimCandidates->isNotEmpty())
+                    <button type="button" @click="showList = ! showList"
+                            class="rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                        <span x-text="showList ? 'Sembunyikan' : 'Lihat Urutan'"></span>
+                    </button>
+                @endif
+
+                <form action="{{ route('admin.re-registrations.generate-nim') }}" method="POST"
+                      onsubmit="return confirm('Bubuhkan NIM ke {{ $nimCandidates->count() }} camaba sesuai urutan tanggal daftar ulang? NIM yang sudah dibuat tidak diubah lagi.')">
+                    @csrf
+                    <button type="submit" @disabled($nimCandidates->isEmpty())
+                            class="rounded-lg bg-polmind-blue px-5 py-3 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50">
+                        Generate NIM ({{ $nimCandidates->count() }})
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        @if($nimCandidates->isNotEmpty())
+            <div x-show="showList" x-cloak class="overflow-x-auto border-t border-slate-200">
+                <table class="w-full min-w-[720px] text-left text-sm">
+                    <thead class="border-b border-slate-200 text-xs text-slate-400 [&_th]:font-medium">
+                        <tr>
+                            <th class="px-5 py-3">Urutan</th>
+                            <th class="px-5 py-3">Tanggal Daftar Ulang</th>
+                            <th class="px-5 py-3">Camaba</th>
+                            <th class="px-5 py-3">Prodi</th>
+                            <th class="px-5 py-3">Kode NIM Prodi</th>
+                        </tr>
+                    </thead>
+                    <tbody class="table-zebra">
+                        @foreach($nimCandidates as $row)
+                            <tr>
+                                <td class="px-5 py-3 font-bold text-polmind-blue">{{ $loop->iteration }}</td>
+                                <td class="px-5 py-3 text-slate-700">{{ $row['re_registered_at']?->translatedFormat('d M Y') ?? '-' }}</td>
+                                <td class="px-5 py-3">
+                                    <p class="font-semibold text-slate-800">{{ $row['applicant']->full_name }}</p>
+                                    <p class="text-xs text-slate-500">{{ $row['applicant']->registration_number }}</p>
+                                </td>
+                                <td class="px-5 py-3 text-slate-700">{{ $row['applicant']->studyProgram?->code ?? '-' }}</td>
+                                <td class="px-5 py-3">
+                                    @if($row['applicant']->studyProgram?->nim_code)
+                                        <span class="font-mono font-bold text-slate-800">{{ $row['applicant']->studyProgram->nim_code }}</span>
+                                    @else
+                                        <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">Belum diisi</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        @endif
+    </div>
+
     {{-- Filter --}}
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div class="border-b border-slate-200 pb-5">

@@ -126,6 +126,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
     Route::patch('/selections/{applicant}/reject', [SelectionController::class, 'reject'])->name('selections.reject');
 
     Route::get('/re-registrations', [ReRegistrationController::class, 'index'])->name('re-registrations.index');
+    Route::post('/re-registrations/generate-nim', [ReRegistrationController::class, 'generateNim'])->name('re-registrations.generate-nim');
     Route::patch('/re-registrations/{reRegistration}/validate', [ReRegistrationController::class, 'validateReRegistration'])->name('re-registrations.validate');
     Route::patch('/re-registrations/{reRegistration}/reject', [ReRegistrationController::class, 'reject'])->name('re-registrations.reject');
     Route::patch('/re-registrations/{reRegistration}/ready-sync', [ReRegistrationController::class, 'markReadySync'])->name('re-registrations.ready-sync');
@@ -151,6 +152,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
     Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
     Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
     Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
+
+    Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');
 
     Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
     Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');

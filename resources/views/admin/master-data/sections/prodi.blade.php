@@ -4,7 +4,7 @@
         <div>
             <h2 class="text-base font-semibold text-slate-900">Program Studi</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
-                Data prodi untuk pilihan pendaftaran camaba.
+                Data prodi untuk pilihan pendaftaran camaba. Kode NIM dipakai saat Generate NIM, contoh A pada A20270001.
             </p>
         </div>
 
@@ -21,9 +21,12 @@
         class="hidden border-b border-slate-200 bg-slate-50 p-6">
         @csrf
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <input type="text" name="code" placeholder="Kode, contoh TRPL" required
                 class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+            <input type="text" name="nim_code" maxlength="5" placeholder="Kode NIM, contoh A" title="Kode prodi pada NIM, contoh A pada A20270001"
+                class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100 uppercase">
 
             <input type="text" name="name" placeholder="Nama prodi" required
                 class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
@@ -40,7 +43,7 @@
             </label>
 
             <textarea name="description" rows="3" placeholder="Deskripsi prodi"
-                    class="md:col-span-2 xl:col-span-5 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
+                    class="md:col-span-2 xl:col-span-6 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100"></textarea>
         </div>
 
         <div class="mt-4 flex justify-end gap-3">
@@ -62,6 +65,7 @@
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
                     <th class="px-5 py-3.5">Kode</th>
+                    <th class="px-5 py-3.5">Kode NIM</th>
                     <th class="px-5 py-3.5">Nama Prodi</th>
                     <th class="px-5 py-3.5">Jenjang</th>
                     <th class="px-5 py-3.5">Kuota</th>
@@ -74,6 +78,7 @@
                 @forelse($studyPrograms as $program)
                     <tr>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $program->code }}</td>
+                        <td class="px-5 py-3.5 font-mono font-bold text-slate-700">{{ $program->nim_code ?? '-' }}</td>
                         <td class="px-5 py-3.5">
                             <p class="font-semibold text-slate-800">{{ $program->name }}</p>
                             <p class="mt-1 text-xs leading-5 text-slate-500">{{ $program->description }}</p>
@@ -111,14 +116,17 @@
                     </tr>
 
                     <tr id="edit-study-program-{{ $program->id }}" class="hidden bg-slate-50">
-                        <td colspan="6" class="px-6 py-5">
+                        <td colspan="7" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.study-programs.update', $program) }}" method="POST">
                                 @csrf
                                 @method('PUT')
 
-                                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+                                <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
                                     <input type="text" name="code" value="{{ $program->code }}" required
                                         class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+
+                                    <input type="text" name="nim_code" value="{{ $program->nim_code }}" maxlength="5" placeholder="Kode NIM, contoh A" title="Kode prodi pada NIM, contoh A pada A20270001"
+                                        class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100 uppercase">
 
                                     <input type="text" name="name" value="{{ $program->name }}" required
                                         class="rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
@@ -135,7 +143,7 @@
                                     </label>
 
                                     <textarea name="description" rows="3"
-                                            class="md:col-span-2 xl:col-span-5 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ $program->description }}</textarea>
+                                            class="md:col-span-2 xl:col-span-6 rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ $program->description }}</textarea>
                                 </div>
 
                                 <div class="mt-4 flex justify-end gap-3">
@@ -155,7 +163,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data prodi.
                         </td>
                     </tr>

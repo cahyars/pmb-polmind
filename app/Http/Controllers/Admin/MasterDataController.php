@@ -9,7 +9,9 @@ use App\Models\DocumentType;
 use App\Models\FeeComponent;
 use App\Models\PmbYear;
 use App\Models\SelectionComponent;
+use App\Models\Setting;
 use App\Models\StudyProgram;
+use App\Services\NimGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -28,6 +30,7 @@ class MasterDataController extends Controller
         'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
         'berkas' => ['label' => 'Jenis Berkas', 'description' => 'Dokumen yang wajib atau opsional diunggah camaba.'],
         'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI, UKT, dan komponen daftar ulang.'],
+        'penomoran' => ['label' => 'Penomoran', 'description' => 'Format NIM mahasiswa baru yang dibubuhkan PMB.'],
     ];
 
     public function index()
@@ -62,6 +65,12 @@ class MasterDataController extends Controller
             ],
             'biaya' => [
                 'feeComponents' => FeeComponent::orderBy('type')->orderBy('sort_order')->get(),
+            ],
+            'penomoran' => [
+                'studyPrograms' => StudyProgram::orderBy('code')->get(),
+                'nimFormat' => NimGenerator::format(),
+                'nimDigits' => NimGenerator::digits(),
+                'nimScope' => NimGenerator::scope(),
             ],
         };
 
@@ -102,6 +111,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'unique:study_programs,code'],
+            'nim_code' => ['nullable', 'alpha_num:ascii', 'max:5', 'unique:study_programs,nim_code'],
             'name' => ['required', 'string', 'max:255'],
             'degree' => ['required', 'string', 'max:20'],
             'quota' => ['required', 'integer', 'min:0'],
@@ -110,6 +120,7 @@ class MasterDataController extends Controller
 
         StudyProgram::create([
             'code' => strtoupper($validated['code']),
+            'nim_code' => filled($validated['nim_code'] ?? null) ? strtoupper($validated['nim_code']) : null,
             'name' => $validated['name'],
             'degree' => strtoupper($validated['degree']),
             'quota' => $validated['quota'],
@@ -124,6 +135,7 @@ class MasterDataController extends Controller
     {
         $validated = $request->validate([
             'code' => ['required', 'string', 'max:20', 'unique:study_programs,code,' . $studyProgram->id],
+            'nim_code' => ['nullable', 'alpha_num:ascii', 'max:5', 'unique:study_programs,nim_code,' . $studyProgram->id],
             'name' => ['required', 'string', 'max:255'],
             'degree' => ['required', 'string', 'max:20'],
             'quota' => ['required', 'integer', 'min:0'],
@@ -132,6 +144,7 @@ class MasterDataController extends Controller
 
         $studyProgram->update([
             'code' => strtoupper($validated['code']),
+            'nim_code' => filled($validated['nim_code'] ?? null) ? strtoupper($validated['nim_code']) : null,
             'name' => $validated['name'],
             'degree' => strtoupper($validated['degree']),
             'quota' => $validated['quota'],
@@ -140,6 +153,33 @@ class MasterDataController extends Controller
         ]);
 
         return back()->with('success', 'Program studi berhasil diperbarui.');
+    }
+
+    public function updateNumbering(Request $request)
+    {
+        $validated = $request->validate([
+            'nim_format' => ['required', 'string', 'max:50', 'regex:/^([A-Za-z0-9.\-\/]|\{PRODI\}|\{KELAS\}|\{TAHUN\}|\{TAHUN2\}|\{URUT\})+$/'],
+            'nim_digits' => ['required', 'integer', 'min:3', 'max:6'],
+            'nim_scope' => ['required', Rule::in(array_keys(NimGenerator::SCOPES))],
+        ], [
+            'nim_format.regex' => 'Format NIM hanya boleh berisi huruf, angka, titik, strip, garis miring, dan kode {PRODI}, {KELAS}, {TAHUN}, {TAHUN2}, {URUT}.',
+        ], [
+            'nim_format' => 'format NIM',
+            'nim_digits' => 'panjang nomor urut',
+            'nim_scope' => 'cakupan nomor urut',
+        ]);
+
+        if (substr_count($validated['nim_format'], '{URUT}') !== 1) {
+            return back()->withErrors('Format NIM wajib memuat kode {URUT} tepat satu kali.')->withInput();
+        }
+
+        Setting::put([
+            'nim.format' => $validated['nim_format'],
+            'nim.digits' => $validated['nim_digits'],
+            'nim.scope' => $validated['nim_scope'],
+        ]);
+
+        return back()->with('success', 'Pengaturan format NIM berhasil disimpan.');
     }
 
     public function toggleStudyProgram(StudyProgram $studyProgram)

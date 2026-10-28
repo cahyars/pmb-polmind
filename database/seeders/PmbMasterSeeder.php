@@ -85,6 +85,7 @@ class PmbMasterSeeder extends Seeder
         $programs = [
             [
                 'code' => 'TRPL',
+                'nim_code' => 'A',
                 'name' => 'Teknologi Rekayasa Perangkat Lunak',
                 'degree' => 'D4',
                 'quota' => 40,
@@ -93,6 +94,7 @@ class PmbMasterSeeder extends Seeder
             ],
             [
                 'code' => 'TRM',
+                'nim_code' => 'B',
                 'name' => 'Teknologi Rekayasa Manufaktur',
                 'degree' => 'D4',
                 'quota' => 40,
@@ -101,6 +103,7 @@ class PmbMasterSeeder extends Seeder
             ],
             [
                 'code' => 'BD',
+                'nim_code' => 'C',
                 'name' => 'Bisnis Digital',
                 'degree' => 'D4',
                 'quota' => 40,

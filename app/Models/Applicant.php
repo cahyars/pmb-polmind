@@ -68,6 +68,7 @@ class Applicant extends Authenticatable
         'sync_status',
 
         'nim',
+        'nim_generated_at',
         'synced_at',
     ];
 
@@ -82,6 +83,7 @@ class Applicant extends Authenticatable
         'transportation_id' => 'integer',
         'kps_recipient' => 'boolean',
         'special_need_id' => 'integer',
+        'nim_generated_at' => 'datetime',
         'synced_at' => 'datetime',
         'password' => 'hashed',
     ];

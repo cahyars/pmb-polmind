@@ -3,11 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SelectAdminPmbYear;
 use App\Models\Applicant;
 use App\Models\Invoice;
 use App\Models\Payment;
+use App\Models\PmbYear;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
+use App\Services\NimGenerator;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -96,6 +99,10 @@ class ReRegistrationController extends Controller
             ->paginate(10)
             ->withQueryString();
 
+        $pmbYear = $this->selectedPmbYear($request);
+        $nimCandidates = $pmbYear ? NimGenerator::eligible($pmbYear) : collect();
+        $nimExample = NimGenerator::example(year: $pmbYear?->year);
+
         return view('admin.re-registrations.index', compact(
             'acceptedApplicants',
             'waitingReRegistrations',
@@ -104,8 +111,40 @@ class ReRegistrationController extends Controller
             'partialReRegistrations',
             'totalPaidReRegistration',
             'studyPrograms',
-            'reRegistrations'
+            'reRegistrations',
+            'nimCandidates',
+            'nimExample'
         ));
+    }
+
+    /**
+     * Bubuhkan NIM ke camaba yang sudah membayar daftar ulang, berurutan
+     * dari tanggal daftar ulang paling awal.
+     */
+    public function generateNim(Request $request)
+    {
+        $pmbYear = $this->selectedPmbYear($request);
+
+        if (! $pmbYear) {
+            return back()->withErrors('Pilih Tahun PMB terlebih dahulu.');
+        }
+
+        ['generated' => $generated, 'skipped' => $skipped] = NimGenerator::generate($pmbYear);
+
+        if ($generated->isEmpty() && $skipped->isEmpty()) {
+            return back()->withErrors('Belum ada camaba yang memenuhi syarat untuk dibubuhkan NIM.');
+        }
+
+        if ($skipped->isNotEmpty()) {
+            $programs = $skipped->map(fn ($applicant) => $applicant->studyProgram?->code ?? '-')->unique()->implode(', ');
+
+            $message = $generated->count() . ' NIM berhasil dibuat. ' . $skipped->count()
+                . ' camaba dilewati karena kode NIM prodi (' . $programs . ') belum diisi di Master Data Program Studi.';
+
+            return $generated->isEmpty() ? back()->withErrors($message) : back()->with('success', $message);
+        }
+
+        return back()->with('success', $generated->count() . ' NIM berhasil dibuat sesuai urutan tanggal daftar ulang.');
     }
 
     public function validateReRegistration(ReRegistration $reRegistration)
@@ -207,6 +246,11 @@ class ReRegistrationController extends Controller
         });
 
         return back()->with('success', 'Camaba berhasil ditandai siap sinkron ke SIAKAD.');
+    }
+
+    private function selectedPmbYear(Request $request): ?PmbYear
+    {
+        return PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
     }
 
     private function guardCanValidate(ReRegistration $reRegistration): ?string
