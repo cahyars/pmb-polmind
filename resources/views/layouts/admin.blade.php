@@ -51,7 +51,16 @@
                     ['label' => 'Seleksi', 'url' => '/admin/selections', 'icon' => 'check', 'active' => request()->is('admin/selections*')],
                     ['label' => 'Daftar Ulang', 'url' => '/admin/re-registrations', 'icon' => 'cap', 'active' => request()->is('admin/re-registrations*')],
                     ['label' => 'Follow Up', 'url' => '/admin/follow-ups', 'icon' => 'chat', 'active' => request()->is('admin/follow-ups*')],
-                    ['label' => 'Laporan', 'url' => '/admin/reports', 'icon' => 'chart', 'active' => request()->is('admin/reports*')],
+                    [
+                        'label' => 'Laporan',
+                        'icon' => 'chart',
+                        'active' => request()->is('admin/reports*'),
+                        'children' => collect(\App\Http\Controllers\Admin\ReportController::SECTIONS)->map(fn ($item, $key) => [
+                            'label' => $item['label'],
+                            'url' => route('admin.reports.show', $key),
+                            'active' => request()->routeIs('admin.reports.show') && request()->route('section') === $key,
+                        ])->values()->all(),
+                    ],
                 ],
                 'Pengaturan' => [
                     [
@@ -355,5 +364,7 @@
     </div>
 
     @include('partials.file-preview-modal')
+
+    @stack('scripts')
 </body>
 </html>

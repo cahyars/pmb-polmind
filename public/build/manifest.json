@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-BO1gM9qC.css",
+    "file": "assets/app-BjSCX5b2.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -12,6 +12,12 @@
     "file": "assets/app-BSF1Iefk.js",
     "name": "app",
     "src": "resources/js/app.js",
+    "isEntry": true
+  },
+  "resources/js/report-charts.js": {
+    "file": "assets/report-charts-BiADfdbD.js",
+    "name": "report-charts",
+    "src": "resources/js/report-charts.js",
     "isEntry": true
   }
 }

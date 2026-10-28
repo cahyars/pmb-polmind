@@ -377,7 +377,7 @@ class SiakadBiodataTest extends TestCase
 
         $admin = User::factory()->create();
 
-        foreach (['/admin/dashboard', '/admin/applicants', '/admin/applicants/' . $applicant->registration_number, '/admin/integrations', '/admin/reports'] as $url) {
+        foreach (['/admin/dashboard', '/admin/applicants', '/admin/applicants/' . $applicant->registration_number, '/admin/integrations', '/admin/reports/pendaftar', '/admin/reports/seleksi', '/admin/reports/daftar-ulang'] as $url) {
             $this->actingAs($admin, 'web')->get($url)->assertOk();
         }
 
