@@ -97,6 +97,12 @@
                    class="inline-flex items-center justify-center rounded-xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur transition hover:bg-white/20">
                     Konsultasi WA
                 </a>
+                @if($brochures->isNotEmpty())
+                    @include('public.partials.brochure-download', [
+                        'dropUp' => true,
+                        'buttonClass' => 'inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur transition hover:bg-white/20',
+                    ])
+                @endif
             </div>
         </div>
 
@@ -159,12 +165,10 @@
             </p>
 
             @if($brochures->isNotEmpty())
-                {{-- Satu brosur langsung diunduh; lebih dari satu diarahkan ke daftar brosur. --}}
-                <a href="{{ $brochures->count() === 1 ? route('brochures.download', $brochures->first()) : '#brosur' }}"
-                   class="mt-8 inline-flex items-center gap-2 rounded-xl border border-polmind-border bg-white px-5 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-blue-50">
-                    <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.03 8.22a.75.75 0 0 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 1 0-1.06-1.06l-3.22 3.22V2.75Z"/><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"/></svg>
-                    Download Brosur
-                </a>
+                @include('public.partials.brochure-download', [
+                    'wrapperClass' => 'mt-8 inline-block',
+                    'buttonClass' => ($brochures->count() === 1 ? 'mt-8 ' : '') . 'inline-flex items-center gap-2 rounded-xl border border-polmind-border bg-white px-5 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-blue-50',
+                ])
             @else
                 <a href="https://polmind.ac.id/pmb"
                    target="_blank"
@@ -510,45 +514,6 @@
         </div>
     </div>
 </section>
-
-{{-- BROSUR (diunggah admin di menu Brosur) --}}
-@if($brochures->isNotEmpty())
-<section id="brosur" class="scroll-mt-20 bg-white py-20">
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div class="text-center">
-            <h2 class="text-3xl font-black text-polmind-blue sm:text-4xl">
-                Brosur PMB
-            </h2>
-            <p class="mt-3 text-sm text-slate-600">
-                Unduh brosur untuk informasi lengkap program studi, jalur masuk, dan biaya kuliah.
-            </p>
-        </div>
-
-        {{-- Lebar grid mengikuti jumlah brosur agar kartu tetap di tengah. --}}
-        <div class="mx-auto mt-10 grid gap-5 {{ match (min($brochures->count(), 3)) { 1 => 'max-w-sm', 2 => 'max-w-3xl sm:grid-cols-2', default => 'max-w-5xl sm:grid-cols-2 lg:grid-cols-3' } }}">
-            @foreach($brochures as $brochure)
-                <a href="{{ route('brochures.download', $brochure) }}"
-                   class="group flex flex-col rounded-2xl border border-slate-200 bg-polmind-bg p-6 transition hover:border-polmind-blue hover:bg-blue-50">
-                    <span class="flex h-12 w-12 items-center justify-center rounded-xl bg-white text-polmind-blue shadow-sm">
-                        <x-icon name="book" class="h-6 w-6" />
-                    </span>
-                    <span class="mt-5 text-lg font-black text-slate-900">{{ $brochure->title }}</span>
-                    @if($brochure->description)
-                        <span class="mt-2 text-sm leading-6 text-slate-600">{{ $brochure->description }}</span>
-                    @endif
-                    <span class="mt-auto flex items-center justify-between gap-3 pt-6 text-sm">
-                        <span class="font-semibold text-slate-500">{{ $brochure->extension }} · {{ $brochure->size_label }}</span>
-                        <span class="inline-flex items-center gap-1.5 font-bold text-polmind-blue">
-                            <svg class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10.75 2.75a.75.75 0 0 0-1.5 0v8.69L6.03 8.22a.75.75 0 0 0-1.06 1.06l4.5 4.5a.75.75 0 0 0 1.06 0l4.5-4.5a.75.75 0 1 0-1.06-1.06l-3.22 3.22V2.75Z"/><path d="M3.5 12.75a.75.75 0 0 0-1.5 0v2.5A2.75 2.75 0 0 0 4.75 18h10.5A2.75 2.75 0 0 0 18 15.25v-2.5a.75.75 0 0 0-1.5 0v2.5c0 .69-.56 1.25-1.25 1.25H4.75c-.69 0-1.25-.56-1.25-1.25v-2.5Z"/></svg>
-                            Unduh
-                        </span>
-                    </span>
-                </a>
-            @endforeach
-        </div>
-    </div>
-</section>
-@endif
 
 {{-- FAQ --}}
 <section id="faq" class="scroll-mt-20 bg-polmind-bg py-20">

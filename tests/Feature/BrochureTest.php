@@ -28,7 +28,7 @@ class BrochureTest extends TestCase
     {
         $operator = User::factory()->operator()->create();
 
-        $this->get('/')->assertOk()->assertDontSee('id="brosur"', false);
+        $this->get('/')->assertOk()->assertDontSee('Unduh Brosur');
 
         $this->actingAs($operator, 'web')
             ->get('/admin/brochures')
@@ -49,19 +49,28 @@ class BrochureTest extends TestCase
 
         auth('web')->logout();
 
+        // Satu brosur: tombol di hero dan Jalur Masuk langsung mengunduh.
         $this->get('/')
             ->assertOk()
-            ->assertSee('id="brosur"', false)
-            ->assertSee('Brosur PMB 2027')
-            ->assertSee('PDF · 900 KB')
-            ->assertSee('href="#brosur"', false)
-            ->assertSee(route('brochures.download', $brochure), false);
+            ->assertSeeInOrder(['Konsultasi WA', 'Unduh Brosur'])
+            ->assertDontSee('id="brosur"', false)
+            ->assertSee('href="' . route('brochures.download', $brochure) . '"', false);
 
         $this->get('/brosur/' . $brochure->id)
             ->assertOk()
             ->assertDownload('brosur-pmb-2027.pdf');
 
         $this->assertSame(1, $brochure->refresh()->download_count);
+
+        // Lebih dari satu brosur: tombol menampilkan pilihan brosur.
+        Brochure::create(['title' => 'Brosur Kelas Karyawan', 'file_path' => 'brochures/b.pdf', 'file_name' => 'b.pdf', 'file_size' => 2400000]);
+
+        $this->get('/')
+            ->assertSee('aria-haspopup="true"', false)
+            ->assertSee('Brosur Kelas Karyawan')
+            ->assertSee('PDF · 2,3 MB');
+
+        Brochure::where('title', 'Brosur Kelas Karyawan')->delete();
 
         // Disembunyikan: tidak tampil dan tidak bisa diunduh.
         $this->actingAs($operator, 'web')->patch('/admin/brochures/' . $brochure->id . '/toggle');

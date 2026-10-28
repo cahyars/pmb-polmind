@@ -21,7 +21,6 @@
             ['href' => '#jalur-masuk', 'label' => 'Jalur Masuk'],
             ['href' => '#biaya', 'label' => 'Biaya'],
             ['href' => '#alur', 'label' => 'Panduan'],
-            ...(collect($brochures ?? [])->isNotEmpty() ? [['href' => '#brosur', 'label' => 'Brosur']] : []),
             ['href' => '#faq', 'label' => 'FAQ'],
         ];
     @endphp
