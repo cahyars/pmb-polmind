@@ -62,6 +62,8 @@ class PrintController extends Controller
 
         $payment->load(['invoice.items', 'invoice.payments', 'paymentMethod', 'applicant.pmbYear', 'applicant.studyProgram']);
 
-        return view('print.kwitansi', compact('payment'));
+        $signer = ReceiptNumber::signer();
+
+        return view('print.kwitansi', compact('payment', 'signer'));
     }
 }

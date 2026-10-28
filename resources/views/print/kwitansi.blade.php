@@ -60,9 +60,9 @@
 
     <div class="w-56 text-center text-sm">
         <p class="text-slate-700">Divalidasi {{ ($payment->verified_at ?? now())->translatedFormat('j F Y') }}</p>
-        <p class="mt-1 text-slate-700">Bagian Keuangan PMB</p>
+        <p class="mt-1 text-slate-700">{{ $signer['title'] }}</p>
         <div class="h-20"></div>
-        <p class="border-t border-slate-400 pt-1 font-semibold">{{ $payment->verified_by_name ?? 'Admin PMB' }}</p>
+        <p class="min-h-7 border-t border-slate-400 pt-1 font-semibold">{{ $signer['name'] }}</p>
     </div>
 </div>
 

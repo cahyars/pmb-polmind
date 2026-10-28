@@ -149,7 +149,7 @@
     @method('PUT')
 
     <div class="border-b border-slate-200 p-6">
-        <h2 class="text-base font-semibold text-slate-900">Nomor Kwitansi</h2>
+        <h2 class="text-base font-semibold text-slate-900">Kwitansi Pembayaran</h2>
         <p class="mt-2 text-sm leading-6 text-slate-600">
             Nomor kwitansi diberikan saat pembayaran divalidasi admin dan dapat dicetak camaba dari halaman Pembayaran.
             Nomor urut berjalan per Tahun PMB. Kwitansi yang sudah bernomor tidak berubah saat format diganti.
@@ -195,11 +195,30 @@
                 <span x-text="preview('DU', 2)"></span>
             </p>
         </div>
+
+        <div class="border-t border-slate-200 pt-5 md:col-span-3">
+            <h3 class="text-sm font-semibold text-slate-900">Penandatangan Kwitansi</h3>
+            <p class="mt-1 text-xs leading-5 text-slate-500">Tampil di bagian tanda tangan kwitansi. Kosongkan nama jika kwitansi ditandatangani manual.</p>
+        </div>
+
+        <div>
+            <label for="receipt_signer_title" class="text-sm font-semibold text-slate-700">Jabatan</label>
+            <input type="text" id="receipt_signer_title" name="receipt_signer_title" required maxlength="100"
+                   value="{{ old('receipt_signer_title', $receiptSigner['title']) }}" placeholder="Contoh: Bendahara PMB"
+                   class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+        </div>
+
+        <div class="md:col-span-2">
+            <label for="receipt_signer_name" class="text-sm font-semibold text-slate-700">Nama</label>
+            <input type="text" id="receipt_signer_name" name="receipt_signer_name" maxlength="100"
+                   value="{{ old('receipt_signer_name', $receiptSigner['name']) }}" placeholder="Contoh: Siti Rahmawati, S.E."
+                   class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+        </div>
     </div>
 
     <div class="flex justify-end border-t border-slate-200 p-6">
         <button type="submit" class="rounded-lg bg-polmind-blue px-5 py-3 text-sm font-semibold text-white">
-            Simpan Format Kwitansi
+            Simpan Pengaturan Kwitansi
         </button>
     </div>
 </form>

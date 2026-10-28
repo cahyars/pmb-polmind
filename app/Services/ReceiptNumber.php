@@ -18,6 +18,8 @@ class ReceiptNumber
 
     public const DEFAULT_DIGITS = 5;
 
+    public const DEFAULT_SIGNER_TITLE = 'Bagian Keuangan PMB';
+
     public const TOKENS = [
         '{JENIS}' => 'Jenis pembayaran: PMB (formulir) atau DU (daftar ulang)',
         '{TAHUN}' => 'Tahun PMB 4 digit, contoh 2027',
@@ -36,6 +38,18 @@ class ReceiptNumber
     public static function digits(): int
     {
         return (int) Setting::get('receipt.digits', self::DEFAULT_DIGITS);
+    }
+
+    /**
+     * Penandatangan kwitansi yang diatur admin PMB. Nama kosong berarti
+     * tanda tangan ditulis tangan di atas garis.
+     */
+    public static function signer(): array
+    {
+        return [
+            'name' => Setting::get('receipt.signer_name'),
+            'title' => Setting::get('receipt.signer_title', self::DEFAULT_SIGNER_TITLE),
+        ];
     }
 
     public static function render(string $format, int $digits, array $values): string

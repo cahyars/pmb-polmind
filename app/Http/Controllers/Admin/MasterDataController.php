@@ -74,6 +74,7 @@ class MasterDataController extends Controller
                 'nimScope' => NimGenerator::scope(),
                 'receiptFormat' => ReceiptNumber::format(),
                 'receiptDigits' => ReceiptNumber::digits(),
+                'receiptSigner' => ReceiptNumber::signer(),
             ],
         };
 
@@ -190,11 +191,15 @@ class MasterDataController extends Controller
         $validated = $request->validate([
             'receipt_format' => ['required', 'string', 'max:50', 'regex:/^([A-Za-z0-9.\-\/]|\{JENIS\}|\{TAHUN\}|\{BULAN\}|\{ROMAWI\}|\{URUT\})+$/'],
             'receipt_digits' => ['required', 'integer', 'min:3', 'max:8'],
+            'receipt_signer_name' => ['nullable', 'string', 'max:100'],
+            'receipt_signer_title' => ['required', 'string', 'max:100'],
         ], [
             'receipt_format.regex' => 'Format kwitansi hanya boleh berisi huruf, angka, titik, strip, garis miring, dan kode {JENIS}, {TAHUN}, {BULAN}, {ROMAWI}, {URUT}.',
         ], [
             'receipt_format' => 'format nomor kwitansi',
             'receipt_digits' => 'panjang nomor urut',
+            'receipt_signer_name' => 'nama penandatangan',
+            'receipt_signer_title' => 'jabatan penandatangan',
         ]);
 
         if (substr_count($validated['receipt_format'], '{URUT}') !== 1) {
@@ -204,9 +209,11 @@ class MasterDataController extends Controller
         Setting::put([
             'receipt.format' => $validated['receipt_format'],
             'receipt.digits' => $validated['receipt_digits'],
+            'receipt.signer_name' => $validated['receipt_signer_name'] ?? null,
+            'receipt.signer_title' => $validated['receipt_signer_title'],
         ]);
 
-        return back()->with('success', 'Pengaturan nomor kwitansi berhasil disimpan. Format baru berlaku untuk kwitansi berikutnya.');
+        return back()->with('success', 'Pengaturan kwitansi berhasil disimpan. Format nomor baru berlaku untuk kwitansi berikutnya.');
     }
 
     public function toggleStudyProgram(StudyProgram $studyProgram)

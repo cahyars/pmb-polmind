@@ -65,7 +65,8 @@ class PrintDocumentsTest extends TestCase
             ->assertOk()
             ->assertSee('KW/PMB/2027/00001')
             ->assertSee('Tiga ratus ribu rupiah')
-            ->assertSee('LUNAS');
+            ->assertSee('LUNAS')
+            ->assertSee('Bagian Keuangan PMB');
 
         $this->actingAs($other, 'applicant')
             ->get('/camaba/cetak/kwitansi/' . $payment->id)
@@ -82,11 +83,16 @@ class PrintDocumentsTest extends TestCase
             ->assertSee('KW/{JENIS}/{TAHUN}/{URUT}');
 
         $this->actingAs($admin, 'web')
-            ->put('/admin/master-data/numbering/receipt', ['receipt_format' => 'KW/{TAHUN}', 'receipt_digits' => 4])
+            ->put('/admin/master-data/numbering/receipt', ['receipt_format' => 'KW/{TAHUN}', 'receipt_digits' => 4, 'receipt_signer_title' => 'Bendahara'])
             ->assertSessionHasErrors();
 
         $this->actingAs($admin, 'web')
-            ->put('/admin/master-data/numbering/receipt', ['receipt_format' => '{URUT}/KW-{JENIS}/{ROMAWI}/{TAHUN}', 'receipt_digits' => 4])
+            ->put('/admin/master-data/numbering/receipt', [
+                'receipt_format' => '{URUT}/KW-{JENIS}/{ROMAWI}/{TAHUN}',
+                'receipt_digits' => 4,
+                'receipt_signer_title' => 'Bendahara PMB',
+                'receipt_signer_name' => 'Siti Rahmawati, S.E.',
+            ])
             ->assertSessionHasNoErrors();
 
         $payment = $this->waitingPayment($this->registerApplicant());
@@ -95,6 +101,11 @@ class PrintDocumentsTest extends TestCase
         $this->actingAs($admin, 'web')->patch('/admin/payments/' . $payment->id . '/accept');
 
         $this->assertSame('0001/KW-PMB/IV/2027', $payment->refresh()->receipt_number);
+
+        $this->actingAs($payment->applicant, 'applicant')
+            ->get('/camaba/cetak/kwitansi/' . $payment->id)
+            ->assertSee('Bendahara PMB')
+            ->assertSee('Siti Rahmawati, S.E.');
     }
 
     public function test_applicant_prints_own_invoice_only(): void
