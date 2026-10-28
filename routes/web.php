@@ -124,6 +124,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/payments/{payment}/proof', [AdminFileController::class, 'paymentProof'])->name('payments.proof');
     Route::patch('/documents/{document}/accept', [DocumentVerificationController::class, 'accept'])->name('documents.accept');
     Route::patch('/documents/{document}/reject', [DocumentVerificationController::class, 'reject'])->name('documents.reject');
+    Route::get('/documents/{registration_number}', [DocumentVerificationController::class, 'show'])->name('documents.show');
+    Route::patch('/documents/{registration_number}/accept-all', [DocumentVerificationController::class, 'acceptAll'])->name('documents.accept-all');
 
     // Hanya Admin PMB: tujuan pembayaran.
     Route::middleware(AdminAccess::class . ':admin')->group(function () {

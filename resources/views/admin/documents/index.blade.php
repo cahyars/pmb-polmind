@@ -6,18 +6,10 @@
 
 @section('content')
 @php
-    $statusLabels = [
-        'belum_upload' => 'Belum Upload',
-        'menunggu_verifikasi' => 'Menunggu Verifikasi',
-        'diterima' => 'Diterima',
-        'ditolak' => 'Ditolak',
-    ];
-
-    $statusClasses = [
-        'belum_upload' => 'bg-slate-100 text-slate-600',
-        'menunggu_verifikasi' => 'bg-yellow-100 text-yellow-700',
-        'diterima' => 'bg-green-100 text-green-700',
-        'ditolak' => 'bg-red-100 text-red-700',
+    $statusFilters = [
+        'menunggu_verifikasi' => 'Perlu Verifikasi',
+        'ditolak' => 'Ada Berkas Ditolak',
+        'selesai' => 'Selesai Diverifikasi',
     ];
 
     $registrationPathClasses = [
@@ -25,6 +17,8 @@
         'prestasi' => 'bg-green-100 text-green-700',
         'undangan' => 'bg-purple-100 text-purple-700',
     ];
+
+    $requiredCount = $requiredDocumentTypeIds->count();
 @endphp
 
 <div class="space-y-8">
@@ -86,7 +80,7 @@
             </p>
         </div>
 
-        <form action="{{ route('admin.documents.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
+        <form action="{{ route('admin.documents.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-5">
             <div class="xl:col-span-2">
                 <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
@@ -94,19 +88,6 @@
                        value="{{ request('keyword') }}"
                        placeholder="Nama, no pendaftaran, NIK, sekolah, file..."
                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-            </div>
-
-            <div>
-                <label class="text-sm font-semibold text-slate-700">Jenis Berkas</label>
-                <select name="document_type"
-                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                    <option value="">Semua Berkas</option>
-                    @foreach($documentTypes as $type)
-                        <option value="{{ $type->id }}" @selected(request('document_type') == $type->id)>
-                            {{ $type->name }}
-                        </option>
-                    @endforeach
-                </select>
             </div>
 
             <div>
@@ -144,7 +125,7 @@
                 <select name="status"
                         class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Status</option>
-                    @foreach($statusLabels as $key => $label)
+                    @foreach($statusFilters as $key => $label)
                         <option value="{{ $key }}" @selected(request('status') === $key)>
                             {{ $label }}
                         </option>
@@ -152,7 +133,7 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-3 xl:col-span-6">
+            <div class="flex items-end gap-3 xl:col-span-5">
                 <button type="submit"
                         class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter
@@ -172,234 +153,128 @@
             <div>
                 <h2 class="text-base font-semibold text-slate-900">Antrian Verifikasi Berkas</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Admin hanya dapat memvalidasi berkas yang berstatus menunggu verifikasi.
+                    Satu baris per camaba. Klik Detail untuk memeriksa berkas yang menunggu verifikasi.
                 </p>
             </div>
 
             <span class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-polmind-blue">
-                {{ $documents->total() }} Data
+                {{ $applicants->total() }} Camaba
             </span>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[1300px] text-left text-sm">
-                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
-                    <tr>
-                        <th class="px-5 py-3.5">Camaba</th>
-                        <th class="px-5 py-3.5">Jalur</th>
-                        <th class="px-5 py-3.5">Jenis Berkas</th>
-                        <th class="px-5 py-3.5">File</th>
-                        <th class="px-5 py-3.5">Prodi</th>
-                        <th class="px-5 py-3.5">Status</th>
-                        <th class="px-5 py-3.5">Catatan</th>
-                        <th class="px-5 py-3.5">Upload</th>
-                        <th class="px-5 py-3.5 text-right">Aksi</th>
+        <table class="w-full text-left text-sm">
+            <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
+                <tr>
+                    <th class="px-5 py-3.5">Camaba</th>
+                    <th class="hidden px-5 py-3.5 lg:table-cell">Prodi &amp; Jalur</th>
+                    <th class="px-5 py-3.5">Berkas</th>
+                    <th class="hidden px-5 py-3.5 md:table-cell">Status</th>
+                    <th class="hidden px-5 py-3.5 xl:table-cell">Upload Terakhir</th>
+                    <th class="px-5 py-3.5 text-right">Aksi</th>
+                </tr>
+            </thead>
+
+            <tbody class="table-zebra">
+                @forelse($applicants as $applicant)
+                    @php
+                        $waiting = $applicant->documents->where('status', 'menunggu_verifikasi');
+                        $rejectedCount = $applicant->documents->where('status', 'ditolak')->count();
+                        $acceptedRequiredCount = $applicant->documents
+                            ->where('status', 'diterima')
+                            ->whereIn('document_type_id', $requiredDocumentTypeIds)
+                            ->count();
+
+                        [$statusLabel, $statusClass] = match (true) {
+                            $waiting->isNotEmpty() => ['Perlu Verifikasi', 'bg-yellow-100 text-yellow-700'],
+                            $rejectedCount > 0 => ['Menunggu Upload Ulang', 'bg-red-100 text-red-700'],
+                            $requiredCount > 0 && $acceptedRequiredCount >= $requiredCount => ['Lengkap', 'bg-green-100 text-green-700'],
+                            default => ['Belum Lengkap', 'bg-slate-100 text-slate-600'],
+                        };
+
+                        $registrationPath = $applicant->registration_path ?? 'umum';
+                        $lastUploadedAt = $applicant->last_uploaded_at ? \Illuminate\Support\Carbon::parse($applicant->last_uploaded_at) : null;
+                    @endphp
+
+                    <tr class="align-top transition hover:bg-slate-50 {{ $waiting->isNotEmpty() ? 'bg-yellow-50/40' : '' }}">
+                        <td class="px-5 py-4">
+                            <p class="font-bold text-polmind-blue">{{ $applicant->registration_number }}</p>
+                            <p class="mt-1 font-semibold text-slate-800">{{ $applicant->full_name }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $applicant->education?->school_name ?? '-' }}</p>
+                            <p class="mt-1 text-xs text-slate-500 lg:hidden">
+                                {{ $applicant->studyProgram?->code ?? '-' }} · {{ $applicant->registration_path_label }}
+                            </p>
+                        </td>
+
+                        <td class="hidden px-5 py-4 lg:table-cell">
+                            <p class="font-semibold text-slate-800">{{ $applicant->studyProgram?->code ?? '-' }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $applicant->classType?->name ?? '-' }}</p>
+                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                                {{ $applicant->registration_path_label }}
+                            </span>
+                        </td>
+
+                        <td class="px-5 py-4">
+                            @if($waiting->isNotEmpty())
+                                <p class="font-semibold text-yellow-800">
+                                    {{ $waiting->count() }} berkas perlu diverifikasi
+                                </p>
+                                <div class="mt-2 flex flex-wrap gap-1.5">
+                                    @foreach($waiting as $document)
+                                        <span class="rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-semibold text-yellow-800">
+                                            {{ $document->documentType?->name ?? '-' }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            @else
+                                <p class="font-semibold text-slate-600">Tidak ada berkas menunggu</p>
+                            @endif
+
+                            <p class="mt-2 text-xs text-slate-500">
+                                Wajib diterima {{ $acceptedRequiredCount }}/{{ $requiredCount }}
+                                @if($rejectedCount > 0)
+                                    · <span class="font-semibold text-red-600">{{ $rejectedCount }} ditolak</span>
+                                @endif
+                            </p>
+
+                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold md:hidden {{ $statusClass }}">
+                                {{ $statusLabel }}
+                            </span>
+                        </td>
+
+                        <td class="hidden px-5 py-4 md:table-cell">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $statusClass }}">
+                                {{ $statusLabel }}
+                            </span>
+                        </td>
+
+                        <td class="hidden px-5 py-4 text-slate-600 xl:table-cell">
+                            {{ $lastUploadedAt?->format('d M Y H:i') ?? '-' }}
+                        </td>
+
+                        <td class="px-5 py-4 text-right">
+                            <a href="{{ route('admin.documents.show', $applicant->registration_number) }}"
+                               class="inline-flex rounded-lg px-3 py-2 text-xs font-semibold transition {{ $waiting->isNotEmpty() ? 'bg-polmind-blue text-white hover:bg-polmind-blue-dark' : 'border border-slate-300 text-slate-700 hover:bg-slate-50' }}">
+                                Detail
+                            </a>
+                        </td>
                     </tr>
-                </thead>
-
-                <tbody class="table-zebra">
-                    @forelse($documents as $document)
-                        @php
-                            $fileUrl = $document->file_path
-                                ? route('admin.documents.file', $document)
-                                : null;
-
-                            $registrationPath = $document->applicant?->registration_path ?? 'umum';
-                            $isWaiting = $document->status === 'menunggu_verifikasi';
-                        @endphp
-
-                        <tr class="align-top transition hover:bg-slate-50">
-                            <td class="px-5 py-3.5">
-                                <p class="font-bold text-polmind-blue">
-                                    {{ $document->applicant?->registration_number }}
-                                </p>
-
-                                <p class="mt-1 font-semibold text-slate-800">
-                                    {{ $document->applicant?->full_name }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $document->applicant?->education?->school_name ?? '-' }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $document->applicant?->phone ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $document->applicant?->registration_path_label ?? 'Umum' }}
-                                </span>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <p class="font-semibold text-slate-800">
-                                    {{ $document->documentType?->name ?? '-' }}
-                                </p>
-
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    @if($document->documentType?->is_required)
-                                        <span class="rounded-full bg-red-100 px-3 py-1 text-xs font-bold text-red-700">
-                                            Wajib
-                                        </span>
-                                    @else
-                                        <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
-                                            Opsional
-                                        </span>
-                                    @endif
-
-                                    <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
-                                        {{ $document->documentType?->code ?? '-' }}
-                                    </span>
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <p class="max-w-56 truncate font-semibold text-slate-700">
-                                    {{ $document->file_name ?? '-' }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ strtoupper($document->file_extension ?? '-') }} · {{ $document->file_size_kb ?? 0 }} KB
-                                </p>
-
-                                @if($fileUrl)
-                                    <a href="{{ $fileUrl }}"
-                                       @click.prevent="$store.preview.show($el.href, @js(basename($document->file_path)))"
-                                       class="mt-3 inline-flex rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-polmind-blue transition hover:bg-blue-100">
-                                        Lihat File
-                                    </a>
-                                @else
-                                    <span class="mt-3 inline-flex rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                        File kosong
-                                    </span>
-                                @endif
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
-                                    {{ $document->applicant?->studyProgram?->code ?? '-' }}
-                                </span>
-
-                                <p class="mt-2 text-xs text-slate-500">
-                                    {{ $document->applicant?->classType?->name ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $statusClasses[$document->status] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $statusLabels[$document->status] ?? $document->status }}
-                                </span>
-
-                                @if($document->verified_at)
-                                    <p class="mt-2 text-xs text-slate-500">
-                                        {{ $document->verified_at->format('d M Y H:i') }}
-                                    </p>
-                                @endif
-
-                                @if($document->verified_by_name)
-                                    <p class="mt-1 text-xs text-slate-500">
-                                        {{ $document->verified_by_name }}
-                                    </p>
-                                @endif
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                @if($document->admin_note)
-                                    <div class="max-w-64 rounded-lg border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
-                                        <p class="font-bold">Catatan Admin</p>
-                                        <p class="mt-1">{{ $document->admin_note }}</p>
-                                    </div>
-                                @else
-                                    <span class="text-slate-500">-</span>
-                                @endif
-                            </td>
-
-                            <td class="px-5 py-3.5 text-slate-600">
-                                {{ $document->uploaded_at?->format('d M Y H:i') ?? '-' }}
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <div class="flex justify-end gap-2">
-                                    <a href="{{ url('/admin/applicants/' . $document->applicant?->registration_number) }}"
-                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                        Detail
-                                    </a>
-
-                                    @if($isWaiting)
-                                        <form action="{{ route('admin.documents.accept', $document) }}"
-                                              method="POST"
-                                              onsubmit="return confirm('Terima berkas ini?')">
-                                            @csrf
-                                            @method('PATCH')
-
-                                            <button type="submit"
-                                                    class="rounded-lg bg-green-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-green-700">
-                                                Terima
-                                            </button>
-                                        </form>
-
-                                        <button type="button"
-                                                onclick="document.getElementById('reject-form-{{ $document->id }}').classList.toggle('hidden')"
-                                                class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700">
-                                            Tolak
-                                        </button>
-                                    @else
-                                        <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                            Selesai
-                                        </span>
-                                    @endif
-                                </div>
-
-                                @if($isWaiting)
-                                    <form id="reject-form-{{ $document->id }}"
-                                          action="{{ route('admin.documents.reject', $document) }}"
-                                          method="POST"
-                                          class="mt-3 hidden rounded-lg border border-red-200 bg-red-50 p-3">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <textarea name="admin_note"
-                                                  rows="3"
-                                                  required
-                                                  placeholder="Tulis alasan penolakan..."
-                                                  class="w-full rounded-lg border border-red-200 px-3 py-2 text-xs outline-none focus:border-red-500 focus:ring-4 focus:ring-red-100">{{ old('admin_note') }}</textarea>
-
-                                        <div class="mt-2 flex justify-end gap-2">
-                                            <button type="button"
-                                                    onclick="document.getElementById('reject-form-{{ $document->id }}').classList.add('hidden')"
-                                                    class="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700">
-                                                Batal
-                                            </button>
-
-                                            <button type="submit"
-                                                    class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white">
-                                                Simpan Tolak
-                                            </button>
-                                        </div>
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
-                                <p class="text-sm font-semibold text-slate-600">
-                                    Tidak ada data berkas ditemukan.
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    Coba reset filter atau tunggu camaba mengupload berkas.
-                                </p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <p class="text-sm font-semibold text-slate-600">
+                                Tidak ada data berkas ditemukan.
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Coba reset filter atau tunggu camaba mengupload berkas.
+                            </p>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
 
         <div class="border-t border-slate-200 p-6">
-            {{ $documents->links() }}
+            {{ $applicants->links() }}
         </div>
     </div>
 
