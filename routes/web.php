@@ -103,6 +103,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
     Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
+    Route::patch('/applicants/{registration_number}/waive-registration-fee', [ApplicantController::class, 'waiveRegistrationFee'])->name('applicants.waive-registration-fee');
 
     Route::get('/documents', [DocumentVerificationController::class, 'index'])->name('documents.index');
     Route::get('/documents/{document}/file', [AdminFileController::class, 'document'])->name('documents.file');

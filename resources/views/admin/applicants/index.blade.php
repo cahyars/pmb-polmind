@@ -210,7 +210,9 @@
 
                 if (! $decided) {
                     $badges[] = match ($applicant->payment_status) {
-                        'valid' => ['Formulir Lunas', 'bg-green-100 text-green-700'],
+                        'valid' => $applicant->registrationInvoice?->isWaived()
+                            ? ['Formulir Gratis', 'bg-green-100 text-green-700']
+                            : ['Formulir Lunas', 'bg-green-100 text-green-700'],
                         'menunggu_verifikasi' => ['Bayar Diverifikasi', 'bg-yellow-100 text-yellow-800'],
                         'ditolak' => ['Bukti Bayar Ditolak', 'bg-red-100 text-red-700'],
                         default => ['Belum Bayar (Peminat)', 'bg-red-100 text-red-700'],

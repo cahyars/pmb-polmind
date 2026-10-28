@@ -47,6 +47,18 @@
 
 <div class="space-y-8">
 
+    @if(session('success'))
+        <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
+            {{ session('success') }}
+        </div>
+    @endif
+
+    @if($errors->any())
+        <div class="rounded-lg border border-red-200 bg-red-50 px-5 py-4 text-sm font-semibold text-red-700" role="alert">
+            {{ $errors->first() }}
+        </div>
+    @endif
+
     {{-- Header --}}
     <div class="rounded-xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20">
         <div class="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
@@ -394,10 +406,18 @@
                                     <div>
                                         <p class="text-xs font-semibold text-slate-500">Status</p>
                                         <span class="mt-1 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($invoice->status) }}">
-                                            {{ str_replace('_', ' ', ucfirst($invoice->status)) }}
+                                            {{ $invoice->isWaived() ? 'Gratis (dibebaskan)' : str_replace('_', ' ', ucfirst($invoice->status)) }}
                                         </span>
                                     </div>
                                 </div>
+
+                                @if($invoice->isWaived())
+                                    <p class="mt-4 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-600">
+                                        Dibebaskan oleh <span class="font-semibold">{{ $invoice->waived_by_name }}</span>
+                                        pada {{ $invoice->waived_at->translatedFormat('d M Y H:i') }}.
+                                        Dasar: {{ $invoice->waiver_reason }}
+                                    </p>
+                                @endif
                             </div>
 
                             <div class="mt-5 space-y-3">
@@ -446,6 +466,44 @@
                     </p>
                 </div>
             </div>
+
+            {{-- Formulir Gratis --}}
+            @php($registrationInvoice = $applicant->registrationInvoice)
+            @if($registrationInvoice && ($registrationInvoice->isWaived() || $registrationInvoice->canBeWaived()))
+                <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+                    <h2 class="text-base font-semibold text-slate-900">Formulir Gratis</h2>
+
+                    @if($registrationInvoice->isWaived())
+                        <div class="mt-5 rounded-lg bg-green-50 p-5 text-sm leading-6 text-green-800">
+                            <p class="font-semibold">Biaya formulir sudah dibebaskan.</p>
+                            <p class="mt-1 text-xs">{{ $registrationInvoice->waiver_reason }}</p>
+                        </div>
+                    @else
+                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                            Bebaskan biaya formulir atas perintah pimpinan, contoh untuk pendaftar dari asal sekolah tertentu.
+                            Camaba langsung dapat mengisi biodata tanpa mengunggah bukti bayar.
+                        </p>
+
+                        <form action="{{ route('admin.applicants.waive-registration-fee', $applicant->registration_number) }}"
+                              method="POST"
+                              onsubmit="return confirm('Gratiskan biaya formulir untuk {{ e($applicant->full_name) }}?')"
+                              class="mt-5 space-y-3">
+                            @csrf
+                            @method('PATCH')
+
+                            <label for="waiver_reason" class="text-sm font-semibold text-slate-700">Dasar pembebasan</label>
+                            <textarea id="waiver_reason" name="waiver_reason" rows="3" required maxlength="1000"
+                                      placeholder="Contoh: Perintah Direktur, siswa SMK Negeri 1 Batam digratiskan formulir"
+                                      class="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ old('waiver_reason', $applicant->education?->school_name ? 'Perintah pimpinan: pendaftar dari ' . $applicant->education->school_name : '') }}</textarea>
+
+                            <button type="submit"
+                                    class="w-full rounded-lg bg-green-600 px-4 py-3 text-sm font-bold text-white transition hover:brightness-95">
+                                Gratiskan Formulir
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            @endif
 
             {{-- Action --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">

@@ -173,7 +173,7 @@
                             </h2>
 
                             <span class="rounded-full px-3 py-1 text-xs font-black {{ $badgeClass($invoiceStatus) }}">
-                                {{ $invoiceStatusLabels[$invoiceStatus] ?? str_replace('_', ' ', ucfirst($invoiceStatus)) }}
+                                {{ $invoice->isWaived() ? 'Gratis' : ($invoiceStatusLabels[$invoiceStatus] ?? str_replace('_', ' ', ucfirst($invoiceStatus))) }}
                             </span>
                         </div>
 
@@ -197,8 +197,13 @@
                         </div>
 
                         <div class="rounded-2xl bg-slate-50 p-4">
-                            <p class="text-xs font-bold text-slate-500">Sudah Dibayar</p>
-                            <p class="mt-2 text-2xl font-black {{ $validPaidAmount > 0 ? 'text-green-700' : 'text-slate-400' }}">Rp{{ number_format($validPaidAmount, 0, ',', '.') }}</p>
+                            @if($invoice->isWaived())
+                                <p class="text-xs font-bold text-slate-500">Status Biaya</p>
+                                <p class="mt-2 text-2xl font-black text-green-700">Dibebaskan</p>
+                            @else
+                                <p class="text-xs font-bold text-slate-500">Sudah Dibayar</p>
+                                <p class="mt-2 text-2xl font-black {{ $validPaidAmount > 0 ? 'text-green-700' : 'text-slate-400' }}">Rp{{ number_format($validPaidAmount, 0, ',', '.') }}</p>
+                            @endif
                         </div>
                     </div>
                 @else
@@ -282,10 +287,17 @@
                                 </div>
 
                                 <div>
-                                    <p class="text-sm font-black text-slate-800">Tagihan Lunas</p>
-                                    <p class="mt-1 text-xs leading-5 text-slate-500">
-                                        Pembayaran sudah tervalidasi oleh admin PMB.
-                                    </p>
+                                    @if($invoice->isWaived())
+                                        <p class="text-sm font-black text-slate-800">Formulir Gratis</p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                                            Biaya formulir Anda dibebaskan oleh PMB Polmind. Tidak perlu melakukan pembayaran.
+                                        </p>
+                                    @else
+                                        <p class="text-sm font-black text-slate-800">Tagihan Lunas</p>
+                                        <p class="mt-1 text-xs leading-5 text-slate-500">
+                                            Pembayaran sudah tervalidasi oleh admin PMB.
+                                        </p>
+                                    @endif
                                 </div>
                             </div>
                         </div>

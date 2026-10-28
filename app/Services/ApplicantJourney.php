@@ -190,6 +190,7 @@ class ApplicantJourney
                 'key' => 'pembayaran',
                 'label' => 'Bayar Formulir',
                 'description' => match (true) {
+                    $paid && $applicant->registrationInvoice?->isWaived() => 'Biaya formulir dibebaskan, tidak perlu membayar.',
                     $paid => 'Pembayaran formulir sudah diverifikasi.',
                     $this->paymentWaiting() => 'Bukti bayar terkirim, menunggu verifikasi admin (maks. 1x24 jam kerja).',
                     $applicant->payment_status === 'ditolak' => 'Bukti bayar ditolak. Silakan unggah ulang bukti yang benar.',

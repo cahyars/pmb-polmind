@@ -17,10 +17,14 @@ class Invoice extends Model
         'due_date',
         'total_amount',
         'status',
+        'waived_at',
+        'waived_by_name',
+        'waiver_reason',
         'note',
     ];
 
     protected $casts = [
+        'waived_at' => 'datetime',
         'issue_date' => 'date',
         'due_date' => 'date',
         'total_amount' => 'decimal:2',
@@ -92,5 +96,40 @@ class Invoice extends Model
     public function isWaitingVerification(): bool
     {
         return $this->status === 'waiting_verification';
+    }
+
+    public function isWaived(): bool
+    {
+        return $this->waived_at !== null;
+    }
+
+    /**
+     * Formulir boleh digratiskan selama belum ada pembayaran yang dikirim atau divalidasi.
+     */
+    public function canBeWaived(): bool
+    {
+        return $this->type === 'registration'
+            && ! $this->isWaived()
+            && in_array($this->status, ['unpaid', 'rejected'], true)
+            && ! $this->payments()->whereIn('status', ['waiting_verification', 'valid'])->exists();
+    }
+
+    /**
+     * Bebaskan biaya formulir: tagihan dianggap lunas tanpa pembayaran
+     * dan camaba langsung dapat melanjutkan ke biodata.
+     */
+    public function waive(string $reason, string $waivedBy): void
+    {
+        $this->update([
+            'status' => 'paid',
+            'waived_at' => now(),
+            'waived_by_name' => $waivedBy,
+            'waiver_reason' => $reason,
+            'note' => 'Biaya formulir dibebaskan: ' . $reason,
+        ]);
+
+        $this->applicant->update([
+            'payment_status' => 'valid',
+        ]);
     }
 }

@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
+use App\Models\Invoice;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class ApplicantController extends Controller
 {
@@ -45,6 +47,7 @@ class ApplicantController extends Controller
                 'classType',
                 'education',
                 'reRegistration',
+                'registrationInvoice',
                 'photoDocument',
             ])
             ->when($request->filled('keyword'), function ($query) use ($request) {
@@ -118,6 +121,43 @@ class ApplicantController extends Controller
             ->firstOrFail();
 
         return view('admin.applicants.show', compact('applicant'));
+    }
+
+    /**
+     * Gratiskan formulir pendaftaran atas perintah pimpinan, contoh untuk
+     * pendaftar dari asal sekolah tertentu.
+     */
+    public function waiveRegistrationFee(Request $request, string $registration_number)
+    {
+        $applicant = Applicant::where('registration_number', $registration_number)->firstOrFail();
+
+        $validated = $request->validate([
+            'waiver_reason' => ['required', 'string', 'max:1000'],
+        ], [], [
+            'waiver_reason' => 'dasar pembebasan',
+        ]);
+
+        $waived = DB::transaction(function () use ($applicant, $request, $validated) {
+            $invoice = Invoice::query()
+                ->where('applicant_id', $applicant->id)
+                ->where('type', 'registration')
+                ->lockForUpdate()
+                ->first();
+
+            if (! $invoice || ! $invoice->canBeWaived()) {
+                return false;
+            }
+
+            $invoice->waive($validated['waiver_reason'], $request->user('web')?->name ?? 'Admin PMB');
+
+            return true;
+        });
+
+        if (! $waived) {
+            return back()->withErrors('Formulir tidak dapat digratiskan karena sudah dibayar, sedang menunggu verifikasi pembayaran, atau sudah dibebaskan.');
+        }
+
+        return back()->with('success', 'Biaya formulir ' . $applicant->full_name . ' berhasil dibebaskan. Camaba dapat langsung mengisi biodata.');
     }
 
     /**
