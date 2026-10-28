@@ -105,11 +105,25 @@
                 $schedules = $wave?->selectionSchedules ?? collect();
             @endphp
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-                <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">Jadwal Seleksi {{ $wave?->name }}</h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Ikuti setiap tes sesuai jadwal. Perubahan jadwal akan diinformasikan oleh panitia PMB.
-                    </p>
+                <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 sm:flex-row sm:items-start">
+                    <div>
+                        <h2 class="text-xl font-black text-polmind-blue">Jadwal Seleksi {{ $wave?->name }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-slate-600">
+                            Ikuti setiap tes sesuai jadwal. Perubahan jadwal akan diinformasikan oleh panitia PMB.
+                        </p>
+                    </div>
+
+                    @if($applicant->canPrintExamCard())
+                        <a href="{{ route('camaba.print.exam-card') }}" target="_blank" rel="noopener"
+                           class="inline-flex shrink-0 items-center gap-2 rounded-xl bg-polmind-blue px-4 py-2.5 text-sm font-bold text-white hover:brightness-110">
+                            <x-icon name="document-text" class="h-4 w-4" />
+                            Cetak Kartu Ujian
+                        </a>
+                    @else
+                        <p class="shrink-0 rounded-xl bg-slate-50 px-4 py-2.5 text-xs font-semibold text-slate-500 sm:max-w-56">
+                            Kartu ujian dapat dicetak setelah biodata lengkap.
+                        </p>
+                    @endif
                 </div>
 
                 @if($schedules->isEmpty())

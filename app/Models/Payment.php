@@ -14,6 +14,7 @@ class Payment extends Model
         'invoice_id',
         'payment_method_id',
         'payment_number',
+        'receipt_number',
         'transfer_date',
         'sender_name',
         'sender_bank',

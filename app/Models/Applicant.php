@@ -122,6 +122,15 @@ class Applicant extends Authenticatable
             && blank($this->nim);
     }
 
+    /**
+     * Kartu ujian terbuka setelah formulir lunas (atau digratiskan) dan biodata lengkap.
+     */
+    public function canPrintExamCard(): bool
+    {
+        return $this->payment_status === 'valid'
+            && $this->registration_status === 'biodata_lengkap';
+    }
+
     public function getGenderLabelAttribute(): string
     {
         return match ($this->gender) {

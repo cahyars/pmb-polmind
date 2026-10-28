@@ -7,6 +7,7 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
+use App\Services\ReceiptNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -103,6 +104,8 @@ class PaymentVerificationController extends Controller
                 'verified_at' => now(),
                 'verified_by_name' => 'Admin PMB',
             ]);
+
+            ReceiptNumber::assign($payment);
 
             $this->refreshPaymentStatus($payment);
         });

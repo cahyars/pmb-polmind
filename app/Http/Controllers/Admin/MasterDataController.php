@@ -12,6 +12,7 @@ use App\Models\SelectionComponent;
 use App\Models\Setting;
 use App\Models\StudyProgram;
 use App\Services\NimGenerator;
+use App\Services\ReceiptNumber;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -30,7 +31,7 @@ class MasterDataController extends Controller
         'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
         'berkas' => ['label' => 'Jenis Berkas', 'description' => 'Dokumen yang wajib atau opsional diunggah camaba.'],
         'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI, UKT, dan komponen daftar ulang.'],
-        'penomoran' => ['label' => 'Penomoran', 'description' => 'Format NIM mahasiswa baru yang dibubuhkan PMB.'],
+        'penomoran' => ['label' => 'Penomoran', 'description' => 'Format NIM mahasiswa baru dan nomor kwitansi pembayaran.'],
     ];
 
     public function index()
@@ -71,6 +72,8 @@ class MasterDataController extends Controller
                 'nimFormat' => NimGenerator::format(),
                 'nimDigits' => NimGenerator::digits(),
                 'nimScope' => NimGenerator::scope(),
+                'receiptFormat' => ReceiptNumber::format(),
+                'receiptDigits' => ReceiptNumber::digits(),
             ],
         };
 
@@ -180,6 +183,30 @@ class MasterDataController extends Controller
         ]);
 
         return back()->with('success', 'Pengaturan format NIM berhasil disimpan.');
+    }
+
+    public function updateReceiptNumbering(Request $request)
+    {
+        $validated = $request->validate([
+            'receipt_format' => ['required', 'string', 'max:50', 'regex:/^([A-Za-z0-9.\-\/]|\{JENIS\}|\{TAHUN\}|\{BULAN\}|\{ROMAWI\}|\{URUT\})+$/'],
+            'receipt_digits' => ['required', 'integer', 'min:3', 'max:8'],
+        ], [
+            'receipt_format.regex' => 'Format kwitansi hanya boleh berisi huruf, angka, titik, strip, garis miring, dan kode {JENIS}, {TAHUN}, {BULAN}, {ROMAWI}, {URUT}.',
+        ], [
+            'receipt_format' => 'format nomor kwitansi',
+            'receipt_digits' => 'panjang nomor urut',
+        ]);
+
+        if (substr_count($validated['receipt_format'], '{URUT}') !== 1) {
+            return back()->withErrors('Format nomor kwitansi wajib memuat kode {URUT} tepat satu kali.')->withInput();
+        }
+
+        Setting::put([
+            'receipt.format' => $validated['receipt_format'],
+            'receipt.digits' => $validated['receipt_digits'],
+        ]);
+
+        return back()->with('success', 'Pengaturan nomor kwitansi berhasil disimpan. Format baru berlaku untuk kwitansi berikutnya.');
     }
 
     public function toggleStudyProgram(StudyProgram $studyProgram)

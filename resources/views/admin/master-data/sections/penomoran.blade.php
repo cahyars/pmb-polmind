@@ -34,7 +34,7 @@
         <div class="grid gap-5 p-6 md:grid-cols-2">
             <div class="md:col-span-2">
                 <label for="nim_format" class="text-sm font-semibold text-slate-700">Pola NIM</label>
-                <input type="text" id="nim_format" name="nim_format" x-model="format" required maxlength="50"
+                <input type="text" id="nim_format" name="nim_format" value="{{ old('nim_format', $nimFormat) }}" x-model="format" required maxlength="50"
                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 font-mono text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                 <div class="mt-3 flex flex-wrap gap-2">
                     @foreach(\App\Services\NimGenerator::TOKENS as $token => $label)
@@ -125,3 +125,81 @@
         @endif
     </div>
 </div>
+
+{{-- Nomor Kwitansi --}}
+<form action="{{ route('admin.master-data.numbering.receipt') }}"
+      method="POST"
+      x-data="{
+          format: @js(old('receipt_format', $receiptFormat)),
+          digits: @js((int) old('receipt_digits', $receiptDigits)),
+          year: @js((string) ($selectedPmbYear?->year ?? now()->year)),
+          preview(jenis, urut) {
+              const roman = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+              const month = new Date().getMonth();
+              return this.format
+                  .replaceAll('{JENIS}', jenis)
+                  .replaceAll('{TAHUN}', this.year)
+                  .replaceAll('{BULAN}', String(month + 1).padStart(2, '0'))
+                  .replaceAll('{ROMAWI}', roman[month])
+                  .replaceAll('{URUT}', String(urut).padStart(this.digits, '0'));
+          },
+      }"
+      class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    @csrf
+    @method('PUT')
+
+    <div class="border-b border-slate-200 p-6">
+        <h2 class="text-base font-semibold text-slate-900">Nomor Kwitansi</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">
+            Nomor kwitansi diberikan saat pembayaran divalidasi admin dan dapat dicetak camaba dari halaman Pembayaran.
+            Nomor urut berjalan per Tahun PMB. Kwitansi yang sudah bernomor tidak berubah saat format diganti.
+        </p>
+    </div>
+
+    <div class="grid gap-5 p-6 md:grid-cols-3">
+        <div class="md:col-span-2">
+            <label for="receipt_format" class="text-sm font-semibold text-slate-700">Pola Nomor Kwitansi</label>
+            <input type="text" id="receipt_format" name="receipt_format" value="{{ old('receipt_format', $receiptFormat) }}" x-model="format" required maxlength="50"
+                   class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 font-mono text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+            <div class="mt-3 flex flex-wrap gap-2">
+                @foreach(\App\Services\ReceiptNumber::TOKENS as $token => $label)
+                    <button type="button"
+                            @click="format += @js($token)"
+                            title="{{ $label }}"
+                            class="rounded-md border border-slate-200 bg-slate-50 px-2.5 py-1 font-mono text-xs font-semibold text-slate-700 hover:border-polmind-blue hover:text-polmind-blue">
+                        {{ $token }}
+                    </button>
+                @endforeach
+            </div>
+            <ul class="mt-3 grid gap-1 text-xs leading-5 text-slate-500 sm:grid-cols-2">
+                @foreach(\App\Services\ReceiptNumber::TOKENS as $token => $label)
+                    <li><span class="font-mono font-semibold text-slate-700">{{ $token }}</span> {{ $label }}</li>
+                @endforeach
+            </ul>
+        </div>
+
+        <div>
+            <label for="receipt_digits" class="text-sm font-semibold text-slate-700">Panjang Nomor Urut</label>
+            <select id="receipt_digits" name="receipt_digits" x-model.number="digits"
+                    class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                @foreach([3, 4, 5, 6, 7, 8] as $digit)
+                    <option value="{{ $digit }}" @selected((int) old('receipt_digits', $receiptDigits) === $digit)>{{ $digit }} digit ({{ str_pad('1', $digit, '0', STR_PAD_LEFT) }})</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="rounded-lg border border-blue-100 bg-blue-50 p-4 md:col-span-3">
+            <p class="text-xs font-semibold uppercase tracking-wide text-polmind-blue">Contoh hasil</p>
+            <p class="mt-2 break-all font-mono text-lg font-bold text-slate-900">
+                <span x-text="preview('PMB', 1)"></span>,
+                <span x-text="preview('DU', 2)"></span>
+            </p>
+        </div>
+    </div>
+
+    <div class="flex justify-end border-t border-slate-200 p-6">
+        <button type="submit" class="rounded-lg bg-polmind-blue px-5 py-3 text-sm font-semibold text-white">
+            Simpan Format Kwitansi
+        </button>
+    </div>
+</form>

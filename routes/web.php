@@ -24,6 +24,7 @@ use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
 use App\Http\Controllers\Camaba\FileController as CamabaFileController;
 use App\Http\Controllers\Camaba\PaymentController as CamabaPaymentController;
+use App\Http\Controllers\Camaba\PrintController as CamabaPrintController;
 use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
 use App\Http\Controllers\Camaba\ReRegistrationController as CamabaReRegistrationController;
 use App\Http\Middleware\EnsureRegistrationPaid;
@@ -64,6 +65,9 @@ Route::middleware('auth:applicant')
             ->name('payments.upload-proof');
         Route::get('/pembayaran/bukti/{payment}', [CamabaFileController::class, 'paymentProof'])->name('payments.proof');
 
+        Route::get('/cetak/invoice/{invoice}', [CamabaPrintController::class, 'invoice'])->name('print.invoice');
+        Route::get('/cetak/kwitansi/{payment}', [CamabaPrintController::class, 'receipt'])->name('print.receipt');
+
         Route::get('/upload-berkas/{document}/file', [CamabaFileController::class, 'document'])->name('documents.file');
 
         // Terbuka setelah pembayaran formulir diverifikasi admin.
@@ -81,6 +85,8 @@ Route::middleware('auth:applicant')
             Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
 
             Route::get('/daftar-ulang', [CamabaReRegistrationController::class, 'index'])->name('re-registration.index');
+
+            Route::get('/cetak/kartu-ujian', [CamabaPrintController::class, 'examCard'])->name('print.exam-card');
         });
     });
 
@@ -155,6 +161,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
     Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
 
     Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');
+    Route::put('/master-data/numbering/receipt', [MasterDataController::class, 'updateReceiptNumbering'])->name('master-data.numbering.receipt');
 
     Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
     Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');

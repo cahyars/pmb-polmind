@@ -181,6 +181,14 @@
                             Invoice ini berisi rincian tagihan dan histori pembayaran.
                         </p>
                     </div>
+
+                    @if($invoiceStatus !== 'cancelled')
+                        <a href="{{ route('camaba.print.invoice', $invoice) }}" target="_blank" rel="noopener"
+                           class="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-bold text-slate-700 hover:bg-slate-50">
+                            <x-icon name="document-text" class="h-4 w-4" />
+                            Cetak Invoice
+                        </a>
+                    @endif
                 </div>
 
                 {{-- Summary --}}
@@ -493,6 +501,13 @@
                                             <span class="rounded-full px-3 py-1 text-xs font-black {{ $historyStatusClass }}">
                                                 {{ $historyStatusLabel }}
                                             </span>
+
+                                            @if($historyStatus === 'valid')
+                                                <a href="{{ route('camaba.print.receipt', $payment) }}" target="_blank" rel="noopener"
+                                                   class="rounded-full bg-green-100 px-3 py-1 text-xs font-black text-green-700">
+                                                    Cetak Kwitansi
+                                                </a>
+                                            @endif
 
                                             @if($historyProofUrl)
                                                 <a href="{{ $historyProofUrl }}"
