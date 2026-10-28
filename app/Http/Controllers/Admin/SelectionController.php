@@ -115,7 +115,7 @@ class SelectionController extends Controller
                     'status' => 'diterima',
                     'note' => $validated['note'] ?: 'Camaba dinyatakan diterima.',
                     'decided_at' => now(),
-                    'decided_by_name' => 'Admin PMB',
+                    'decided_by_name' => $this->actorName(),
                 ]
             );
 
@@ -158,7 +158,7 @@ class SelectionController extends Controller
                     'status' => 'cadangan',
                     'note' => $validated['note'] ?: 'Camaba masuk daftar cadangan.',
                     'decided_at' => now(),
-                    'decided_by_name' => 'Admin PMB',
+                    'decided_by_name' => $this->actorName(),
                 ]
             );
 
@@ -201,7 +201,7 @@ class SelectionController extends Controller
                     'status' => 'ditolak',
                     'note' => $validated['note'],
                     'decided_at' => now(),
-                    'decided_by_name' => 'Admin PMB',
+                    'decided_by_name' => $this->actorName(),
                 ]
             );
 

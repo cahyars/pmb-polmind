@@ -164,7 +164,7 @@
                 ['label' => 'Daftar Ulang', 'desc' => 'Validasi DU camaba', 'url' => '/admin/re-registrations', 'icon' => 'cap'],
                 ['label' => 'Follow Up', 'desc' => 'CRM dan reminder WA', 'url' => '/admin/follow-ups', 'icon' => 'chat'],
                 ['label' => 'Laporan', 'desc' => 'Rekap pimpinan', 'url' => '/admin/reports', 'icon' => 'chart'],
-                ['label' => 'Master Data', 'desc' => 'Konfigurasi PMB', 'url' => '/admin/master-data', 'icon' => 'cog'],
+                ...(auth('web')->user()?->isAdmin() ? [['label' => 'Master Data', 'desc' => 'Konfigurasi PMB', 'url' => '/admin/master-data', 'icon' => 'cog']] : []),
                 ['label' => 'Integrasi', 'desc' => 'Sinkron ke SIAKAD', 'url' => '/admin/integrations', 'icon' => 'sync'],
                 ['label' => 'Landing PMB', 'desc' => 'Lihat halaman publik', 'url' => '/', 'icon' => 'computer'],
             ] as $module)

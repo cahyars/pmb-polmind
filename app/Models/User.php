@@ -14,6 +14,15 @@ class User extends Authenticatable
     use HasFactory, Notifiable;
 
     /**
+     * Admin PMB mengelola semuanya. Operator PMB punya akses penuh kecuali
+     * Master Data, Tujuan Pembayaran, dan Kelola Akun.
+     */
+    public const ROLES = [
+        'admin' => 'Admin PMB',
+        'operator' => 'Operator PMB',
+    ];
+
+    /**
      * The attributes that are mass assignable.
      *
      * @var list<string>
@@ -21,6 +30,8 @@ class User extends Authenticatable
     protected $fillable = [
         'name',
         'email',
+        'role',
+        'is_active',
         'password',
     ];
 
@@ -45,6 +56,17 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'applicants_seen_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
+    }
+
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
+    }
+
+    public function getRoleLabelAttribute(): string
+    {
+        return self::ROLES[$this->role] ?? ucfirst((string) $this->role);
     }
 }

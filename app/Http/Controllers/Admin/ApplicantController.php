@@ -148,7 +148,7 @@ class ApplicantController extends Controller
                 return false;
             }
 
-            $invoice->waive($validated['waiver_reason'], $request->user('web')?->name ?? 'Admin PMB');
+            $invoice->waive($validated['waiver_reason'], $this->actorName());
 
             return true;
         });

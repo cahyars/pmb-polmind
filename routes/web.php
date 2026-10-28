@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
 use App\Http\Controllers\Admin\MasterDataController;
 use App\Http\Controllers\Admin\SelectionScheduleController;
+use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SchoolController;
@@ -27,6 +28,7 @@ use App\Http\Controllers\Camaba\PaymentController as CamabaPaymentController;
 use App\Http\Controllers\Camaba\PrintController as CamabaPrintController;
 use App\Http\Controllers\Camaba\SelectionStatusController as CamabaSelectionStatusController;
 use App\Http\Controllers\Camaba\ReRegistrationController as CamabaReRegistrationController;
+use App\Http\Middleware\AdminAccess;
 use App\Http\Middleware\EnsureRegistrationPaid;
 use App\Http\Middleware\SelectAdminPmbYear;
 
@@ -99,7 +101,7 @@ Route::prefix('admin')->name('admin.')->group(function () {
     });
 });
 
-Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYear::class])->group(function () {
+Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::class, SelectAdminPmbYear::class])->group(function () {
     Route::post('/logout', [AdminAuthController::class, 'logout'])->name('logout');
     Route::post('/pmb-year', [AdminAuthController::class, 'selectPmbYear'])->name('pmb-year.select');
 
@@ -117,11 +119,14 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
     Route::patch('/documents/{document}/accept', [DocumentVerificationController::class, 'accept'])->name('documents.accept');
     Route::patch('/documents/{document}/reject', [DocumentVerificationController::class, 'reject'])->name('documents.reject');
 
-    Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
-    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
-    Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
-    Route::patch('/payment-methods/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
-    Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+    // Hanya Admin PMB: tujuan pembayaran.
+    Route::middleware(AdminAccess::class . ':admin')->group(function () {
+        Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
+        Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
+        Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
+        Route::patch('/payment-methods/{paymentMethod}/toggle', [PaymentMethodController::class, 'toggle'])->name('payment-methods.toggle');
+        Route::delete('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
+    });
 
     Route::get('/payments', [PaymentVerificationController::class, 'index'])->name('payments.index');
     Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');
@@ -148,47 +153,55 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', SelectAdminPmbYe
         ->whereIn('section', array_keys(ReportController::SECTIONS))
         ->name('reports.show');
 
-    Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
-    Route::get('/master-data/{section}', [MasterDataController::class, 'show'])
-        ->whereIn('section', array_keys(MasterDataController::SECTIONS))
-        ->name('master-data.show');
+    // Hanya Admin PMB: Master Data dan kelola akun.
+    Route::middleware(AdminAccess::class . ':admin')->group(function () {
+        Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
+        Route::get('/master-data/{section}', [MasterDataController::class, 'show'])
+            ->whereIn('section', array_keys(MasterDataController::SECTIONS))
+            ->name('master-data.show');
 
-    Route::post('/master-data/selection-components', [SelectionScheduleController::class, 'storeComponent'])->name('master-data.selection-components.store');
-    Route::put('/master-data/selection-components/{selectionComponent}', [SelectionScheduleController::class, 'updateComponent'])->name('master-data.selection-components.update');
-    Route::patch('/master-data/selection-components/{selectionComponent}/toggle', [SelectionScheduleController::class, 'toggleComponent'])->name('master-data.selection-components.toggle');
+        Route::post('/master-data/selection-components', [SelectionScheduleController::class, 'storeComponent'])->name('master-data.selection-components.store');
+        Route::put('/master-data/selection-components/{selectionComponent}', [SelectionScheduleController::class, 'updateComponent'])->name('master-data.selection-components.update');
+        Route::patch('/master-data/selection-components/{selectionComponent}/toggle', [SelectionScheduleController::class, 'toggleComponent'])->name('master-data.selection-components.toggle');
 
-    Route::post('/master-data/selection-schedules', [SelectionScheduleController::class, 'storeSchedule'])->name('master-data.selection-schedules.store');
-    Route::put('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('master-data.selection-schedules.update');
-    Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
-    Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
-    Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
+        Route::post('/master-data/selection-schedules', [SelectionScheduleController::class, 'storeSchedule'])->name('master-data.selection-schedules.store');
+        Route::put('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('master-data.selection-schedules.update');
+        Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
+        Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
+        Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
 
-    Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');
-    Route::put('/master-data/numbering/receipt', [MasterDataController::class, 'updateReceiptNumbering'])->name('master-data.numbering.receipt');
+        Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');
+        Route::put('/master-data/numbering/receipt', [MasterDataController::class, 'updateReceiptNumbering'])->name('master-data.numbering.receipt');
 
-    Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
-    Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');
-    Route::patch('/master-data/study-programs/{studyProgram}/toggle', [MasterDataController::class, 'toggleStudyProgram'])->name('master-data.study-programs.toggle');
+        Route::post('/master-data/study-programs', [MasterDataController::class, 'storeStudyProgram'])->name('master-data.study-programs.store');
+        Route::put('/master-data/study-programs/{studyProgram}', [MasterDataController::class, 'updateStudyProgram'])->name('master-data.study-programs.update');
+        Route::patch('/master-data/study-programs/{studyProgram}/toggle', [MasterDataController::class, 'toggleStudyProgram'])->name('master-data.study-programs.toggle');
 
-    Route::post('/master-data/fee-components', [MasterDataController::class, 'storeFeeComponent'])->name('master-data.fee-components.store');
-    Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
-    Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
+        Route::post('/master-data/fee-components', [MasterDataController::class, 'storeFeeComponent'])->name('master-data.fee-components.store');
+        Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
+        Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
 
-    Route::post('/master-data/pmb-years', [MasterDataController::class, 'storePmbYear'])->name('master-data.pmb-years.store');
-    Route::put('/master-data/pmb-years/{pmbYear}', [MasterDataController::class, 'updatePmbYear'])->name('master-data.pmb-years.update');
-    Route::patch('/master-data/pmb-years/{pmbYear}/toggle', [MasterDataController::class, 'togglePmbYear'])->name('master-data.pmb-years.toggle');
+        Route::post('/master-data/pmb-years', [MasterDataController::class, 'storePmbYear'])->name('master-data.pmb-years.store');
+        Route::put('/master-data/pmb-years/{pmbYear}', [MasterDataController::class, 'updatePmbYear'])->name('master-data.pmb-years.update');
+        Route::patch('/master-data/pmb-years/{pmbYear}/toggle', [MasterDataController::class, 'togglePmbYear'])->name('master-data.pmb-years.toggle');
 
-    Route::post('/master-data/admission-waves', [MasterDataController::class, 'storeAdmissionWave'])->name('master-data.admission-waves.store');
-    Route::put('/master-data/admission-waves/{admissionWave}', [MasterDataController::class, 'updateAdmissionWave'])->name('master-data.admission-waves.update');
-    Route::patch('/master-data/admission-waves/{admissionWave}/toggle', [MasterDataController::class, 'toggleAdmissionWave'])->name('master-data.admission-waves.toggle');
+        Route::post('/master-data/admission-waves', [MasterDataController::class, 'storeAdmissionWave'])->name('master-data.admission-waves.store');
+        Route::put('/master-data/admission-waves/{admissionWave}', [MasterDataController::class, 'updateAdmissionWave'])->name('master-data.admission-waves.update');
+        Route::patch('/master-data/admission-waves/{admissionWave}/toggle', [MasterDataController::class, 'toggleAdmissionWave'])->name('master-data.admission-waves.toggle');
 
-    Route::post('/master-data/class-types', [MasterDataController::class, 'storeClassType'])->name('master-data.class-types.store');
-    Route::put('/master-data/class-types/{classType}', [MasterDataController::class, 'updateClassType'])->name('master-data.class-types.update');
-    Route::patch('/master-data/class-types/{classType}/toggle', [MasterDataController::class, 'toggleClassType'])->name('master-data.class-types.toggle');
+        Route::post('/master-data/class-types', [MasterDataController::class, 'storeClassType'])->name('master-data.class-types.store');
+        Route::put('/master-data/class-types/{classType}', [MasterDataController::class, 'updateClassType'])->name('master-data.class-types.update');
+        Route::patch('/master-data/class-types/{classType}/toggle', [MasterDataController::class, 'toggleClassType'])->name('master-data.class-types.toggle');
 
-    Route::post('/master-data/document-types', [MasterDataController::class, 'storeDocumentType'])->name('master-data.document-types.store');
-    Route::put('/master-data/document-types/{documentType}', [MasterDataController::class, 'updateDocumentType'])->name('master-data.document-types.update');
-    Route::patch('/master-data/document-types/{documentType}/toggle', [MasterDataController::class, 'toggleDocumentType'])->name('master-data.document-types.toggle');
+        Route::post('/master-data/document-types', [MasterDataController::class, 'storeDocumentType'])->name('master-data.document-types.store');
+        Route::put('/master-data/document-types/{documentType}', [MasterDataController::class, 'updateDocumentType'])->name('master-data.document-types.update');
+        Route::patch('/master-data/document-types/{documentType}/toggle', [MasterDataController::class, 'toggleDocumentType'])->name('master-data.document-types.toggle');
+
+        Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::post('/users', [UserController::class, 'store'])->name('users.store');
+        Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
+        Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
+    });
 
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');

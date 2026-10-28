@@ -98,7 +98,7 @@ class DocumentVerificationController extends Controller
                 'status' => 'diterima',
                 'admin_note' => null,
                 'verified_at' => now(),
-                'verified_by_name' => 'Admin PMB',
+                'verified_by_name' => $this->actorName(),
             ]);
 
             $this->refreshApplicantDocumentStatus($document->applicant);
@@ -126,7 +126,7 @@ class DocumentVerificationController extends Controller
                 'status' => 'ditolak',
                 'admin_note' => $validated['admin_note'],
                 'verified_at' => now(),
-                'verified_by_name' => 'Admin PMB',
+                'verified_by_name' => $this->actorName(),
             ]);
 
             $this->refreshApplicantDocumentStatus($document->applicant);

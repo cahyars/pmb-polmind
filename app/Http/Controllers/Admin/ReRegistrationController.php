@@ -161,7 +161,7 @@ class ReRegistrationController extends Controller
             $reRegistration->update([
                 'status' => 'valid',
                 'validated_at' => now(),
-                'validated_by_name' => 'Admin PMB',
+                'validated_by_name' => $this->actorName(),
                 'ready_sync_at' => now(),
                 'admin_note' => null,
             ]);
@@ -197,7 +197,7 @@ class ReRegistrationController extends Controller
             $reRegistration->update([
                 'status' => 'ditolak',
                 'validated_at' => now(),
-                'validated_by_name' => 'Admin PMB',
+                'validated_by_name' => $this->actorName(),
                 'ready_sync_at' => null,
                 'admin_note' => $validated['admin_note'],
             ]);

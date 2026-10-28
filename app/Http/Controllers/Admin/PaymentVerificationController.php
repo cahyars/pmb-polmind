@@ -102,7 +102,7 @@ class PaymentVerificationController extends Controller
                 'status' => 'valid',
                 'admin_note' => null,
                 'verified_at' => now(),
-                'verified_by_name' => 'Admin PMB',
+                'verified_by_name' => $this->actorName(),
             ]);
 
             ReceiptNumber::assign($payment);
@@ -144,7 +144,7 @@ class PaymentVerificationController extends Controller
                 'status' => 'rejected',
                 'admin_note' => $validated['admin_note'],
                 'verified_at' => now(),
-                'verified_by_name' => 'Admin PMB',
+                'verified_by_name' => $this->actorName(),
             ]);
 
             $this->refreshPaymentStatus($payment, $validated['admin_note']);
@@ -217,7 +217,7 @@ class PaymentVerificationController extends Controller
                     'invoice_id' => $payment->invoice_id,
                     'status' => $isFullyPaid ? 'valid' : $reRegistrationStatus,
                     'validated_at' => $isFullyPaid ? now() : null,
-                    'validated_by_name' => $isFullyPaid ? 'Admin PMB' : null,
+                    'validated_by_name' => $isFullyPaid ? $this->actorName() : null,
                     'ready_sync_at' => $isFullyPaid ? now() : null,
                     'admin_note' => $isFullyPaid
                         ? null

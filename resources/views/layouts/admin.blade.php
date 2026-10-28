@@ -67,6 +67,7 @@
                         'label' => 'Master Data',
                         'url' => '/admin/master-data',
                         'icon' => 'cog',
+                        'admin_only' => true,
                         'active' => request()->is('admin/master-data*'),
                         'children' => collect(\App\Http\Controllers\Admin\MasterDataController::SECTIONS)
                             ->map(fn (array $item, string $key) => [
@@ -77,10 +78,17 @@
                             ->values()
                             ->all(),
                     ],
-                    ['label' => 'Tujuan Pembayaran', 'url' => '/admin/payment-methods', 'icon' => 'bank', 'active' => request()->is('admin/payment-methods*')],
+                    ['label' => 'Tujuan Pembayaran', 'url' => '/admin/payment-methods', 'icon' => 'bank', 'admin_only' => true, 'active' => request()->is('admin/payment-methods*')],
                     ['label' => 'Integrasi SIAKAD', 'url' => '/admin/integrations', 'icon' => 'sync', 'active' => request()->is('admin/integrations*')],
+                    ['label' => 'Kelola Akun', 'url' => '/admin/users', 'icon' => 'key', 'admin_only' => true, 'active' => request()->is('admin/users*')],
                 ],
             ];
+
+            // Operator PMB tidak melihat menu khusus Admin PMB.
+            $menuGroups = collect($menuGroups)
+                ->map(fn ($menus) => array_values(array_filter($menus, fn ($menu) => empty($menu['admin_only']) || $adminUser?->isAdmin())))
+                ->filter()
+                ->all();
 
             $adminName = $adminUser?->name ?: 'Admin PMB';
             $adminInitials = collect(preg_split('/\s+/', trim($adminName)))
@@ -349,7 +357,7 @@
                             </div>
                             <div class="hidden 2xl:block">
                                 <p class="text-sm font-semibold text-slate-900">{{ $adminName }}</p>
-                                <p class="text-xs text-slate-400">Administrator</p>
+                                <p class="text-xs text-slate-400">{{ $adminUser?->role_label ?? 'Administrator' }}</p>
                             </div>
                         </div>
                     </div>

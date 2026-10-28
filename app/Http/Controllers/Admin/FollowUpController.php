@@ -100,7 +100,7 @@ class FollowUpController extends Controller
             'contacted_at' => now(),
             'next_follow_up_date' => $validated['next_follow_up_date'] ?? null,
             'note' => $validated['note'],
-            'officer_name' => 'Admin PMB',
+            'officer_name' => $this->actorName(),
         ]);
 
         return back()->with('success', 'Catatan follow up berhasil disimpan.');
