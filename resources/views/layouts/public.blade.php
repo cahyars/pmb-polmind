@@ -139,7 +139,7 @@
             <div>
                 <h3 class="font-semibold text-slate-900">Kontak Kami</h3>
                 <div class="mt-3 space-y-2 text-sm text-slate-600">
-                    <p>Kawasan Industri MM2100 (MM2100 Industrial Town)</p>
+                    <p class="leading-6">{{ config('pmb.campus_address') }}</p>
                     <p><a href="{{ \App\Services\AdminWhatsApp::url() }}" target="_blank" rel="noopener" class="hover:text-polmind-blue">{{ \App\Services\AdminWhatsApp::display() }}</a></p>
                     <p>info@polmind.ac.id</p>
                 </div>
@@ -149,9 +149,19 @@
         <div class="border-t border-slate-200 py-5">
             <div class="mx-auto flex max-w-7xl flex-col justify-between gap-3 px-4 text-xs text-slate-500 sm:px-6 md:flex-row lg:px-8">
                 <p>© {{ date('Y') }} Politeknik Mitra Industri. All Rights Reserved.</p>
-                <div class="flex gap-5">
+                <div class="flex items-center gap-5"
+                     x-data
+                     @keydown.window="if ($event.altKey && $event.shiftKey && $event.code === 'KeyA' && ! $event.target.closest('input, textarea, select, [contenteditable]')) window.location = $refs.adminLogin.href">
                     <a href="#" class="hover:text-polmind-blue">Kebijakan Privasi</a>
                     <a href="#" class="hover:text-polmind-blue">Syarat & Ketentuan</a>
+                    {{-- Shortcut login admin PMB (juga Alt+Shift+A) --}}
+                    <a href="{{ route('admin.login') }}"
+                       x-ref="adminLogin"
+                       title="Login Admin PMB (Alt+Shift+A)"
+                       aria-label="Login Admin PMB"
+                       class="-m-1.5 rounded-full p-1.5 text-slate-300 transition hover:bg-blue-50 hover:text-polmind-blue focus-visible:text-polmind-blue focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-200">
+                        <x-icon name="lock" class="h-4 w-4" />
+                    </a>
                 </div>
             </div>
         </div>

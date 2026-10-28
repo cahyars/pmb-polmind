@@ -39,10 +39,10 @@ class DashboardController extends Controller
             'undangan' => Applicant::where('registration_path', 'undangan')->count(),
         ];
 
-        $targetApplicants = 180;
+        $targetNewStudents = config('pmb.target_new_students');
 
-        $targetProgress = $targetApplicants > 0
-            ? round(($totalApplicants / $targetApplicants) * 100)
+        $targetProgress = $targetNewStudents > 0
+            ? round(($validReRegistrations / $targetNewStudents) * 100)
             : 0;
 
         $funnel = collect([
@@ -136,7 +136,7 @@ class DashboardController extends Controller
             'failedSyncApplicants',
             'totalValidPayment',
             'registrationPathStats',
-            'targetApplicants',
+            'targetNewStudents',
             'targetProgress',
             'funnel',
             'programs',

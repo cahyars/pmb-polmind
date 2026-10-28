@@ -36,15 +36,17 @@
             </div>
 
             <div class="rounded-xl bg-white/10 p-6">
-                <p class="text-sm font-semibold text-blue-100">Total Pendaftar</p>
-                <p class="mt-3 text-4xl font-bold">{{ $totalApplicants }}</p>
+                <p class="text-sm font-semibold text-blue-100">Mahasiswa Baru</p>
+                <p class="mt-3 text-4xl font-bold">
+                    {{ $validReRegistrations }}<span class="text-xl font-semibold text-blue-100"> / {{ $targetNewStudents }}</span>
+                </p>
 
                 <div class="mt-5 h-3 overflow-hidden rounded-full bg-white/20">
                     <div class="h-full rounded-full bg-polmind-yellow" style="width: {{ min($targetProgress, 100) }}%"></div>
                 </div>
 
                 <p class="mt-4 text-xs leading-5 text-blue-100">
-                    Target sementara {{ $targetApplicants }} pendaftar. Progress sekitar {{ $targetProgress }}%.
+                    Target {{ $targetNewStudents }} mahasiswa baru (daftar ulang valid). Progress sekitar {{ $targetProgress }}% · Total pendaftar {{ $totalApplicants }}.
                 </p>
             </div>
         </div>
