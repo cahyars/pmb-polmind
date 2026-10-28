@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdmissionWave;
+use App\Models\Brochure;
 use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
@@ -49,7 +50,7 @@ class HomeController extends Controller
             'studyPrograms' => StudyProgram::where('is_active', true)->orderBy('code')->get(),
             'documentTypes' => DocumentType::where('is_active', true)->orderBy('sort_order')->get(),
             'classTypes' => ClassType::where('is_active', true)->orderBy('code')->get(),
-            'brochureUrl' => file_exists(public_path('files/brosur-pmb.pdf')) ? asset('files/brosur-pmb.pdf') : null,
+            'brochures' => Brochure::published()->get(),
         ]);
     }
 }

@@ -79,6 +79,7 @@
                             ->all(),
                     ],
                     ['label' => 'Tujuan Pembayaran', 'url' => '/admin/payment-methods', 'icon' => 'bank', 'admin_only' => true, 'active' => request()->is('admin/payment-methods*')],
+                    ['label' => 'Brosur', 'url' => '/admin/brochures', 'icon' => 'book', 'active' => request()->is('admin/brochures*')],
                     ['label' => 'Integrasi SIAKAD', 'url' => '/admin/integrations', 'icon' => 'sync', 'active' => request()->is('admin/integrations*')],
                     ['label' => 'Kelola Akun', 'url' => '/admin/users', 'icon' => 'key', 'admin_only' => true, 'active' => request()->is('admin/users*')],
                 ],

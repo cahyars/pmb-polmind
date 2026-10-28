@@ -1,11 +1,13 @@
 <?php
 
+use App\Http\Controllers\BrochureController;
 use App\Http\Controllers\HomeController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FileController as AdminFileController;
 use App\Http\Controllers\Admin\ApplicantController;
+use App\Http\Controllers\Admin\BrochureController as AdminBrochureController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
@@ -33,6 +35,10 @@ use App\Http\Middleware\EnsureRegistrationPaid;
 use App\Http\Middleware\SelectAdminPmbYear;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
+
+Route::get('/brosur/{brochure}', [BrochureController::class, 'download'])
+    ->middleware('throttle:60,1')
+    ->name('brochures.download');
 
 // Terbuka untuk tamu karena sekolah asal dipilih saat registrasi.
 Route::get('/referensi/sekolah', [SchoolController::class, 'index'])
@@ -202,6 +208,13 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
     });
+
+    Route::get('/brochures', [AdminBrochureController::class, 'index'])->name('brochures.index');
+    Route::post('/brochures', [AdminBrochureController::class, 'store'])->middleware('throttle:20,1')->name('brochures.store');
+    Route::put('/brochures/{brochure}', [AdminBrochureController::class, 'update'])->middleware('throttle:20,1')->name('brochures.update');
+    Route::patch('/brochures/{brochure}/toggle', [AdminBrochureController::class, 'toggle'])->name('brochures.toggle');
+    Route::delete('/brochures/{brochure}', [AdminBrochureController::class, 'destroy'])->name('brochures.destroy');
+    Route::get('/brochures/{brochure}/file', [AdminBrochureController::class, 'file'])->name('brochures.file');
 
     Route::get('/integrations', [IntegrationController::class, 'index'])->name('integrations.index');
     Route::patch('/integrations/{applicant}/processing', [IntegrationController::class, 'markProcessing'])->name('integrations.processing');
