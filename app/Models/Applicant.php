@@ -35,6 +35,7 @@ class Applicant extends Authenticatable
         'admission_wave_id',
         'study_program_id',
         'second_study_program_id',
+        'accepted_study_program_id',
         'class_type_id',
 
         'registration_number',
@@ -150,6 +151,36 @@ class Applicant extends Authenticatable
         return self::REGISTRATION_PATHS[$this->registration_path]['label'] ?? self::REGISTRATION_PATHS['umum']['label'];
     }
 
+    /**
+     * Pilihan prodi (1 atau 2) tempat camaba diterima, null jika belum diterima.
+     */
+    public function acceptedChoice(): ?int
+    {
+        if ($this->selection_status !== 'diterima') {
+            return null;
+        }
+
+        return $this->accepted_study_program_id
+            && $this->accepted_study_program_id === $this->second_study_program_id ? 2 : 1;
+    }
+
+    /**
+     * Prodi yang dijalani camaba: prodi tempat diterima, atau pilihan pertama selama belum diterima.
+     * Dipakai untuk NIM, daftar ulang, dan sinkron SIAKAD.
+     */
+    public function getEnrolledStudyProgramAttribute(): ?StudyProgram
+    {
+        return ($this->accepted_study_program_id ? $this->acceptedStudyProgram : null) ?? $this->studyProgram;
+    }
+
+    public function scopeWhereEnrolledProgram($query, $studyProgramId)
+    {
+        return $query->where(function ($q) use ($studyProgramId) {
+            $q->where('accepted_study_program_id', $studyProgramId)
+                ->orWhere(fn ($legacy) => $legacy->whereNull('accepted_study_program_id')->where('study_program_id', $studyProgramId));
+        });
+    }
+
     public function pmbYear()
     {
         return $this->belongsTo(PmbYear::class);
@@ -168,6 +199,11 @@ class Applicant extends Authenticatable
     public function secondStudyProgram()
     {
         return $this->belongsTo(StudyProgram::class, 'second_study_program_id');
+    }
+
+    public function acceptedStudyProgram()
+    {
+        return $this->belongsTo(StudyProgram::class, 'accepted_study_program_id');
     }
 
     public function classType()

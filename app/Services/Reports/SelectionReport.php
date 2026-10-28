@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Models\Applicant;
+use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use Illuminate\Support\Collection;
 
@@ -31,7 +32,7 @@ class SelectionReport
     public static function build(ReportFilter $filter): array
     {
         $applicants = $filter->applicants()
-            ->with(['selection', 'studyProgram', 'admissionWave'])
+            ->with(['selection.scores', 'studyProgram', 'acceptedStudyProgram', 'admissionWave'])
             ->get();
 
         $ready = $applicants->filter(fn (Applicant $applicant) => self::isReady($applicant));
@@ -53,6 +54,11 @@ class SelectionReport
                 $applicants->pluck('admissionWave')->filter()->unique('id')->sortBy('start_date')->mapWithKeys(fn ($wave) => [$wave->id => $wave->name])
             ),
             'scores' => self::scoreBuckets($applicants),
+            'components' => SelectionComponent::orderBy('sort_order')->orderBy('name')->get()
+                ->filter(fn ($component) => $component->is_active || $applicants->contains(
+                    fn ($applicant) => $applicant->selection?->scores->contains('selection_component_id', $component->id)
+                ))
+                ->values(),
             'results' => $applicants
                 ->where('selection_status', '!=', 'belum_diseleksi')
                 ->sortBy([

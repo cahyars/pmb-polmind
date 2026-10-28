@@ -30,13 +30,14 @@
     };
 
     $heroDesc = match ($selectionStatus) {
-        'diterima' => 'Silakan lanjutkan proses daftar ulang melalui menu pembayaran atau halaman pengumuman.',
+        'diterima' => 'Anda diterima di Program Studi ' . ($applicant->enrolled_study_program?->name ?? '-') . ' (pilihan ' . $applicant->acceptedChoice() . '). Silakan lanjutkan proses daftar ulang melalui menu pembayaran atau halaman pengumuman.',
         'cadangan' => 'Status Anda masih menunggu keputusan lanjutan dari panitia PMB.',
         'ditolak' => 'Terima kasih telah mengikuti proses seleksi PMB Politeknik Mitra Industri.',
         default => 'Data Anda sedang diproses oleh panitia PMB. Silakan pantau halaman ini secara berkala.',
     };
 
     $selectionDone = in_array($selectionStatus, ['diterima', 'cadangan', 'ditolak']);
+    $acceptedChoice = $applicant->acceptedChoice();
     $hasReRegistrationInvoice = (bool) $applicant->reRegistrationInvoice;
 @endphp
 
@@ -49,7 +50,7 @@
                 <p class="text-sm font-bold text-blue-100">Nomor Pendaftaran</p>
                 <h1 class="mt-2 text-3xl font-black">{{ $applicant->registration_number }}</h1>
                 <p class="mt-3 text-sm leading-6 text-blue-100">
-                    {{ $applicant->full_name }} · {{ $applicant->studyProgram?->name ?? '-' }}
+                    {{ $applicant->full_name }} · {{ $applicant->enrolled_study_program?->name ?? '-' }}
                 </p>
             </div>
 
@@ -171,35 +172,31 @@
                 @endif
             </div>
 
-            {{-- Nilai Seleksi --}}
+            {{-- Hasil Seleksi (nilai hanya untuk internal kampus, tidak ditampilkan) --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                 <div class="border-b border-slate-200 pb-5">
-                    <h2 class="text-xl font-black text-polmind-blue">Nilai Seleksi</h2>
+                    <h2 class="text-xl font-black text-polmind-blue">Hasil Seleksi</h2>
                     <p class="mt-2 text-sm leading-6 text-slate-600">
-                        Nilai akan tampil setelah panitia PMB melakukan input hasil seleksi.
+                        Hasil akan tampil setelah panitia PMB menetapkan keputusan seleksi.
                     </p>
                 </div>
 
-                <div class="mt-6 grid gap-5 md:grid-cols-3">
-                    <div class="rounded-2xl bg-slate-50 p-5 text-center">
-                        <p class="text-sm font-bold text-slate-500">Nilai Tes</p>
-                        <p class="mt-3 text-4xl font-black text-polmind-blue">
-                            {{ $applicant->selection?->test_score ?? '-' }}
-                        </p>
+                <div class="mt-6 grid gap-5 md:grid-cols-2">
+                    <div class="rounded-2xl bg-slate-50 p-5">
+                        <p class="text-sm font-bold text-slate-500">Status</p>
+                        <span class="mt-3 inline-flex rounded-full px-4 py-1.5 text-sm font-black {{ $statusClasses[$selectionStatus] ?? 'bg-slate-100 text-slate-600' }}">
+                            {{ $statusLabels[$selectionStatus] ?? $selectionStatus }}
+                        </span>
                     </div>
 
-                    <div class="rounded-2xl bg-slate-50 p-5 text-center">
-                        <p class="text-sm font-bold text-slate-500">Nilai Interview</p>
-                        <p class="mt-3 text-4xl font-black text-polmind-blue">
-                            {{ $applicant->selection?->interview_score ?? '-' }}
-                        </p>
-                    </div>
-
-                    <div class="rounded-2xl bg-blue-50 p-5 text-center">
-                        <p class="text-sm font-bold text-polmind-blue">Nilai Akhir</p>
-                        <p class="mt-3 text-4xl font-black text-polmind-blue">
-                            {{ $applicant->selection?->final_score ?? '-' }}
-                        </p>
+                    <div class="rounded-2xl {{ $acceptedChoice ? 'bg-green-50' : 'bg-slate-50' }} p-5">
+                        <p class="text-sm font-bold {{ $acceptedChoice ? 'text-green-700' : 'text-slate-500' }}">Diterima di Program Studi</p>
+                        @if($acceptedChoice)
+                            <p class="mt-2 text-lg font-black text-slate-900">{{ $applicant->enrolled_study_program?->name }}</p>
+                            <p class="mt-1 text-sm font-semibold text-green-700">Pilihan {{ $acceptedChoice }}</p>
+                        @else
+                            <p class="mt-2 text-lg font-black text-slate-400">-</p>
+                        @endif
                     </div>
                 </div>
 
@@ -290,8 +287,13 @@
                     </div>
 
                     <div>
-                        <p class="text-xs font-bold text-slate-500">Prodi Pilihan</p>
+                        <p class="text-xs font-bold text-slate-500">Prodi Pilihan 1</p>
                         <p class="mt-1 font-bold text-slate-800">{{ $applicant->studyProgram?->name ?? '-' }}</p>
+                    </div>
+
+                    <div>
+                        <p class="text-xs font-bold text-slate-500">Prodi Pilihan 2</p>
+                        <p class="mt-1 font-bold text-slate-800">{{ $applicant->secondStudyProgram?->name ?? '-' }}</p>
                     </div>
 
                     <div>

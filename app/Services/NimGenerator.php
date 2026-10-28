@@ -88,6 +88,7 @@ class NimGenerator
             ->whereHas('reRegistrationInvoice.payments', fn ($query) => $query->where('status', 'valid'))
             ->with([
                 'studyProgram',
+                'acceptedStudyProgram',
                 'classType',
                 'reRegistrationInvoice.payments' => fn ($query) => $query->where('status', 'valid'),
             ])
@@ -127,7 +128,7 @@ class NimGenerator
         DB::transaction(function () use ($pmbYear, $format, $digits, $scope, $needsProdiCode, &$generated, &$skipped) {
             foreach (self::eligible($pmbYear) as $row) {
                 $applicant = $row['applicant'];
-                $prodiCode = strtoupper((string) $applicant->studyProgram?->nim_code);
+                $prodiCode = strtoupper((string) $applicant->enrolled_study_program?->nim_code);
 
                 if ($needsProdiCode && $prodiCode === '') {
                     $skipped->push($applicant);
@@ -146,7 +147,7 @@ class NimGenerator
                     continue;
                 }
 
-                $sequenceKey = $scope === 'prodi' ? 'nim-' . ($prodiCode ?: $applicant->study_program_id) : 'nim';
+                $sequenceKey = $scope === 'prodi' ? 'nim-' . ($prodiCode ?: $applicant->enrolled_study_program?->id) : 'nim';
 
                 do {
                     $nim = self::render($format, $digits, [

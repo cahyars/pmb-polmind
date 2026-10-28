@@ -29,6 +29,7 @@ class IntegrationController extends Controller
                 'pmbYear',
                 'admissionWave',
                 'studyProgram',
+                'acceptedStudyProgram',
                 'classType',
                 'address',
                 'education',
@@ -61,7 +62,7 @@ class IntegrationController extends Controller
                 });
             })
             ->when($request->filled('study_program'), function ($query) use ($request) {
-                $query->where('study_program_id', $request->study_program);
+                $query->whereEnrolledProgram($request->study_program);
             })
             ->when($request->filled('registration_path'), function ($query) use ($request) {
                 $query->where('registration_path', $request->registration_path);

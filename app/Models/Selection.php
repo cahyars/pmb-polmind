@@ -11,8 +11,6 @@ class Selection extends Model
 
     protected $fillable = [
         'applicant_id',
-        'test_score',
-        'interview_score',
         'final_score',
         'status',
         'note',
@@ -21,8 +19,6 @@ class Selection extends Model
     ];
 
     protected $casts = [
-        'test_score' => 'decimal:2',
-        'interview_score' => 'decimal:2',
         'final_score' => 'decimal:2',
         'decided_at' => 'datetime',
     ];
@@ -30,6 +26,31 @@ class Selection extends Model
     public function applicant()
     {
         return $this->belongsTo(Applicant::class);
+    }
+
+    /**
+     * Nilai per komponen tes. Hanya untuk internal kampus, tidak ditampilkan ke camaba.
+     */
+    public function scores()
+    {
+        return $this->hasMany(SelectionScore::class);
+    }
+
+    /**
+     * Rata-rata berbobot dari komponen yang sudah dinilai; null jika belum ada nilai.
+     */
+    public static function weightedScore(iterable $scores): ?float
+    {
+        $totalWeight = 0;
+        $total = 0;
+
+        foreach ($scores as $score) {
+            $weight = max((int) $score->component?->weight, 0);
+            $totalWeight += $weight;
+            $total += (float) $score->score * $weight;
+        }
+
+        return $totalWeight > 0 ? round($total / $totalWeight, 2) : null;
     }
 
     public function isAccepted(): bool

@@ -9,12 +9,26 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\ReRegistration;
 use App\Models\Selection;
+use App\Models\SelectionComponent;
+use App\Models\SelectionScore;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class SelectionController extends Controller
 {
+    // Keputusan yang dapat dipilih admin => status seleksi camaba.
+    private const DECISIONS = [
+        'diterima_1' => 'diterima',
+        'diterima_2' => 'diterima',
+        'cadangan' => 'cadangan',
+        'ditolak' => 'ditolak',
+    ];
+
+    private const NOT_READY_MESSAGE = 'Camaba belum siap diseleksi. Pastikan berkas dan pembayaran pendaftaran sudah valid.';
+
     public function index(Request $request)
     {
         $readySelection = Applicant::where('document_status', 'valid')
@@ -32,10 +46,11 @@ class SelectionController extends Controller
         $applicants = Applicant::query()
             ->with([
                 'studyProgram',
+                'secondStudyProgram',
+                'acceptedStudyProgram',
                 'classType',
                 'education',
                 'selection',
-                'registrationInvoice',
                 'reRegistrationInvoice',
             ])
             ->when($request->filled('keyword'), function ($query) use ($request) {
@@ -88,166 +103,196 @@ class SelectionController extends Controller
         ));
     }
 
-    public function accept(Request $request, Applicant $applicant)
+    public function show(string $registrationNumber)
     {
-        if ($message = $this->guardSelectionDecision($applicant, 'diterima')) {
+        $applicant = Applicant::where('registration_number', $registrationNumber)
+            ->with([
+                'studyProgram',
+                'secondStudyProgram',
+                'acceptedStudyProgram',
+                'classType',
+                'admissionWave',
+                'education',
+                'photoDocument',
+                'selection.scores',
+                'reRegistrationInvoice',
+            ])
+            ->firstOrFail();
+
+        $components = $this->componentsFor($applicant);
+        $scores = $applicant->selection?->scores->pluck('score', 'selection_component_id') ?? collect();
+
+        return view('admin.selections.show', compact('applicant', 'components', 'scores'));
+    }
+
+    public function saveScores(Request $request, Applicant $applicant)
+    {
+        if (! $this->isReady($applicant)) {
+            return back()->withErrors(self::NOT_READY_MESSAGE);
+        }
+
+        $components = $this->componentsFor($applicant);
+        $scores = $this->validateScores($request, $components);
+
+        DB::transaction(fn () => $this->storeScores($applicant, $components, $scores));
+
+        return back()->with('success', 'Nilai seleksi berhasil disimpan.');
+    }
+
+    public function decide(Request $request, Applicant $applicant)
+    {
+        $validated = $request->validate([
+            'decision' => ['required', Rule::in(array_keys(self::DECISIONS))],
+            'note' => [Rule::requiredIf($request->input('decision') === 'ditolak'), 'nullable', 'string', 'max:1000'],
+        ], [
+            'decision.required' => 'Pilih keputusan seleksi terlebih dahulu.',
+            'note.required' => 'Catatan wajib diisi jika camaba ditolak.',
+        ]);
+
+        $decision = $validated['decision'];
+        $status = self::DECISIONS[$decision];
+
+        $acceptedProgramId = match ($decision) {
+            'diterima_1' => $applicant->study_program_id,
+            'diterima_2' => $applicant->second_study_program_id,
+            default => null,
+        };
+
+        if ($decision === 'diterima_2' && ! $acceptedProgramId) {
+            return back()->withErrors('Camaba tidak memiliki pilihan prodi kedua.');
+        }
+
+        if ($message = $this->guardSelectionDecision($applicant, $status, $acceptedProgramId)) {
             return back()->withErrors($message);
         }
 
-        $validated = $request->validate([
-            'test_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'interview_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'note' => ['nullable', 'string', 'max:1000'],
-        ]);
+        $components = $this->componentsFor($applicant);
+        $scores = $this->validateScores($request, $components);
 
-        DB::transaction(function () use ($applicant, $validated) {
-            $finalScore = $this->calculateFinalScore(
-                $validated['test_score'] ?? null,
-                $validated['interview_score'] ?? null
-            );
+        DB::transaction(function () use ($applicant, $components, $scores, $status, $acceptedProgramId, $validated) {
+            $selection = $this->storeScores($applicant, $components, $scores);
 
-            Selection::updateOrCreate(
-                ['applicant_id' => $applicant->id],
-                [
-                    'test_score' => $validated['test_score'] ?? null,
-                    'interview_score' => $validated['interview_score'] ?? null,
-                    'final_score' => $finalScore,
-                    'status' => 'diterima',
-                    'note' => $validated['note'] ?: 'Camaba dinyatakan diterima.',
-                    'decided_at' => now(),
-                    'decided_by_name' => $this->actorName(),
-                ]
-            );
+            $selection->update([
+                'status' => $status,
+                'note' => $validated['note'] ?? null,
+                'decided_at' => now(),
+                'decided_by_name' => $this->actorName(),
+            ]);
 
             $applicant->update([
-                'selection_status' => 'diterima',
+                'selection_status' => $status,
+                'accepted_study_program_id' => $acceptedProgramId,
                 're_registration_status' => 'belum_daftar_ulang',
                 'sync_status' => 'belum_siap',
             ]);
 
-            $this->createReRegistrationInvoice($applicant);
+            if ($status === 'diterima') {
+                $this->createReRegistrationInvoice($applicant);
+            } else {
+                $this->cancelReRegistrationInvoice($applicant);
+            }
         });
 
-        return back()->with('success', 'Camaba berhasil dinyatakan diterima dan invoice daftar ulang dibuat.');
+        return back()->with('success', match ($decision) {
+            'diterima_1', 'diterima_2' => 'Camaba diterima di pilihan ' . substr($decision, -1) . ' ('
+                . StudyProgram::whereKey($acceptedProgramId)->value('code') . ') dan invoice daftar ulang dibuat.',
+            'cadangan' => 'Camaba berhasil ditandai sebagai cadangan.',
+            default => 'Camaba berhasil ditolak.',
+        });
     }
 
-    public function reserve(Request $request, Applicant $applicant)
+    private function isReady(Applicant $applicant): bool
     {
-        if ($message = $this->guardSelectionDecision($applicant, 'cadangan')) {
-            return back()->withErrors($message);
-        }
-
-        $validated = $request->validate([
-            'test_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'interview_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'note' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        DB::transaction(function () use ($applicant, $validated) {
-            $finalScore = $this->calculateFinalScore(
-                $validated['test_score'] ?? null,
-                $validated['interview_score'] ?? null
-            );
-
-            Selection::updateOrCreate(
-                ['applicant_id' => $applicant->id],
-                [
-                    'test_score' => $validated['test_score'] ?? null,
-                    'interview_score' => $validated['interview_score'] ?? null,
-                    'final_score' => $finalScore,
-                    'status' => 'cadangan',
-                    'note' => $validated['note'] ?: 'Camaba masuk daftar cadangan.',
-                    'decided_at' => now(),
-                    'decided_by_name' => $this->actorName(),
-                ]
-            );
-
-            $applicant->update([
-                'selection_status' => 'cadangan',
-                're_registration_status' => 'belum_daftar_ulang',
-                'sync_status' => 'belum_siap',
-            ]);
-
-            $this->cancelReRegistrationInvoice($applicant);
-        });
-
-        return back()->with('success', 'Camaba berhasil ditandai sebagai cadangan.');
+        return $applicant->document_status === 'valid' && $applicant->payment_status === 'valid';
     }
 
-    public function reject(Request $request, Applicant $applicant)
-    {
-        if ($message = $this->guardSelectionDecision($applicant, 'ditolak')) {
-            return back()->withErrors($message);
-        }
-
-        $validated = $request->validate([
-            'test_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'interview_score' => ['nullable', 'numeric', 'min:0', 'max:100'],
-            'note' => ['required', 'string', 'max:1000'],
-        ]);
-
-        DB::transaction(function () use ($applicant, $validated) {
-            $finalScore = $this->calculateFinalScore(
-                $validated['test_score'] ?? null,
-                $validated['interview_score'] ?? null
-            );
-
-            Selection::updateOrCreate(
-                ['applicant_id' => $applicant->id],
-                [
-                    'test_score' => $validated['test_score'] ?? null,
-                    'interview_score' => $validated['interview_score'] ?? null,
-                    'final_score' => $finalScore,
-                    'status' => 'ditolak',
-                    'note' => $validated['note'],
-                    'decided_at' => now(),
-                    'decided_by_name' => $this->actorName(),
-                ]
-            );
-
-            $applicant->update([
-                'selection_status' => 'ditolak',
-                're_registration_status' => 'belum_daftar_ulang',
-                'sync_status' => 'belum_siap',
-            ]);
-
-            $this->cancelReRegistrationInvoice($applicant);
-        });
-
-        return back()->with('success', 'Camaba berhasil ditolak.');
-    }
-
-    private function guardSelectionDecision(Applicant $applicant, string $targetStatus): ?string
+    private function guardSelectionDecision(Applicant $applicant, string $targetStatus, $acceptedProgramId): ?string
     {
         $applicant->loadMissing('reRegistrationInvoice');
 
-        if ($applicant->document_status !== 'valid' || $applicant->payment_status !== 'valid') {
-            return 'Camaba belum siap diseleksi. Pastikan berkas dan pembayaran pendaftaran sudah valid.';
+        if (! $this->isReady($applicant)) {
+            return self::NOT_READY_MESSAGE;
         }
 
         $reRegistrationInvoice = $applicant->reRegistrationInvoice;
 
-        if (
-            $targetStatus !== 'diterima'
-            && $reRegistrationInvoice
-            && in_array($reRegistrationInvoice->status, ['waiting_verification', 'partial', 'paid'])
-        ) {
+        $hasReRegistrationActivity = filled($applicant->nim) || ($reRegistrationInvoice
+            && in_array($reRegistrationInvoice->status, ['waiting_verification', 'partial', 'paid']));
+
+        if ($hasReRegistrationActivity && $targetStatus !== 'diterima') {
             return 'Status seleksi tidak dapat diubah karena camaba sudah memiliki aktivitas pembayaran daftar ulang.';
+        }
+
+        if (
+            $hasReRegistrationActivity
+            && $applicant->selection_status === 'diterima'
+            && (int) $applicant->enrolled_study_program?->id !== (int) $acceptedProgramId
+        ) {
+            return 'Prodi tempat camaba diterima tidak dapat diubah karena camaba sudah melakukan pembayaran daftar ulang atau memiliki NIM.';
         }
 
         return null;
     }
 
-    private function calculateFinalScore($testScore, $interviewScore): ?float
+    /**
+     * Komponen tes aktif, ditambah komponen nonaktif yang sudah terlanjur dinilai untuk camaba ini.
+     */
+    private function componentsFor(Applicant $applicant): Collection
     {
-        if ($testScore === null && $interviewScore === null) {
-            return null;
+        $scoredIds = SelectionScore::whereHas('selection', fn ($query) => $query->where('applicant_id', $applicant->id))
+            ->pluck('selection_component_id');
+
+        return SelectionComponent::where('is_active', true)
+            ->orWhereIn('id', $scoredIds)
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * @return array<int, string|null> nilai per id komponen
+     */
+    private function validateScores(Request $request, Collection $components): array
+    {
+        $rules = ['scores' => ['nullable', 'array']];
+        $attributes = [];
+
+        foreach ($components as $component) {
+            $rules["scores.{$component->id}"] = ['nullable', 'numeric', 'min:0', 'max:100'];
+            $attributes["scores.{$component->id}"] = 'nilai ' . $component->name;
         }
 
-        $testScore = $testScore ?? 0;
-        $interviewScore = $interviewScore ?? 0;
+        $validated = $request->validate($rules, [], $attributes);
 
-        return round(($testScore * 0.6) + ($interviewScore * 0.4), 2);
+        return $components->mapWithKeys(fn ($component) => [
+            $component->id => $validated['scores'][$component->id] ?? null,
+        ])->all();
+    }
+
+    private function storeScores(Applicant $applicant, Collection $components, array $scores): Selection
+    {
+        $selection = Selection::firstOrCreate(['applicant_id' => $applicant->id]);
+
+        foreach ($components as $component) {
+            $score = $scores[$component->id] ?? null;
+
+            if ($score === null || $score === '') {
+                $selection->scores()->where('selection_component_id', $component->id)->delete();
+
+                continue;
+            }
+
+            $selection->scores()->updateOrCreate(
+                ['selection_component_id' => $component->id],
+                ['score' => $score]
+            );
+        }
+
+        $selection->update([
+            'final_score' => Selection::weightedScore($selection->scores()->with('component')->get()),
+        ]);
+
+        return $selection;
     }
 
     private function createReRegistrationInvoice(Applicant $applicant): void

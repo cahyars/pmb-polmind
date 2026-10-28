@@ -99,8 +99,9 @@
                         <th class="{{ $th }}">Camaba</th>
                         <th class="{{ $th }}">Prodi</th>
                         <th class="{{ $th }}">Jalur</th>
-                        <th class="{{ $th }} text-right">Tes</th>
-                        <th class="{{ $th }} text-right">Wawancara</th>
+                        @foreach($report['components'] as $component)
+                            <th class="{{ $th }} text-right">{{ $component->name }}</th>
+                        @endforeach
                         <th class="{{ $th }} text-right">Nilai Akhir</th>
                         <th class="{{ $th }}">Status</th>
                         <th class="{{ $th }}">Diputuskan</th>
@@ -114,10 +115,16 @@
                                 <a href="{{ route('admin.applicants.show', $applicant->registration_number) }}" class="font-semibold text-slate-900 hover:text-polmind-blue">{{ $applicant->full_name }}</a>
                                 <p class="text-xs text-slate-500">{{ $applicant->registration_number }}</p>
                             </td>
-                            <td class="{{ $td }}">{{ $applicant->studyProgram?->code ?? '-' }}</td>
+                            <td class="{{ $td }}">
+                                {{ $applicant->studyProgram?->code ?? '-' }}
+                                @if($applicant->acceptedChoice() === 2)
+                                    <p class="text-xs text-green-700">Diterima di {{ $applicant->enrolled_study_program?->code }} (pilihan 2)</p>
+                                @endif
+                            </td>
                             <td class="{{ $td }}">{{ $applicant->registration_path_label }}</td>
-                            <td class="{{ $td }} text-right">{{ $applicant->selection?->test_score ?? '-' }}</td>
-                            <td class="{{ $td }} text-right">{{ $applicant->selection?->interview_score ?? '-' }}</td>
+                            @foreach($report['components'] as $component)
+                                <td class="{{ $td }} text-right">{{ $applicant->selection?->scores->firstWhere('selection_component_id', $component->id)?->score ?? '-' }}</td>
+                            @endforeach
                             <td class="{{ $td }} text-right font-semibold text-slate-900">{{ $applicant->selection?->final_score ?? '-' }}</td>
                             <td class="{{ $td }}">
                                 <span class="rounded-full px-2.5 py-1 text-xs font-bold {{ $statusBadge[$applicant->selection_status] ?? 'bg-slate-100 text-slate-600' }}">
@@ -127,7 +134,7 @@
                             <td class="{{ $td }} text-slate-600">{{ $applicant->selection?->decided_at?->translatedFormat('d M Y') ?? '-' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="9" class="px-4 py-8 text-center text-slate-500">Belum ada keputusan seleksi.</td></tr>
+                        <tr><td colspan="{{ 7 + $report['components']->count() }}" class="px-4 py-8 text-center text-slate-500">Belum ada keputusan seleksi.</td></tr>
                     @endforelse
                 </tbody>
             </table>

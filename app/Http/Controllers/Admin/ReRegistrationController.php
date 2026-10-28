@@ -46,6 +46,7 @@ class ReRegistrationController extends Controller
         $reRegistrations = ReRegistration::query()
             ->with([
                 'applicant.studyProgram',
+                'applicant.acceptedStudyProgram',
                 'applicant.classType',
                 'applicant.education',
                 'applicant.selection',
@@ -74,7 +75,7 @@ class ReRegistrationController extends Controller
             })
             ->when($request->filled('study_program'), function ($query) use ($request) {
                 $query->whereHas('applicant', function ($applicantQuery) use ($request) {
-                    $applicantQuery->where('study_program_id', $request->study_program);
+                    $applicantQuery->whereEnrolledProgram($request->study_program);
                 });
             })
             ->when($request->filled('registration_path'), function ($query) use ($request) {
@@ -136,7 +137,7 @@ class ReRegistrationController extends Controller
         }
 
         if ($skipped->isNotEmpty()) {
-            $programs = $skipped->map(fn ($applicant) => $applicant->studyProgram?->code ?? '-')->unique()->implode(', ');
+            $programs = $skipped->map(fn ($applicant) => $applicant->enrolled_study_program?->code ?? '-')->unique()->implode(', ');
 
             $message = $generated->count() . ' NIM berhasil dibuat. ' . $skipped->count()
                 . ' camaba dilewati karena kode NIM prodi (' . $programs . ') belum diisi di Master Data Program Studi.';

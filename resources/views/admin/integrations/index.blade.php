@@ -244,7 +244,7 @@
 
                                 <td class="px-5 py-3.5">
                                     <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
-                                        {{ $applicant->studyProgram?->code ?? '-' }}
+                                        {{ $applicant->enrolled_study_program?->code ?? '-' }}
                                     </span>
 
                                     <p class="mt-2 text-xs text-slate-500">

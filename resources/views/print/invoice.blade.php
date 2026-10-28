@@ -34,7 +34,7 @@
         <tbody>
             <tr><td class="w-32 py-0.5 text-slate-600">Ditagihkan kepada</td><td class="py-0.5 font-semibold">{{ strtoupper($applicant->full_name) }}</td></tr>
             <tr><td class="py-0.5 text-slate-600">No. Pendaftaran</td><td class="py-0.5 font-semibold">{{ $applicant->registration_number }}</td></tr>
-            <tr><td class="py-0.5 text-slate-600">Program Studi</td><td class="py-0.5">{{ $applicant->studyProgram ? $applicant->studyProgram->degree . ' - ' . $applicant->studyProgram->name : '-' }}</td></tr>
+            <tr><td class="py-0.5 text-slate-600">Program Studi</td><td class="py-0.5">{{ $applicant->enrolled_study_program ? $applicant->enrolled_study_program->degree . ' - ' . $applicant->enrolled_study_program->name : '-' }}</td></tr>
             <tr><td class="py-0.5 text-slate-600">Kelas</td><td class="py-0.5">{{ $applicant->classType?->name ?? '-' }}</td></tr>
         </tbody>
     </table>

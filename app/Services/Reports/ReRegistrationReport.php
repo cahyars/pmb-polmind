@@ -23,7 +23,7 @@ class ReRegistrationReport
     {
         $rows = $filter->applicants()
             ->where('applicants.selection_status', 'diterima')
-            ->with(['studyProgram', 'reRegistrationInvoice.payments'])
+            ->with(['studyProgram', 'acceptedStudyProgram', 'reRegistrationInvoice.payments'])
             ->get()
             ->map(fn (Applicant $applicant) => self::row($applicant));
 
@@ -45,7 +45,7 @@ class ReRegistrationReport
             'monthly' => MonthlySeries::fill($paid->countBy(fn ($row) => $row['re_registered_at']->format('Y-m'))),
             'rows' => $rows
                 ->sortBy([
-                    fn ($a, $b) => strcmp((string) $a['applicant']->studyProgram?->code, (string) $b['applicant']->studyProgram?->code),
+                    fn ($a, $b) => strcmp((string) $a['applicant']->enrolled_study_program?->code, (string) $b['applicant']->enrolled_study_program?->code),
                     fn ($a, $b) => [$a['re_registered_at']?->timestamp ?? PHP_INT_MAX, $a['applicant']->id] <=> [$b['re_registered_at']?->timestamp ?? PHP_INT_MAX, $b['applicant']->id],
                 ])
                 ->values(),
@@ -83,7 +83,7 @@ class ReRegistrationReport
     {
         return StudyProgram::orderBy('code')->get()
             ->map(function ($program) use ($rows) {
-                $group = $rows->filter(fn ($row) => $row['applicant']->study_program_id === $program->id);
+                $group = $rows->filter(fn ($row) => $row['applicant']->enrolled_study_program?->id === $program->id);
 
                 if (! $program->is_active && $group->isEmpty()) {
                     return null;

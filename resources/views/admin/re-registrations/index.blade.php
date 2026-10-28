@@ -169,10 +169,10 @@
                                     <p class="font-semibold text-slate-800">{{ $row['applicant']->full_name }}</p>
                                     <p class="text-xs text-slate-500">{{ $row['applicant']->registration_number }}</p>
                                 </td>
-                                <td class="px-5 py-3 text-slate-700">{{ $row['applicant']->studyProgram?->code ?? '-' }}</td>
+                                <td class="px-5 py-3 text-slate-700">{{ $row['applicant']->enrolled_study_program?->code ?? '-' }}</td>
                                 <td class="px-5 py-3">
-                                    @if($row['applicant']->studyProgram?->nim_code)
-                                        <span class="font-mono font-bold text-slate-800">{{ $row['applicant']->studyProgram->nim_code }}</span>
+                                    @if($row['applicant']->enrolled_study_program?->nim_code)
+                                        <span class="font-mono font-bold text-slate-800">{{ $row['applicant']->enrolled_study_program->nim_code }}</span>
                                     @else
                                         <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">Belum diisi</span>
                                     @endif
@@ -383,7 +383,7 @@
 
                             <td class="px-5 py-3.5">
                                 <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
-                                    {{ $applicant?->studyProgram?->code ?? '-' }}
+                                    {{ $applicant?->enrolled_study_program?->code ?? '-' }}
                                 </span>
 
                                 <p class="mt-2 text-xs text-slate-500">

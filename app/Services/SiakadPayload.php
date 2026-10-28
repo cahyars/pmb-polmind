@@ -73,7 +73,7 @@ class SiakadPayload
      */
     public static function missingFields(Applicant $applicant): array
     {
-        $applicant->loadMissing(['studyProgram', 'classType', 'address', 'education', 'parentData']);
+        $applicant->loadMissing(['studyProgram', 'acceptedStudyProgram', 'classType', 'address', 'education', 'parentData']);
 
         $checks = [
             'Nama Lengkap' => $applicant->full_name,
@@ -88,7 +88,7 @@ class SiakadPayload
             'Kelurahan' => $applicant->address?->village_name,
             'Kecamatan (Wilayah)' => $applicant->address?->region_id,
             'Nama Ibu Kandung' => $applicant->parentData?->mother_name,
-            'Program Studi' => $applicant->studyProgram?->code,
+            'Program Studi' => $applicant->enrolled_study_program?->code,
             'Jenis Kelas' => $applicant->classType?->code,
             'Asal Sekolah' => $applicant->education?->school_name,
             'Tahun Lulus' => $applicant->education?->graduation_year,

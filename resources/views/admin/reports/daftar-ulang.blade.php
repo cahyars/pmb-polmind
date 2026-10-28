@@ -145,7 +145,7 @@
                                 <a href="{{ route('admin.applicants.show', $row['applicant']->registration_number) }}" class="font-semibold text-slate-900 hover:text-polmind-blue">{{ $row['applicant']->full_name }}</a>
                                 <p class="text-xs text-slate-500">{{ $row['applicant']->registration_number }}</p>
                             </td>
-                            <td class="{{ $td }}">{{ $row['applicant']->studyProgram?->code ?? '-' }}</td>
+                            <td class="{{ $td }}">{{ $row['applicant']->enrolled_study_program?->code ?? '-' }}</td>
                             <td class="{{ $td }} font-mono font-semibold text-slate-900">{{ $row['applicant']->nim ?? '-' }}</td>
                             <td class="{{ $td }} text-slate-600">{{ $row['re_registered_at']?->translatedFormat('d M Y') ?? '-' }}</td>
                             <td class="{{ $td }} text-right">{{ $rupiah($row['total']) }}</td>

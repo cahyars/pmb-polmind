@@ -543,20 +543,27 @@
                             </span>
                         </div>
 
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="rounded-lg bg-slate-50 p-3 text-center">
-                                <p class="text-xs text-slate-500">Tes</p>
-                                <p class="mt-1 font-bold">{{ $applicant->selection->test_score ?? '-' }}</p>
+                        @if($applicant->acceptedChoice())
+                            <div>
+                                <p class="text-xs font-semibold text-slate-500">Diterima di</p>
+                                <p class="mt-1 font-semibold text-slate-800">
+                                    {{ $applicant->enrolled_study_program?->code }} · Pilihan {{ $applicant->acceptedChoice() }}
+                                </p>
                             </div>
-                            <div class="rounded-lg bg-slate-50 p-3 text-center">
-                                <p class="text-xs text-slate-500">Interview</p>
-                                <p class="mt-1 font-bold">{{ $applicant->selection->interview_score ?? '-' }}</p>
+                        @endif
+
+                        <dl class="divide-y divide-slate-100 rounded-lg bg-slate-50 px-3">
+                            @foreach($applicant->selection->scores->sortBy(fn ($score) => $score->component?->sort_order) as $score)
+                                <div class="flex justify-between gap-3 py-2 text-xs">
+                                    <dt class="text-slate-500">{{ $score->component?->name ?? '-' }}</dt>
+                                    <dd class="font-bold text-slate-800">{{ $score->score }}</dd>
+                                </div>
+                            @endforeach
+                            <div class="flex justify-between gap-3 py-2 text-xs">
+                                <dt class="font-semibold text-polmind-blue">Nilai Akhir</dt>
+                                <dd class="font-bold text-polmind-blue">{{ $applicant->selection->final_score ?? '-' }}</dd>
                             </div>
-                            <div class="rounded-lg bg-slate-50 p-3 text-center">
-                                <p class="text-xs text-slate-500">Final</p>
-                                <p class="mt-1 font-bold">{{ $applicant->selection->final_score ?? '-' }}</p>
-                            </div>
-                        </div>
+                        </dl>
 
                         <p class="rounded-lg bg-slate-50 p-4 text-xs leading-5 text-slate-600">
                             {{ $applicant->selection->note ?? 'Belum ada catatan seleksi.' }}

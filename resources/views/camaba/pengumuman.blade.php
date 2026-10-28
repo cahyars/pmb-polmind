@@ -16,7 +16,7 @@
     };
 
     $message = match ($status) {
-        'diterima' => 'Berdasarkan hasil seleksi PMB Politeknik Mitra Industri, Anda dinyatakan diterima sebagai calon mahasiswa baru. Silakan melanjutkan proses daftar ulang sesuai jadwal dan ketentuan.',
+        'diterima' => 'Berdasarkan hasil seleksi PMB Politeknik Mitra Industri, Anda dinyatakan diterima sebagai calon mahasiswa baru di Program Studi ' . ($applicant->enrolled_study_program?->name ?? '-') . '. Silakan melanjutkan proses daftar ulang sesuai jadwal dan ketentuan.',
         'cadangan' => 'Berdasarkan hasil seleksi PMB Politeknik Mitra Industri, Anda masuk daftar cadangan. Informasi lanjutan akan disampaikan oleh panitia PMB.',
         'ditolak' => 'Berdasarkan hasil seleksi PMB Politeknik Mitra Industri, Anda belum dinyatakan lolos seleksi pada periode ini. Terima kasih atas partisipasi Anda.',
         default => 'Hasil seleksi belum diumumkan. Silakan pantau dashboard secara berkala.',
@@ -114,7 +114,12 @@
 
                 <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">
                     <p class="text-xs font-black uppercase tracking-wide text-polmind-blue">Program Studi</p>
-                    <p class="mt-2 text-sm font-bold text-slate-900">{{ $applicant->studyProgram?->name ?? '-' }}</p>
+                    <p class="mt-2 text-sm font-bold text-slate-900">
+                        {{ $applicant->enrolled_study_program?->name ?? '-' }}
+                        @if($applicant->acceptedChoice())
+                            <span class="font-semibold text-green-700">(diterima di pilihan {{ $applicant->acceptedChoice() }})</span>
+                        @endif
+                    </p>
                 </div>
 
                 <div class="rounded-2xl border border-blue-100 bg-blue-50 p-5">

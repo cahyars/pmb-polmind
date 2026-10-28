@@ -34,15 +34,6 @@
         'rejected' => 'Ditolak',
         'cancelled' => 'Dibatalkan',
     ];
-
-    $invoiceStatusClasses = [
-        'unpaid' => 'bg-yellow-100 text-yellow-700',
-        'waiting_verification' => 'bg-yellow-100 text-yellow-700',
-        'partial' => 'bg-blue-100 text-polmind-blue',
-        'paid' => 'bg-green-100 text-green-700',
-        'rejected' => 'bg-red-100 text-red-700',
-        'cancelled' => 'bg-red-100 text-red-700',
-    ];
 @endphp
 
 <div class="space-y-8">
@@ -161,7 +152,7 @@
             <div>
                 <h2 class="text-base font-semibold text-slate-900">Daftar Seleksi Camaba</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Camaba yang diterima akan otomatis dibuatkan invoice daftar ulang.
+                    Klik Proses untuk input nilai per komponen tes dan menentukan keputusan. Nilai hanya untuk internal kampus.
                 </p>
             </div>
 
@@ -170,276 +161,108 @@
             </span>
         </div>
 
-        <div class="overflow-x-auto">
-            <table class="w-full min-w-[1450px] text-left text-sm">
-                <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
-                    <tr>
-                        <th class="px-5 py-3.5">Camaba</th>
-                        <th class="px-5 py-3.5">Jalur</th>
-                        <th class="px-5 py-3.5">Prodi</th>
-                        <th class="px-5 py-3.5">Status Administrasi</th>
-                        <th class="px-5 py-3.5">Nilai</th>
-                        <th class="px-5 py-3.5">Status Seleksi</th>
-                        <th class="px-5 py-3.5">Invoice DU</th>
-                        <th class="px-5 py-3.5 text-right">Aksi</th>
+        <table class="w-full text-left text-sm">
+            <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
+                <tr>
+                    <th class="px-5 py-3.5">Camaba</th>
+                    <th class="hidden px-5 py-3.5 lg:table-cell">Pilihan Prodi</th>
+                    <th class="hidden px-5 py-3.5 md:table-cell">Administrasi</th>
+                    <th class="hidden px-5 py-3.5 text-right xl:table-cell">Nilai Akhir</th>
+                    <th class="px-5 py-3.5">Status Seleksi</th>
+                    <th class="px-5 py-3.5 text-right">Aksi</th>
+                </tr>
+            </thead>
+
+            <tbody class="table-zebra">
+                @forelse($applicants as $applicant)
+                    @php
+                        $selection = $applicant->selection;
+                        $selectionStatus = $applicant->selection_status ?? 'belum_diseleksi';
+                        $registrationPath = $applicant->registration_path ?? 'umum';
+                        $isReadyForSelection = $applicant->document_status === 'valid'
+                            && $applicant->payment_status === 'valid';
+                        $acceptedChoice = $applicant->acceptedChoice();
+                        $reRegistrationInvoice = $applicant->reRegistrationInvoice;
+                    @endphp
+
+                    <tr class="align-top transition hover:bg-slate-50">
+                        <td class="px-5 py-4">
+                            <p class="font-bold text-polmind-blue">{{ $applicant->registration_number }}</p>
+                            <p class="mt-1 font-semibold text-slate-800">{{ $applicant->full_name }}</p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $applicant->education?->school_name ?? '-' }}</p>
+                            <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                                {{ $applicant->registration_path_label }}
+                            </span>
+                        </td>
+
+                        <td class="hidden px-5 py-4 lg:table-cell">
+                            <p class="text-xs text-slate-500">1. <span class="font-semibold text-slate-800">{{ $applicant->studyProgram?->code ?? '-' }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">2. <span class="font-semibold text-slate-800">{{ $applicant->secondStudyProgram?->code ?? '-' }}</span></p>
+                            <p class="mt-1 text-xs text-slate-500">{{ $applicant->classType?->name ?? '-' }}</p>
+                        </td>
+
+                        <td class="hidden px-5 py-4 md:table-cell">
+                            <p class="text-xs font-semibold {{ $applicant->document_status === 'valid' ? 'text-green-700' : 'text-yellow-700' }}">
+                                {{ $applicant->document_status === 'valid' ? '✓' : '•' }} Berkas {{ str_replace('_', ' ', $applicant->document_status) }}
+                            </p>
+                            <p class="mt-1 text-xs font-semibold {{ $applicant->payment_status === 'valid' ? 'text-green-700' : 'text-yellow-700' }}">
+                                {{ $applicant->payment_status === 'valid' ? '✓' : '•' }} Bayar {{ str_replace('_', ' ', $applicant->payment_status) }}
+                            </p>
+                        </td>
+
+                        <td class="hidden px-5 py-4 text-right font-bold text-polmind-blue xl:table-cell">
+                            {{ $selection?->final_score ?? '-' }}
+                        </td>
+
+                        <td class="px-5 py-4">
+                            <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $selectionClasses[$selectionStatus] ?? 'bg-slate-100 text-slate-600' }}">
+                                {{ $selectionLabels[$selectionStatus] ?? $selectionStatus }}
+                            </span>
+
+                            @if($acceptedChoice)
+                                <p class="mt-2 text-xs font-semibold text-green-700">
+                                    Pilihan {{ $acceptedChoice }} · {{ $applicant->enrolled_study_program?->code }}
+                                </p>
+                            @endif
+
+                            @if($reRegistrationInvoice && $selectionStatus === 'diterima')
+                                <p class="mt-1 text-xs text-slate-500">
+                                    Invoice DU: {{ $invoiceStatusLabels[$reRegistrationInvoice->status] ?? $reRegistrationInvoice->status }}
+                                </p>
+                            @endif
+
+                            @if($selection?->decided_at)
+                                <p class="mt-1 text-xs text-slate-400">{{ $selection->decided_at->format('d M Y H:i') }}</p>
+                            @endif
+                        </td>
+
+                        <td class="px-5 py-4 text-right">
+                            @if($isReadyForSelection)
+                                <a href="{{ route('admin.selections.show', $applicant->registration_number) }}"
+                                   class="inline-flex rounded-lg px-3 py-2 text-xs font-semibold transition {{ $selectionStatus === 'belum_diseleksi' ? 'bg-polmind-blue text-white hover:bg-polmind-blue-dark' : 'border border-slate-300 text-slate-700 hover:bg-slate-50' }}">
+                                    {{ $selectionStatus === 'belum_diseleksi' ? 'Proses' : 'Ubah' }}
+                                </a>
+                            @else
+                                <span class="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500" title="Berkas dan pembayaran pendaftaran harus valid">
+                                    Belum Siap
+                                </span>
+                            @endif
+                        </td>
                     </tr>
-                </thead>
-
-                <tbody class="table-zebra">
-                    @forelse($applicants as $applicant)
-                        @php
-                            $selection = $applicant->selection;
-                            $selectionStatus = $applicant->selection_status ?? 'belum_diseleksi';
-                            $registrationPath = $applicant->registration_path ?? 'umum';
-
-                            $isReadyForSelection = $applicant->document_status === 'valid'
-                                && $applicant->payment_status === 'valid';
-
-                            $reRegistrationInvoice = $applicant->reRegistrationInvoice;
-
-                            $hasReRegistrationPaymentActivity = $reRegistrationInvoice
-                                && in_array($reRegistrationInvoice->status, ['waiting_verification', 'partial', 'paid']);
-                        @endphp
-
-                        <tr class="align-top transition hover:bg-slate-50">
-                            <td class="px-5 py-3.5">
-                                <p class="font-bold text-polmind-blue">
-                                    {{ $applicant->registration_number }}
-                                </p>
-
-                                <p class="mt-1 font-semibold text-slate-800">
-                                    {{ $applicant->full_name }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $applicant->education?->school_name ?? '-' }}
-                                </p>
-
-                                <p class="mt-1 text-xs text-slate-500">
-                                    {{ $applicant->phone ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $applicant->registration_path_label }}
-                                </span>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full bg-blue-50 px-3 py-1 text-xs font-bold text-polmind-blue">
-                                    {{ $applicant->studyProgram?->code ?? '-' }}
-                                </span>
-
-                                <p class="mt-2 text-xs text-slate-500">
-                                    {{ $applicant->classType?->name ?? '-' }}
-                                </p>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <div class="space-y-2">
-                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $applicant->document_status === 'valid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                        Berkas: {{ str_replace('_', ' ', $applicant->document_status) }}
-                                    </span>
-
-                                    <br>
-
-                                    <span class="inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $applicant->payment_status === 'valid' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700' }}">
-                                        Bayar: {{ str_replace('_', ' ', $applicant->payment_status) }}
-                                    </span>
-
-                                    @if(! $isReadyForSelection)
-                                        <p class="mt-2 max-w-52 text-xs leading-5 text-red-600">
-                                            Belum bisa diproses seleksi.
-                                        </p>
-                                    @endif
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <div class="grid grid-cols-3 gap-2 text-center text-xs">
-                                    <div class="rounded-lg bg-slate-50 p-3">
-                                        <p class="text-slate-500">Tes</p>
-                                        <p class="mt-1 font-bold text-slate-800">
-                                            {{ $selection?->test_score ?? '-' }}
-                                        </p>
-                                    </div>
-
-                                    <div class="rounded-lg bg-slate-50 p-3">
-                                        <p class="text-slate-500">Interview</p>
-                                        <p class="mt-1 font-bold text-slate-800">
-                                            {{ $selection?->interview_score ?? '-' }}
-                                        </p>
-                                    </div>
-
-                                    <div class="rounded-lg bg-slate-50 p-3">
-                                        <p class="text-slate-500">Final</p>
-                                        <p class="mt-1 font-bold text-polmind-blue">
-                                            {{ $selection?->final_score ?? '-' }}
-                                        </p>
-                                    </div>
-                                </div>
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $selectionClasses[$selectionStatus] ?? 'bg-slate-100 text-slate-600' }}">
-                                    {{ $selectionLabels[$selectionStatus] ?? $selectionStatus }}
-                                </span>
-
-                                @if($selection?->decided_at)
-                                    <p class="mt-2 text-xs text-slate-500">
-                                        {{ $selection->decided_at->format('d M Y H:i') }}
-                                    </p>
-                                @endif
-
-                                @if($selection?->note)
-                                    <p class="mt-2 max-w-[240px] text-xs leading-5 text-slate-500">
-                                        {{ $selection->note }}
-                                    </p>
-                                @endif
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                @if($reRegistrationInvoice)
-                                    <p class="font-semibold text-slate-800">
-                                        {{ $reRegistrationInvoice->invoice_number }}
-                                    </p>
-
-                                    <p class="mt-1 text-xs text-slate-500">
-                                        Rp{{ number_format($reRegistrationInvoice->total_amount, 0, ',', '.') }}
-                                    </p>
-
-                                    <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $invoiceStatusClasses[$reRegistrationInvoice->status] ?? 'bg-slate-100 text-slate-600' }}">
-                                        {{ $invoiceStatusLabels[$reRegistrationInvoice->status] ?? $reRegistrationInvoice->status }}
-                                    </span>
-                                @else
-                                    <span class="text-xs font-semibold text-slate-500">
-                                        Belum dibuat
-                                    </span>
-                                @endif
-
-                                @if($hasReRegistrationPaymentActivity)
-                                    <p class="mt-2 max-w-52 text-xs leading-5 text-yellow-700">
-                                        Sudah ada aktivitas pembayaran DU.
-                                    </p>
-                                @endif
-                            </td>
-
-                            <td class="px-5 py-3.5">
-                                <div class="flex justify-end gap-2">
-                                    <a href="{{ url('/admin/applicants/' . $applicant->registration_number) }}"
-                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">
-                                        Detail
-                                    </a>
-
-                                    @if($isReadyForSelection)
-                                        <button type="button"
-                                                onclick="document.getElementById('selection-form-{{ $applicant->id }}').classList.toggle('hidden')"
-                                                class="rounded-lg bg-polmind-blue px-3 py-2 text-xs font-semibold text-white transition hover:bg-polmind-blue-dark">
-                                            Proses
-                                        </button>
-                                    @else
-                                        <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
-                                            Belum Siap
-                                        </span>
-                                    @endif
-                                </div>
-
-                                @if($isReadyForSelection)
-                                    <form id="selection-form-{{ $applicant->id }}"
-                                          action="{{ route('admin.selections.accept', $applicant) }}"
-                                          method="POST"
-                                          class="mt-3 hidden w-[320px] rounded-lg border border-slate-200 bg-slate-50 p-4">
-                                        @csrf
-                                        @method('PATCH')
-
-                                        <div class="grid gap-3 md:grid-cols-2">
-                                            <div>
-                                                <label class="text-xs font-semibold text-slate-600">Nilai Tes</label>
-                                                <input type="number"
-                                                       step="0.01"
-                                                       min="0"
-                                                       max="100"
-                                                       name="test_score"
-                                                       value="{{ old('test_score', $selection?->test_score) }}"
-                                                       placeholder="0-100"
-                                                       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                            </div>
-
-                                            <div>
-                                                <label class="text-xs font-semibold text-slate-600">Interview</label>
-                                                <input type="number"
-                                                       step="0.01"
-                                                       min="0"
-                                                       max="100"
-                                                       name="interview_score"
-                                                       value="{{ old('interview_score', $selection?->interview_score) }}"
-                                                       placeholder="0-100"
-                                                       class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                            </div>
-                                        </div>
-
-                                        <div class="mt-3 rounded-lg border border-blue-100 bg-blue-50 p-3 text-xs leading-5 text-polmind-blue">
-                                            Formula nilai akhir: 60% nilai tes + 40% interview.
-                                        </div>
-
-                                        <div class="mt-3">
-                                            <label class="text-xs font-semibold text-slate-600">Catatan Seleksi</label>
-                                            <textarea name="note"
-                                                      rows="3"
-                                                      placeholder="Catatan seleksi..."
-                                                      class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">{{ old('note', $selection?->note) }}</textarea>
-                                        </div>
-
-                                        <div class="mt-3 grid gap-2 sm:grid-cols-3">
-                                            <button type="submit"
-                                                    formaction="{{ route('admin.selections.accept', $applicant) }}"
-                                                    onclick="return confirm('Set camaba ini sebagai DITERIMA? Invoice daftar ulang akan dibuat otomatis.')"
-                                                    class="w-full rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white hover:bg-green-700">
-                                                Diterima
-                                            </button>
-
-                                            <button type="submit"
-                                                    formaction="{{ route('admin.selections.reserve', $applicant) }}"
-                                                    onclick="return confirm('Set camaba ini sebagai CADANGAN? Invoice daftar ulang akan dibatalkan jika belum ada pembayaran.')"
-                                                    @disabled($hasReRegistrationPaymentActivity)
-                                                    class="w-full rounded-lg bg-yellow-500 px-3 py-2 text-xs font-bold text-polmind-blue-dark hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-50">
-                                                Cadangan
-                                            </button>
-
-                                            <button type="submit"
-                                                    formaction="{{ route('admin.selections.reject', $applicant) }}"
-                                                    onclick="return confirm('Tolak camaba ini? Pastikan catatan seleksi sudah diisi.')"
-                                                    @disabled($hasReRegistrationPaymentActivity)
-                                                    class="w-full rounded-lg bg-red-600 px-3 py-2 text-xs font-bold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50">
-                                                Ditolak
-                                            </button>
-                                        </div>
-
-                                        @if($hasReRegistrationPaymentActivity)
-                                            <p class="mt-3 text-xs leading-5 text-red-600">
-                                                Status tidak bisa diubah ke cadangan/ditolak karena sudah ada aktivitas pembayaran daftar ulang.
-                                            </p>
-                                        @endif
-                                    </form>
-                                @endif
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="8" class="px-6 py-12 text-center">
-                                <p class="text-sm font-semibold text-slate-600">
-                                    Data seleksi tidak ditemukan.
-                                </p>
-                                <p class="mt-1 text-xs text-slate-500">
-                                    Coba reset filter atau tunggu camaba menyelesaikan administrasi.
-                                </p>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
+                @empty
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <p class="text-sm font-semibold text-slate-600">
+                                Data seleksi tidak ditemukan.
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500">
+                                Coba reset filter atau tunggu camaba menyelesaikan administrasi.
+                            </p>
+                        </td>
+                    </tr>
+                @endforelse
+            </tbody>
+        </table>
 
         <div class="border-t border-slate-200 p-6">
             {{ $applicants->links() }}

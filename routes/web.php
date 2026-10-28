@@ -141,9 +141,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::patch('/payments/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payments.reject');
 
     Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
-    Route::patch('/selections/{applicant}/accept', [SelectionController::class, 'accept'])->name('selections.accept');
-    Route::patch('/selections/{applicant}/reserve', [SelectionController::class, 'reserve'])->name('selections.reserve');
-    Route::patch('/selections/{applicant}/reject', [SelectionController::class, 'reject'])->name('selections.reject');
+    Route::get('/selections/{registration_number}', [SelectionController::class, 'show'])->name('selections.show');
+    Route::patch('/selections/{applicant}/scores', [SelectionController::class, 'saveScores'])->name('selections.scores');
+    Route::patch('/selections/{applicant}/decision', [SelectionController::class, 'decide'])->name('selections.decide');
 
     Route::get('/re-registrations', [ReRegistrationController::class, 'index'])->name('re-registrations.index');
     Route::post('/re-registrations/generate-nim', [ReRegistrationController::class, 'generateNim'])->name('re-registrations.generate-nim');

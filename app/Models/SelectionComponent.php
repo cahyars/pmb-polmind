@@ -13,11 +13,13 @@ class SelectionComponent extends Model
         'code',
         'name',
         'description',
+        'weight',
         'sort_order',
         'is_active',
     ];
 
     protected $casts = [
+        'weight' => 'integer',
         'sort_order' => 'integer',
         'is_active' => 'boolean',
     ];

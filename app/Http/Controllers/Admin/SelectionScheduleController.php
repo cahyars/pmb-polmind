@@ -107,10 +107,12 @@ class SelectionScheduleController extends Controller
             'code' => ['required', 'string', 'max:50', 'alpha_dash', Rule::unique('selection_components', 'code')->ignore($component?->id)],
             'name' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:1000'],
+            'weight' => ['nullable', 'integer', 'min:0', 'max:100'],
             'sort_order' => ['nullable', 'integer', 'min:0', 'max:999'],
         ]);
 
         $validated['sort_order'] = (int) ($validated['sort_order'] ?? 0);
+        $validated['weight'] = (int) ($validated['weight'] ?? 1);
 
         return $validated;
     }

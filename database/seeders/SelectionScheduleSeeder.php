@@ -26,12 +26,12 @@ class SelectionScheduleSeeder extends Seeder
     {
         $writtenTest = SelectionComponent::firstOrCreate(
             ['code' => 'TES_TULIS'],
-            ['name' => 'Tes Tertulis', 'description' => 'Tes potensi akademik dan pengetahuan dasar.', 'sort_order' => 1, 'is_active' => true]
+            ['name' => 'Tes Tertulis', 'description' => 'Tes potensi akademik dan pengetahuan dasar.', 'weight' => 60, 'sort_order' => 1, 'is_active' => true]
         );
 
         SelectionComponent::firstOrCreate(
             ['code' => 'WAWANCARA'],
-            ['name' => 'Wawancara', 'description' => 'Wawancara minat, motivasi, dan kesiapan kuliah.', 'sort_order' => 2, 'is_active' => true]
+            ['name' => 'Wawancara', 'description' => 'Wawancara minat, motivasi, dan kesiapan kuliah.', 'weight' => 40, 'sort_order' => 2, 'is_active' => true]
         );
 
         $pmbYear = PmbYear::where('code', 'PMB2027')->first();

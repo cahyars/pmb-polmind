@@ -326,19 +326,25 @@
                 </div>
             @endif
 
-            {{-- Hasil seleksi --}}
-            @if($applicant->selection)
+            {{-- Hasil seleksi (tanpa nilai; nilai hanya untuk internal kampus) --}}
+            @php
+                [$selectionLabel, $selectionClass] = [
+                    'diterima' => ['Diterima', 'text-green-700'],
+                    'cadangan' => ['Cadangan', 'text-yellow-700'],
+                    'ditolak' => ['Belum Lolos', 'text-red-700'],
+                ][$applicant->selection_status] ?? [null, null];
+                $acceptedChoice = $applicant->acceptedChoice();
+            @endphp
+            @if($selectionLabel)
                 <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h2 class="text-lg font-black text-polmind-blue">Hasil Seleksi</h2>
-                    <div class="mt-4 grid grid-cols-3 gap-2 text-center">
-                        @foreach(['Tes' => $applicant->selection->test_score, 'Interview' => $applicant->selection->interview_score, 'Final' => $applicant->selection->final_score] as $scoreLabel => $score)
-                            <div class="rounded-xl bg-slate-50 p-3">
-                                <p class="text-xs text-slate-500">{{ $scoreLabel }}</p>
-                                <p class="mt-1 font-black text-slate-800">{{ $score ?? '-' }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-                    @if($applicant->selection->note)
+                    <p class="mt-3 text-sm font-bold {{ $selectionClass }}">{{ $selectionLabel }}</p>
+                    @if($acceptedChoice)
+                        <p class="mt-1 text-sm text-slate-700">
+                            {{ $applicant->enrolled_study_program?->name }} <span class="text-slate-500">(pilihan {{ $acceptedChoice }})</span>
+                        </p>
+                    @endif
+                    @if($applicant->selection?->note)
                         <p class="mt-4 rounded-2xl bg-slate-50 p-4 text-sm leading-6 text-slate-600">{{ $applicant->selection->note }}</p>
                     @endif
                 </div>

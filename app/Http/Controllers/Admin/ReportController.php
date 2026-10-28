@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\ClassType;
+use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use App\Services\Reports\ApplicantReport;
 use App\Services\Reports\ReportFilter;
@@ -60,13 +61,16 @@ class ReportController extends Controller
                 'studyProgram',
                 'classType',
                 'education',
-                'selection',
+                'selection.scores',
+                'acceptedStudyProgram',
                 'reRegistration',
             ])
             ->latest()
             ->get();
 
-        return response()->streamDownload(function () use ($applicants) {
+        $components = SelectionComponent::orderBy('sort_order')->orderBy('name')->get();
+
+        return response()->streamDownload(function () use ($applicants, $components) {
             $handle = fopen('php://output', 'w');
 
             // BOM UTF-8 agar karakter Indonesia aman saat dibuka di Excel
@@ -95,8 +99,8 @@ class ReportController extends Controller
                 'Status Berkas',
                 'Status Pembayaran',
                 'Status Seleksi',
-                'Nilai Tes',
-                'Nilai Interview',
+                'Diterima di Prodi',
+                ...$components->map(fn ($component) => 'Nilai ' . $component->name),
                 'Nilai Akhir',
                 'Status Daftar Ulang',
                 'Status Sinkron',
@@ -128,8 +132,8 @@ class ReportController extends Controller
                     str_replace('_', ' ', $applicant->document_status),
                     str_replace('_', ' ', $applicant->payment_status),
                     str_replace('_', ' ', $applicant->selection_status),
-                    $applicant->selection?->test_score,
-                    $applicant->selection?->interview_score,
+                    $applicant->acceptedChoice() ? $applicant->enrolled_study_program?->code . ' (pilihan ' . $applicant->acceptedChoice() . ')' : null,
+                    ...$components->map(fn ($component) => $applicant->selection?->scores->firstWhere('selection_component_id', $component->id)?->score),
                     $applicant->selection?->final_score,
                     str_replace('_', ' ', $applicant->re_registration_status),
                     str_replace('_', ' ', $applicant->sync_status),

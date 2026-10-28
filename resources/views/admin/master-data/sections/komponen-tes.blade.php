@@ -9,6 +9,7 @@
             <h2 class="text-base font-semibold text-slate-900">Komponen Tes Seleksi</h2>
             <p class="mt-2 text-sm leading-6 text-slate-600">
                 Jenis tes yang diikuti camaba. Jadwal tiap komponen diatur di menu Jadwal Seleksi.
+                Nilai akhir seleksi = rata-rata berbobot nilai tiap komponen, contoh Tes Tertulis 60 dan Wawancara 40.
             </p>
         </div>
 
@@ -26,11 +27,12 @@
         @csrf
         <input type="hidden" name="_form" value="component-create">
 
-        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
             <input type="text" name="code" value="{{ old('code') }}" placeholder="Kode, contoh TES_TULIS" required maxlength="50" class="{{ $field }} uppercase">
             <input type="text" name="name" value="{{ old('name') }}" placeholder="Nama tes, contoh Tes Tertulis" required maxlength="255" class="{{ $field }} xl:col-span-2">
+            <input type="number" name="weight" value="{{ old('weight', 1) }}" min="0" max="100" required placeholder="Bobot" title="Bobot nilai akhir" class="{{ $field }}">
             <input type="number" name="sort_order" value="{{ old('sort_order', 0) }}" min="0" max="999" placeholder="Urutan" title="Urutan tampil" class="{{ $field }}">
-            <textarea name="description" rows="2" maxlength="1000" placeholder="Keterangan singkat (opsional), contoh: materi atau ketentuan tes" class="{{ $field }} md:col-span-2 xl:col-span-3">{{ old('description') }}</textarea>
+            <textarea name="description" rows="2" maxlength="1000" placeholder="Keterangan singkat (opsional), contoh: materi atau ketentuan tes" class="{{ $field }} md:col-span-2 xl:col-span-4">{{ old('description') }}</textarea>
             <label class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
                 <input type="checkbox" name="is_active" value="1" checked>
                 Aktif
@@ -59,7 +61,7 @@
                         @if($component->description)
                             <p class="mt-1 text-sm text-slate-600">{{ $component->description }}</p>
                         @endif
-                        <p class="mt-1 text-xs text-slate-400">Urutan {{ $component->sort_order }} · dipakai di {{ $component->schedules_count }} jadwal</p>
+                        <p class="mt-1 text-xs text-slate-400">Bobot {{ $component->weight }} · Urutan {{ $component->sort_order }} · dipakai di {{ $component->schedules_count }} jadwal</p>
                     </div>
 
                     <div class="flex shrink-0 gap-2">
@@ -80,11 +82,12 @@
                     @csrf
                     @method('PUT')
 
-                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                    <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
                         <input type="text" name="code" value="{{ $component->code }}" required maxlength="50" title="Kode" class="{{ $field }} uppercase">
                         <input type="text" name="name" value="{{ $component->name }}" required maxlength="255" title="Nama tes" class="{{ $field }} xl:col-span-2">
+                        <input type="number" name="weight" value="{{ $component->weight }}" min="0" max="100" required title="Bobot nilai akhir" class="{{ $field }}">
                         <input type="number" name="sort_order" value="{{ $component->sort_order }}" min="0" max="999" title="Urutan tampil" class="{{ $field }}">
-                        <textarea name="description" rows="2" maxlength="1000" placeholder="Keterangan singkat (opsional)" class="{{ $field }} md:col-span-2 xl:col-span-3">{{ $component->description }}</textarea>
+                        <textarea name="description" rows="2" maxlength="1000" placeholder="Keterangan singkat (opsional)" class="{{ $field }} md:col-span-2 xl:col-span-4">{{ $component->description }}</textarea>
                         <label class="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-700">
                             <input type="checkbox" name="is_active" value="1" @checked($component->is_active)>
                             Aktif

@@ -116,7 +116,7 @@
                 <p class="text-sm font-bold text-blue-100">Nomor Pendaftaran</p>
                 <h1 class="mt-2 text-3xl font-black">{{ $applicant->registration_number }}</h1>
                 <p class="mt-3 text-sm leading-6 text-blue-100">
-                    {{ $applicant->full_name }} · {{ $applicant->studyProgram?->name ?? '-' }}
+                    {{ $applicant->full_name }} · {{ $applicant->enrolled_study_program?->name ?? '-' }}
                 </p>
             </div>
 
