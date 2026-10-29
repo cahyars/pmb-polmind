@@ -9,6 +9,7 @@ use App\Models\RefOption;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\NimGenerator;
+use App\Services\SiakadApiAccess;
 use Database\Seeders\PmbMasterSeeder;
 use Database\Seeders\ReferenceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,7 +20,7 @@ class SiakadApiTest extends TestCase
 {
     use RefreshDatabase, RegistersApplicants;
 
-    private const TOKEN = 'token-rahasia-siakad';
+    private string $token;
 
     protected function setUp(): void
     {
@@ -32,12 +33,12 @@ class SiakadApiTest extends TestCase
 
         AdmissionWave::where('code', 'GEL1')->update(['is_active' => true, 'status' => 'open']);
 
-        config(['services.siakad.token' => self::TOKEN, 'services.siakad.allowed_ips' => null]);
+        $this->token = SiakadApiAccess::generate('Admin PMB');
     }
 
     private function api(): static
     {
-        return $this->withToken(self::TOKEN);
+        return $this->withToken($this->token);
     }
 
     private function student(string $email, ?string $nim = null): Applicant
@@ -63,10 +64,13 @@ class SiakadApiTest extends TestCase
         $this->withToken('salah')->getJson('/api/siakad/mahasiswa')->assertUnauthorized();
         $this->api()->getJson('/api/siakad/mahasiswa')->assertOk();
 
-        config(['services.siakad.allowed_ips' => '10.0.0.5, 10.0.0.6']);
+        SiakadApiAccess::setAllowedIps(['10.0.0.5', '10.0.0.6']);
         $this->api()->getJson('/api/siakad/mahasiswa')->assertForbidden();
 
-        config(['services.siakad.token' => '']);
+        SiakadApiAccess::setAllowedIps(['127.0.0.1']);
+        $this->api()->getJson('/api/siakad/mahasiswa')->assertOk();
+
+        SiakadApiAccess::revoke();
         $this->api()->getJson('/api/siakad/mahasiswa')->assertStatus(503);
     }
 
@@ -188,5 +192,60 @@ class SiakadApiTest extends TestCase
         $student->refresh();
         $this->assertSame('sudah_sinkron', $student->sync_status);
         $this->assertSame('A20270001', $student->nim);
+    }
+
+    public function test_admin_generates_token_from_panel_and_sees_it_once(): void
+    {
+        SiakadApiAccess::revoke();
+
+        $operator = User::factory()->operator()->create();
+        $this->actingAs($operator, 'web')->get(route('admin.integrations.api'))->assertForbidden();
+        $this->actingAs($operator, 'web')->post(route('admin.integrations.api.generate'))->assertForbidden();
+        $this->actingAs($operator, 'web')->get('/admin/integrations')->assertOk()->assertDontSee(route('admin.integrations.api'));
+
+        $admin = User::factory()->create(['name' => 'Bu Admin']);
+
+        $this->actingAs($admin, 'web')
+            ->get('/admin/integrations')
+            ->assertSee('Token API')
+            ->assertSee(route('admin.integrations.api'));
+
+        $this->actingAs($admin, 'web')->get(route('admin.integrations.api'))->assertOk()->assertSee('Nonaktif');
+
+        $response = $this->actingAs($admin, 'web')
+            ->followingRedirects()
+            ->post(route('admin.integrations.api.generate'))
+            ->assertOk()
+            ->assertSee('Salin token sekarang')
+            ->assertSee('PMB_API_URL=' . url('/api/siakad'));
+
+        preg_match('/PMB_API_TOKEN=([a-f0-9]{64})/', $response->getContent(), $match);
+        $first = $match[1];
+
+        // Token tidak tersimpan utuh dan tidak tampil lagi setelah halaman dimuat ulang.
+        $this->assertSame(0, \App\Models\Setting::where('value', $first)->count());
+        $this->actingAs($admin, 'web')
+            ->get(route('admin.integrations.api'))
+            ->assertDontSee($first)
+            ->assertSee('…' . substr($first, -4))
+            ->assertSee('Bu Admin');
+
+        $this->withToken($first)->getJson('/api/siakad/mahasiswa')->assertOk();
+
+        // Token baru membatalkan token lama.
+        $this->actingAs($admin, 'web')->post(route('admin.integrations.api.generate'));
+        $this->withToken($first)->getJson('/api/siakad/mahasiswa')->assertUnauthorized();
+
+        // Pembatasan IP divalidasi.
+        $this->actingAs($admin, 'web')
+            ->put(route('admin.integrations.api.ips'), ['allowed_ips' => '103.10.20.30, bukan-ip'])
+            ->assertSessionHasErrors();
+        $this->actingAs($admin, 'web')
+            ->put(route('admin.integrations.api.ips'), ['allowed_ips' => "103.10.20.30\n103.10.20.31"])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(['103.10.20.30', '103.10.20.31'], SiakadApiAccess::allowedIps());
+
+        $this->actingAs($admin, 'web')->delete(route('admin.integrations.api.revoke'))->assertSessionHasNoErrors();
+        $this->assertFalse(SiakadApiAccess::enabled());
     }
 }

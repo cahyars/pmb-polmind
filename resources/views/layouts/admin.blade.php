@@ -88,7 +88,15 @@
                     ],
                     ['label' => 'Tujuan Pembayaran', 'url' => '/admin/payment-methods', 'icon' => 'bank', 'admin_only' => true, 'active' => request()->is('admin/payment-methods*')],
                     ['label' => 'Brosur', 'url' => '/admin/brochures', 'icon' => 'book', 'active' => request()->is('admin/brochures*')],
-                    ['label' => 'Integrasi SIAKAD', 'url' => '/admin/integrations', 'icon' => 'sync', 'active' => request()->is('admin/integrations*')],
+                    [
+                        'label' => 'Integrasi SIAKAD',
+                        'icon' => 'sync',
+                        'active' => request()->is('admin/integrations*'),
+                        'children' => [
+                            ['label' => 'Monitoring Sinkron', 'url' => route('admin.integrations.index'), 'active' => request()->is('admin/integrations*') && ! request()->is('admin/integrations/api*')],
+                            ['label' => 'Token API', 'url' => route('admin.integrations.api'), 'admin_only' => true, 'active' => request()->is('admin/integrations/api*')],
+                        ],
+                    ],
                     ['label' => 'Kelola Akun', 'url' => '/admin/users', 'icon' => 'key', 'admin_only' => true, 'active' => request()->is('admin/users*')],
                 ],
             ];
@@ -96,6 +104,9 @@
             // Operator PMB tidak melihat menu khusus Admin PMB.
             $menuGroups = collect($menuGroups)
                 ->map(fn ($menus) => array_values(array_filter($menus, fn ($menu) => empty($menu['admin_only']) || $adminUser?->isAdmin())))
+                ->map(fn ($menus) => array_map(fn ($menu) => isset($menu['children'])
+                    ? ['children' => array_values(array_filter($menu['children'], fn ($child) => empty($child['admin_only']) || $adminUser?->isAdmin()))] + $menu
+                    : $menu, $menus))
                 ->filter()
                 ->all();
 

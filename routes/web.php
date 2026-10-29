@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\NimController;
+use App\Http\Controllers\Admin\SiakadApiController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
@@ -174,7 +175,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         ->whereIn('section', array_keys(ReportController::SECTIONS))
         ->name('reports.show');
 
-    // Hanya Admin PMB: Master Data dan kelola akun.
+    // Hanya Admin PMB: Master Data, token API SIAKAD, dan kelola akun.
     Route::middleware(AdminAccess::class . ':admin')->group(function () {
         Route::get('/master-data', [MasterDataController::class, 'index'])->name('master-data.index');
         Route::get('/master-data/{section}', [MasterDataController::class, 'show'])
@@ -223,6 +224,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::post('/master-data/document-types', [MasterDataController::class, 'storeDocumentType'])->name('master-data.document-types.store');
         Route::put('/master-data/document-types/{documentType}', [MasterDataController::class, 'updateDocumentType'])->name('master-data.document-types.update');
         Route::patch('/master-data/document-types/{documentType}/toggle', [MasterDataController::class, 'toggleDocumentType'])->name('master-data.document-types.toggle');
+
+        Route::get('/integrations/api', [SiakadApiController::class, 'index'])->name('integrations.api');
+        Route::post('/integrations/api/token', [SiakadApiController::class, 'generate'])->middleware('throttle:10,1')->name('integrations.api.generate');
+        Route::delete('/integrations/api/token', [SiakadApiController::class, 'revoke'])->name('integrations.api.revoke');
+        Route::put('/integrations/api/ips', [SiakadApiController::class, 'updateIps'])->name('integrations.api.ips');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');

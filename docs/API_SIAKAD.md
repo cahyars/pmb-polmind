@@ -11,7 +11,7 @@ Data yang tersedia hanya milik camaba yang sudah memenuhi semua syarat berikut:
 NIM dibuat di PMB, bukan di SIAKAD.
 
 - **Base URL:** `https://pmb.polmind.ac.id/api/siakad`
-- **Autentikasi:** setiap request wajib membawa header `Authorization: Bearer <token>`. Token diberikan oleh Admin PMB.
+- **Autentikasi:** setiap request wajib membawa header `Authorization: Bearer <token>`. Token dibuat Admin PMB di menu **Integrasi SIAKAD > Token API** lalu diberikan ke tim SIAKAD. Token baru langsung membatalkan token lama.
 - **Format:** semua respons berupa JSON, termasuk respons error.
 - **Batas request:** 120 request per menit.
 

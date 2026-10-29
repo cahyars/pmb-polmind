@@ -88,7 +88,7 @@ class IntegrationController extends Controller
             'applicants',
             'latestLogs'
         ) + [
-            'apiEnabled' => filled(config('services.siakad.token')),
+            'apiEnabled' => \App\Services\SiakadApiAccess::enabled(),
         ]);
     }
 

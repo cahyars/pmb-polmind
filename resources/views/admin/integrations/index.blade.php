@@ -538,9 +538,14 @@
                     @endforeach
                 </ul>
 
-                @unless($apiEnabled)
-                    <p class="mt-4 text-xs leading-5 text-slate-600">Isi <code>SIAKAD_API_TOKEN</code> di file .env server untuk mengaktifkan API.</p>
-                @endunless
+                @if(auth('web')->user()?->isAdmin())
+                    <a href="{{ route('admin.integrations.api') }}"
+                       class="mt-4 inline-flex rounded-lg bg-polmind-blue px-4 py-2.5 text-xs font-semibold text-white hover:brightness-110">
+                        {{ $apiEnabled ? 'Kelola Token API' : 'Buat Token API' }}
+                    </a>
+                @elseif(! $apiEnabled)
+                    <p class="mt-4 text-xs leading-5 text-slate-600">Token API belum dibuat. Hubungi Admin PMB.</p>
+                @endif
             </div>
         </aside>
     </div>
