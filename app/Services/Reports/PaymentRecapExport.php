@@ -65,7 +65,7 @@ class PaymentRecapExport
         $sheet->mergeCells($col($totalStart) . '1:' . $col($totalStart + 1) . '1');
 
         // Baris 2: judul kolom.
-        $headers = [...$fixed, ...$report['weeks']->pluck('week')->all(), ...$report['components']->all(), 'Pembayaran', 'Outstanding', 'Jalur Daftar'];
+        $headers = [...$fixed, ...$report['weeks']->pluck('week')->all(), ...$report['components']->all(), 'Pembayaran', 'Outstanding', 'Jalur Daftar', 'Keterangan'];
         foreach ($headers as $index => $header) {
             $sheet->setCellValue($col($index + 1) . '2', $header);
         }
@@ -98,7 +98,8 @@ class PaymentRecapExport
 
             foreach ($report['components'] as $offset => $name) {
                 $amount = $item['components'][$name] ?? 0;
-                if ($amount > 0) {
+                // Formulir gratis ditulis 0 (bukan kosong) agar terlihat sudah tercatat.
+                if ($amount > 0 || ($name === PaymentRecap::FORM_COMPONENT && $item['note'])) {
                     $sheet->setCellValue($col($componentStart + $offset) . $row, $amount);
                 }
             }
@@ -106,6 +107,7 @@ class PaymentRecapExport
             $sheet->setCellValue($col($totalStart) . $row, $item['paid']);
             $sheet->setCellValue($col($totalStart + 1) . $row, $item['outstanding']);
             $sheet->setCellValue($col($pathColumn) . $row, $applicant->registration_path_label);
+            $sheet->setCellValue($col($pathColumn + 1) . $row, $item['note']);
             $row++;
         }
 
@@ -117,7 +119,7 @@ class PaymentRecapExport
         }
 
         // Gaya mengikuti template: header berwarna, angka ribuan, garis tipis, baris 1-2 & kolom A-E dibekukan.
-        $lastColumn = $col($pathColumn);
+        $lastColumn = $col($pathColumn + 1);
         $sheet->getStyle("A1:{$lastColumn}2")->getFont()->setBold(true);
         $sheet->getStyle("A1:{$lastColumn}2")->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER)->setVertical(Alignment::VERTICAL_CENTER);
         $sheet->getStyle("{$col($weekStart)}1:{$col($totalStart + 1)}1")->getFill()->setFillType(Fill::FILL_SOLID)->getStartColor()->setRGB(self::FILL_MONTH);
@@ -134,7 +136,8 @@ class PaymentRecapExport
         for ($column = $weekStart; $column <= $totalStart + 1; $column++) {
             $sheet->getColumnDimension($col($column))->setWidth($column >= $componentStart ? 15 : 12);
         }
-        $sheet->getColumnDimension($lastColumn)->setWidth(13);
+        $sheet->getColumnDimension($col($pathColumn))->setWidth(13);
+        $sheet->getColumnDimension($lastColumn)->setWidth(30);
 
         return $spreadsheet;
     }

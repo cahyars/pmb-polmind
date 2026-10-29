@@ -13,6 +13,7 @@ use Illuminate\Support\Collection;
  * pemasukan valid per minggu (dikelompokkan per bulan, minggu dimulai Senin), pemasukan
  * per komponen (formulir dan tiap komponen daftar ulang seperti UKT/SPI), total, dan outstanding.
  * Tanggal pembayaran = tanggal transfer/bayar (bila kosong, tanggal validasi).
+ * Formulir yang dibebaskan tampil Rp0 dengan keterangan "Formulir gratis".
  */
 class PaymentRecap
 {
@@ -38,7 +39,8 @@ class PaymentRecap
 
         $rows = $applicants
             ->map(fn (Applicant $applicant) => self::row($applicant, $from, $until))
-            ->filter(fn (array $row) => $row['payments']->isNotEmpty())
+            // Camaba dengan formulir gratis tetap muncul walau belum ada pembayaran.
+            ->filter(fn (array $row) => $row['payments']->isNotEmpty() || $row['form_waived'])
             ->sortBy([
                 fn ($a, $b) => [$a['applicant']->admissionWave?->start_date?->timestamp ?? 0, $a['first_paid_at']->timestamp]
                     <=> [$b['applicant']->admissionWave?->start_date?->timestamp ?? 0, $b['first_paid_at']->timestamp],
@@ -73,6 +75,7 @@ class PaymentRecap
                 'paid' => (float) $rows->sum('paid'),
                 'outstanding' => (float) $rows->sum('outstanding'),
                 'applicants' => $rows->count(),
+                'waived' => $rows->filter(fn ($row) => $row['note'])->count(),
             ],
         ];
     }
@@ -132,6 +135,11 @@ class PaymentRecap
 
         $components = [self::FORM_COMPONENT => 0.0];
 
+        $waivedAt = $applicant->registrationInvoice?->waived_at;
+        $formWaived = $waivedAt !== null
+            && (! $from || $waivedAt->gte($from))
+            && (! $until || $waivedAt->lte($until));
+
         foreach ($payments as $payment) {
             foreach ($payment['components'] as $name => $amount) {
                 $components[$name] = ($components[$name] ?? 0) + $amount;
@@ -141,11 +149,13 @@ class PaymentRecap
         return [
             'applicant' => $applicant,
             'payments' => $payments,
-            'first_paid_at' => $payments->first()['paid_on'] ?? now(),
+            'first_paid_at' => $payments->first()['paid_on'] ?? $waivedAt?->copy()->startOfDay() ?? now(),
             'components' => $components,
             'paid' => (float) $payments->sum('amount'),
             // Outstanding = semua tagihan yang sudah terbit dikurangi semua pembayaran valid (tanpa filter tanggal).
             'outstanding' => max(0, $billed - $paidAll),
+            'form_waived' => $formWaived,
+            'note' => $waivedAt ? 'Formulir gratis' . (filled($applicant->registrationInvoice->waiver_reason) ? ': ' . $applicant->registrationInvoice->waiver_reason : '') : null,
         ];
     }
 

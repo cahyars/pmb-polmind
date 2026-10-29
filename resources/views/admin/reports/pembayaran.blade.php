@@ -18,7 +18,7 @@
     @include('admin.reports.partials.header')
 
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @include('admin.reports.partials.stat', ['label' => 'Total Pemasukan', 'value' => $rupiah($totals['paid']), 'desc' => $number($totals['applicants']) . ' camaba sudah membayar'])
+        @include('admin.reports.partials.stat', ['label' => 'Total Pemasukan', 'value' => $rupiah($totals['paid']), 'desc' => $number($totals['applicants']) . ' camaba' . ($totals['waived'] ? ' · ' . $number($totals['waived']) . ' formulir gratis' : '')])
         @foreach(collect($totals['components'])->take(2) as $name => $amount)
             @include('admin.reports.partials.stat', ['label' => $name, 'value' => $rupiah($amount), 'desc' => 'Pemasukan ' . mb_strtolower($name)])
         @endforeach
@@ -57,7 +57,7 @@
                             @endforeach
                             <th colspan="{{ $report['components']->count() }}" class="{{ $th }} text-center">Per Komponen</th>
                             <th colspan="2" class="{{ $th }} text-center">Total</th>
-                            <th class="{{ $th }} bg-slate-50"></th>
+                            <th colspan="2" class="{{ $th }} bg-slate-50"></th>
                         </tr>
                         <tr class="bg-slate-100">
                             @foreach(['No', 'Gel.', 'Nama Lengkap', 'Prodi', 'Kelas'] as $header)
@@ -72,6 +72,7 @@
                             <th class="{{ $th }} text-right">Pembayaran</th>
                             <th class="{{ $th }} text-right">Outstanding</th>
                             <th class="{{ $th }}">Jalur</th>
+                            <th class="{{ $th }}">Keterangan</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -92,11 +93,18 @@
                                     <td class="{{ $td }} text-right">{{ $money($row['weekly'][$week['key']]) }}</td>
                                 @endforeach
                                 @foreach($report['components'] as $name)
-                                    <td class="{{ $td }} text-right text-slate-600">{{ $money($row['components'][$name] ?? 0) }}</td>
+                                    <td class="{{ $td }} text-right text-slate-600">
+                                        @if($name === \App\Services\Reports\PaymentRecap::FORM_COMPONENT && $row['note'])
+                                            0 <span class="ml-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700" title="{{ $row['note'] }}">Gratis</span>
+                                        @else
+                                            {{ $money($row['components'][$name] ?? 0) }}
+                                        @endif
+                                    </td>
                                 @endforeach
                                 <td class="{{ $td }} text-right font-semibold text-slate-900">{{ $number($row['paid']) }}</td>
                                 <td class="{{ $td }} text-right {{ $row['outstanding'] > 0 ? 'font-semibold text-red-600' : 'text-slate-400' }}">{{ $number($row['outstanding']) }}</td>
                                 <td class="{{ $td }}">{{ $applicant->registration_path_label }}</td>
+                                <td class="{{ $td }} text-slate-500">{{ $row['note'] }}</td>
                             </tr>
                         @endforeach
                     </tbody>
@@ -111,7 +119,7 @@
                             @endforeach
                             <td class="{{ $td }} text-right">{{ $number($totals['paid']) }}</td>
                             <td class="{{ $td }} text-right">{{ $number($totals['outstanding']) }}</td>
-                            <td class="{{ $td }}"></td>
+                            <td colspan="2" class="{{ $td }}"></td>
                         </tr>
                     </tfoot>
                 </table>

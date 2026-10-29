@@ -17,6 +17,7 @@ use Database\Seeders\PmbMasterSeeder;
 use Database\Seeders\ReferenceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\Concerns\RegistersApplicants;
 use Tests\TestCase;
@@ -154,6 +155,48 @@ class PaymentRecapTest extends TestCase
         $this->assertEquals(['Formulir' => 0, 'Daftar Ulang' => 2500000, 'SPI' => 2500000], $april['rows']->first()['components']);
     }
 
+    public function test_free_registration_form_appears_as_zero_with_note(): void
+    {
+        $gratis = $this->registerApplicant(['full_name' => 'Citra', 'email' => 'citra@example.com']);
+        $gratis->registrationInvoice->waive('Siswa SMK Mitra Industri', 'Bu Admin');
+
+        $andi = $this->registerApplicant(['full_name' => 'Andi', 'email' => 'andi@example.com']);
+        $this->pay($andi->registrationInvoice, 300000, '2027-03-02');
+
+        $report = PaymentRecap::build(new ReportFilter);
+        $row = $report['rows']->first(fn ($row) => $row['applicant']->is($gratis));
+
+        $this->assertNotNull($row);
+        $this->assertEquals(0, $row['components']['Formulir']);
+        $this->assertEquals(0, $row['paid']);
+        $this->assertEquals(0, $row['outstanding']);
+        $this->assertSame('Formulir gratis: Siswa SMK Mitra Industri', $row['note']);
+        $this->assertSame(1, $report['totals']['waived']);
+
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get('/admin/reports/pembayaran')
+            ->assertSeeInOrder(['CITRA', 'Gratis', 'Formulir gratis: Siswa SMK Mitra Industri'])
+            ->assertSee('1 formulir gratis');
+
+        $response = $this->actingAs($admin, 'web')->get(route('admin.reports.export-payments'));
+        $path = tempnam(sys_get_temp_dir(), 'rekap') . '.xlsx';
+        file_put_contents($path, $response->streamedContent());
+        $sheet = IOFactory::load($path)->getActiveSheet();
+
+        // Kolom: A-E identitas, F minggu, G-H komponen... cari baris Citra dan kolom Keterangan.
+        $header = collect($sheet->rangeToArray('A2:' . $sheet->getHighestColumn() . '2')[0]);
+        $citraRow = collect(range(3, $sheet->getHighestRow()))->first(fn ($r) => $sheet->getCell('C' . $r)->getValue() === 'CITRA');
+        $column = fn (string $name) => Coordinate::stringFromColumnIndex($header->search($name) + 1);
+
+        $this->assertEquals(0, $sheet->getCell($column('Formulir') . $citraRow)->getValue());
+        $this->assertNotNull($sheet->getCell($column('Formulir') . $citraRow)->getValue());
+        $this->assertSame('Formulir gratis: Siswa SMK Mitra Industri', $sheet->getCell($column('Keterangan') . $citraRow)->getValue());
+
+        @unlink($path);
+    }
+
     public function test_report_page_and_excel_follow_template(): void
     {
         $andi = $this->registerApplicant(['full_name' => 'Andi', 'email' => 'andi@example.com']);
@@ -189,9 +232,10 @@ class PaymentRecapTest extends TestCase
         $this->assertSame(1, $sheet->getCell('B3')->getValue());
         $this->assertEquals(300000, $sheet->getCell('F3')->getValue());
         $this->assertEquals(7500000, $sheet->getCell('H3')->getValue());
-        $this->assertSame(['Formulir', 'Daftar Ulang', 'SPI', 'Pembayaran', 'Outstanding', 'Jalur Daftar'], [
+        $this->assertSame(['Formulir', 'Daftar Ulang', 'SPI', 'Pembayaran', 'Outstanding', 'Jalur Daftar', 'Keterangan'], [
             $sheet->getCell('I2')->getValue(), $sheet->getCell('J2')->getValue(), $sheet->getCell('K2')->getValue(),
             $sheet->getCell('L2')->getValue(), $sheet->getCell('M2')->getValue(), $sheet->getCell('N2')->getValue(),
+            $sheet->getCell('O2')->getValue(),
         ]);
         $this->assertEquals(7800000, $sheet->getCell('L3')->getValue());
         $this->assertSame('TOTAL', $sheet->getCell('C4')->getValue());
