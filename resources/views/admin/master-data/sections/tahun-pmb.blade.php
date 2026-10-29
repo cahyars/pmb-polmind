@@ -69,6 +69,7 @@
         <table class="w-full min-w-[1000px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Nama</th>
                     <th class="px-5 py-3.5">Tahun</th>
@@ -82,6 +83,7 @@
             <tbody class="table-zebra">
                 @forelse($pmbYears as $year)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $year->code }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $year->name }}</td>
                         <td class="px-5 py-3.5 text-slate-700">{{ $year->year }}</td>
@@ -126,7 +128,7 @@
                     </tr>
 
                     <tr id="edit-pmb-year-{{ $year->id }}" class="hidden bg-slate-50">
-                        <td colspan="7" class="px-6 py-5">
+                        <td colspan="8" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.pmb-years.update', $year) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -179,7 +181,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data tahun PMB.
                         </td>
                     </tr>

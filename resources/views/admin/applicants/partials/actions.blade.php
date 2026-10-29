@@ -13,7 +13,7 @@
               @submit.prevent="window.Swal.fire({
                   icon: 'warning',
                   title: 'Hapus data camaba?',
-                  text: @js($applicant->full_name . ' (' . $applicant->registration_number . ') akan dihapus dari daftar camaba.'),
+                  text: @js($applicant->full_name . ' (' . $applicant->registration_number . ') akan dihapus permanen beserta tagihan, riwayat pembayaran, dan berkasnya. Tindakan ini tidak bisa dibatalkan.'),
                   showCancelButton: true,
                   confirmButtonText: 'Ya, hapus',
                   cancelButtonText: 'Batal',

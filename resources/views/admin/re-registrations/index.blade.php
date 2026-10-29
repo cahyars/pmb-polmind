@@ -300,6 +300,7 @@
             <table class="w-full min-w-[1550px] text-left text-sm">
                 <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
+                        <th class="px-5 py-3.5">No</th>
                         <th class="px-5 py-3.5">Camaba</th>
                         <th class="px-5 py-3.5">Jalur</th>
                         <th class="px-5 py-3.5">Program</th>
@@ -357,6 +358,7 @@
                         @endphp
 
                         <tr class="align-top transition hover:bg-slate-50">
+                            <td class="px-5 py-3.5 text-slate-500">{{ $reRegistrations->firstItem() + $loop->index }}</td>
                             <td class="px-5 py-3.5">
                                 <p class="font-bold text-polmind-blue">
                                     {{ $applicant?->registration_number ?? '-' }}
@@ -660,7 +662,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-6 py-12 text-center">
+                            <td colspan="10" class="px-6 py-12 text-center">
                                 <p class="text-sm font-semibold text-slate-600">
                                     Data daftar ulang tidak ditemukan.
                                 </p>

@@ -65,6 +65,7 @@ class CamabaAuthController extends Controller
         $validated = $request->validate([
             'full_name' => ['required', 'string', 'max:255'],
             'nik' => Applicant::nikRules($activeWave->id),
+            'gender' => ['required', Rule::in(['L', 'P'])],
             'email' => ['required', 'email', 'max:255', 'unique:applicants,email'],
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
@@ -78,6 +79,7 @@ class CamabaAuthController extends Controller
             'study_program_id.required' => 'Pilih program studi yang Anda minati.',
             'class_type_id.required' => 'Pilih jenis kelas.',
             'registration_path.required' => 'Pilih jalur pendaftaran.',
+            'gender.required' => 'Pilih jenis kelamin.',
         ] + Applicant::nikMessages($activeWave) + ApplicantEducation::schoolMessages());
 
         $applicant = DB::transaction(function () use ($validated, $activePmbYear, $activeWave) {
@@ -91,6 +93,7 @@ class CamabaAuthController extends Controller
 
                 'full_name' => $validated['full_name'],
                 'nik' => $validated['nik'],
+                'gender' => $validated['gender'],
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'phone' => $validated['phone'],

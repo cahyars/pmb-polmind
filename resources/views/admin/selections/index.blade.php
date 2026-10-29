@@ -164,6 +164,7 @@
         <table class="w-full text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Camaba</th>
                     <th class="hidden px-5 py-3.5 lg:table-cell">Pilihan Prodi</th>
                     <th class="hidden px-5 py-3.5 md:table-cell">Administrasi</th>
@@ -186,6 +187,7 @@
                     @endphp
 
                     <tr class="align-top transition hover:bg-slate-50">
+                        <td class="px-5 py-4 text-slate-500">{{ $applicants->firstItem() + $loop->index }}</td>
                         <td class="px-5 py-4">
                             <p class="font-bold text-polmind-blue">{{ $applicant->registration_number }}</p>
                             <p class="mt-1 font-semibold text-slate-800">{{ $applicant->full_name }}</p>
@@ -251,7 +253,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="6" class="px-6 py-12 text-center">
+                        <td colspan="7" class="px-6 py-12 text-center">
                             <p class="text-sm font-semibold text-slate-600">
                                 Data seleksi tidak ditemukan.
                             </p>

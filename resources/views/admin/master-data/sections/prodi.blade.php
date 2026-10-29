@@ -64,6 +64,7 @@
         <table class="w-full min-w-[900px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Kode NIM</th>
                     <th class="px-5 py-3.5">Nama Prodi</th>
@@ -77,6 +78,7 @@
             <tbody class="table-zebra">
                 @forelse($studyPrograms as $program)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $program->code }}</td>
                         <td class="px-5 py-3.5 font-mono font-bold text-slate-700">{{ $program->nim_code ?? '-' }}</td>
                         <td class="px-5 py-3.5">
@@ -116,7 +118,7 @@
                     </tr>
 
                     <tr id="edit-study-program-{{ $program->id }}" class="hidden bg-slate-50">
-                        <td colspan="7" class="px-6 py-5">
+                        <td colspan="8" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.study-programs.update', $program) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -163,7 +165,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data prodi.
                         </td>
                     </tr>

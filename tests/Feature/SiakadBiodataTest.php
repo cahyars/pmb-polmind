@@ -54,6 +54,7 @@ class SiakadBiodataTest extends TestCase
 
         $this->assertSame('AMMAR MUSYAFFA FIRDAUS', $applicant->full_name);
         $this->assertSame('2171011603070001', $applicant->nik);
+        $this->assertSame('L', $applicant->gender);
         $this->assertSame('A120270001', $applicant->registration_number);
         $this->assertSame('TRPL', $applicant->studyProgram->code);
         $this->assertSame('REG_A', $applicant->classType->code);
@@ -171,7 +172,8 @@ class SiakadBiodataTest extends TestCase
             'school_npsn' => '',
             'school_name' => '',
             'school_type' => '',
-        ]))->assertSessionHasErrors(['nik', 'study_program_id', 'class_type_id', 'registration_path', 'school_region_id', 'school_npsn', 'school_name', 'school_type']);
+            'gender' => '',
+        ]))->assertSessionHasErrors(['nik', 'gender', 'study_program_id', 'class_type_id', 'registration_path', 'school_region_id', 'school_npsn', 'school_name', 'school_type']);
 
         $this->assertSame(0, Applicant::count());
     }

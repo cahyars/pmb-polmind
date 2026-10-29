@@ -162,7 +162,8 @@ class ApplicantController extends Controller
     }
 
     /**
-     * Hapus (soft delete) akun peminat yang belum membayar formulir.
+     * Hapus permanen akun peminat yang belum membayar formulir. Nomor pendaftar
+     * dan invoice-nya bisa dipakai lagi oleh pendaftar berikutnya.
      */
     public function destroy(string $registration_number)
     {
@@ -172,7 +173,7 @@ class ApplicantController extends Controller
             return back()->withErrors('Camaba ' . $applicant->full_name . ' tidak dapat dihapus karena pembayaran formulir sudah diproses.');
         }
 
-        $applicant->delete();
+        $applicant->purge();
 
         return back()->with('success', 'Data camaba ' . $applicant->full_name . ' (' . $applicant->registration_number . ') berhasil dihapus.');
     }

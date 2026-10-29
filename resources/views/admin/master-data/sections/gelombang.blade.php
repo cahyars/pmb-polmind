@@ -78,6 +78,7 @@
         <table class="w-full min-w-[1100px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Tahun PMB</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Nama</th>
@@ -92,6 +93,7 @@
             <tbody class="table-zebra">
                 @forelse($admissionWaves as $wave)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $wave->pmbYear?->name ?? '-' }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $wave->code }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $wave->name }}</td>
@@ -139,7 +141,7 @@
                     </tr>
 
                     <tr id="edit-admission-wave-{{ $wave->id }}" class="hidden bg-slate-50">
-                        <td colspan="8" class="px-6 py-5">
+                        <td colspan="9" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.admission-waves.update', $wave) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -201,7 +203,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="9" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data gelombang.
                         </td>
                     </tr>

@@ -70,6 +70,7 @@
             <table class="w-full min-w-[760px] text-left text-sm">
                 <thead class="border-b border-slate-200 text-xs text-slate-400 [&_th]:px-5 [&_th]:py-3.5 [&_th]:font-medium">
                     <tr>
+                        <th>No</th>
                         <th>Nama</th>
                         <th>Email</th>
                         <th>Peran</th>
@@ -81,6 +82,7 @@
                     @foreach($users as $user)
                         @php($isSelf = $user->is($currentUser))
                         <tr>
+                            <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                             <td class="px-5 py-3.5 font-semibold text-slate-900">
                                 {{ $user->name }}
                                 @if($isSelf)
@@ -113,7 +115,7 @@
                             </td>
                         </tr>
                         <tr id="edit-user-{{ $user->id }}" class="{{ (int) old('_user_id') === $user->id ? '' : 'hidden' }} bg-slate-50">
-                            <td colspan="5" class="px-6 py-5">
+                            <td colspan="6" class="px-6 py-5">
                                 <form action="{{ route('admin.users.update', $user) }}" method="POST" class="grid gap-5 md:grid-cols-2">
                                     @csrf
                                     @method('PUT')

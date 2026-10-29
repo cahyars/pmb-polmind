@@ -99,22 +99,33 @@
                     <p class="{{ $hint }}">Ditulis dengan huruf kapital, sesuai ijazah/KTP.</p>
                 </div>
 
-                <div>
-                    <label for="nik" class="{{ $label }}">NIK {!! $required !!}</label>
-                    <input id="nik"
-                           type="text"
-                           name="nik"
-                           value="{{ old('nik') }}"
-                           required
-                           inputmode="numeric"
-                           pattern="[0-9]{16}"
-                           minlength="16"
-                           maxlength="16"
-                           placeholder="16 digit sesuai KTP/KK"
-                           title="NIK harus 16 digit angka"
-                           oninput="this.value = this.value.replace(/\D/g, '').slice(0, 16)"
-                           class="{{ $field }} tracking-wider">
-                    <p class="{{ $hint }}">Nomor Induk Kependudukan pada KTP atau Kartu Keluarga.</p>
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div>
+                        <label for="nik" class="{{ $label }}">NIK {!! $required !!}</label>
+                        <input id="nik"
+                               type="text"
+                               name="nik"
+                               value="{{ old('nik') }}"
+                               required
+                               inputmode="numeric"
+                               pattern="[0-9]{16}"
+                               minlength="16"
+                               maxlength="16"
+                               placeholder="16 digit sesuai KTP/KK"
+                               title="NIK harus 16 digit angka"
+                               oninput="this.value = this.value.replace(/\D/g, '').slice(0, 16)"
+                               class="{{ $field }} tracking-wider">
+                        <p class="{{ $hint }}">Nomor Induk Kependudukan pada KTP atau Kartu Keluarga.</p>
+                    </div>
+
+                    <div>
+                        <label for="gender" class="{{ $label }}">Jenis Kelamin {!! $required !!}</label>
+                        <select id="gender" name="gender" required class="{{ $field }}">
+                            <option value="">Pilih jenis kelamin</option>
+                            <option value="L" @selected(old('gender') === 'L')>Laki-laki</option>
+                            <option value="P" @selected(old('gender') === 'P')>Perempuan</option>
+                        </select>
+                    </div>
                 </div>
 
                 <div class="grid gap-5 md:grid-cols-2">

@@ -110,6 +110,56 @@ class PaymentFlowTest extends TestCase
             ->assertSee('Pembayaran sedang diverifikasi');
     }
 
+    public function test_admin_can_delete_only_rejected_payments(): void
+    {
+        $admin = User::factory()->create();
+        $method = PaymentMethod::create(['type' => 'bank_transfer', 'provider' => 'Bank BCA', 'account_number' => '1234567890', 'is_active' => true]);
+        $applicant = $this->register();
+        $invoice = $applicant->registrationInvoice()->first();
+
+        $upload = fn () => $this->actingAs($applicant, 'applicant')
+            ->post(route('camaba.payments.upload-proof', $invoice), [
+                'payment_method_id' => $method->id,
+                'sender_name' => 'Ammar',
+                'sender_bank' => 'BRI',
+                'transfer_date' => now()->format('Y-m-d'),
+                'amount' => 300000,
+                'proof_file' => UploadedFile::fake()->image('bukti.jpg'),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $upload();
+        $payment = Payment::firstOrFail();
+
+        $this->actingAs($admin, 'web')
+            ->delete(route('admin.payments.destroy', $payment))
+            ->assertSessionHasErrors();
+
+        $this->actingAs($admin, 'web')
+            ->patch(route('admin.payments.reject', $payment), ['admin_note' => 'Bukti buram'])
+            ->assertSessionHasNoErrors();
+
+        $this->assertSame('ditolak', $applicant->refresh()->payment_status);
+        Storage::disk('local')->assertExists($payment->proof_file_path);
+
+        $this->actingAs($admin, 'web')
+            ->get(route('admin.payments.index'))
+            ->assertSee('action="' . route('admin.payments.destroy', $payment) . '"', false);
+
+        $this->actingAs($admin, 'web')
+            ->delete(route('admin.payments.destroy', $payment))
+            ->assertSessionHas('success');
+
+        $this->assertModelMissing($payment);
+        Storage::disk('local')->assertMissing($payment->proof_file_path);
+        $this->assertSame('belum_bayar', $applicant->refresh()->payment_status);
+        $this->assertSame('unpaid', $invoice->refresh()->status);
+
+        // Nomor pembayaran yang dihapus dipakai lagi.
+        $upload();
+        $this->assertSame('PAY/PMB/2027/00001', Payment::firstOrFail()->payment_number);
+    }
+
     public function test_admin_manages_payment_methods(): void
     {
         $admin = User::factory()->create();

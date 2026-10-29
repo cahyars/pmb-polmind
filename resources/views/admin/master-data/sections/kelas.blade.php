@@ -64,6 +64,7 @@
         <table class="w-full min-w-[750px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Kode No. Pendaftar</th>
                     <th class="px-5 py-3.5">Nama</th>
@@ -76,6 +77,7 @@
             <tbody class="table-zebra">
                 @forelse($classTypes as $classType)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $classType->code }}</td>
                         <td class="px-5 py-3.5 font-bold text-slate-800">{{ $classType->registration_code ?? '-' }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $classType->name }}</td>
@@ -123,7 +125,7 @@
                     </tr>
 
                     <tr id="edit-class-type-{{ $classType->id }}" class="hidden bg-slate-50">
-                        <td colspan="6" class="px-6 py-5">
+                        <td colspan="7" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.class-types.update', $classType) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -174,7 +176,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="5" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data kelas.
                         </td>
                     </tr>

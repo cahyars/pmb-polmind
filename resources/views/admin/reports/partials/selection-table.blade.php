@@ -8,6 +8,7 @@
     <table class="w-full {{ $compact ? 'min-w-[520px]' : 'min-w-[760px]' }} text-left text-sm">
         <thead class="border-b border-slate-200 text-xs text-slate-400 [&_th]:whitespace-nowrap [&_th]:px-3 [&_th]:py-3 [&_th]:font-medium">
             <tr>
+                <th>No</th>
                 <th>{{ $title }}</th>
                 @unless($compact)<th class="text-right">Pendaftar</th>@endunless
                 <th class="text-right">Siap Seleksi</th>
@@ -22,6 +23,7 @@
         <tbody class="table-zebra">
             @forelse($rows as $row)
                 <tr>
+                    <td class="px-3 py-2.5 text-slate-500">{{ $loop->iteration }}</td>
                     <td class="px-3 py-2.5 font-semibold text-slate-900">{{ $name($row) }}</td>
                     @unless($compact)<td class="{{ $cell }}">{{ $row['registrants'] }}</td>@endunless
                     <td class="{{ $cell }}">{{ $row['ready'] }}</td>
@@ -33,7 +35,7 @@
                     @unless($compact)<td class="{{ $cell }}">{{ $row['average_score'] ?? '-' }}</td>@endunless
                 </tr>
             @empty
-                <tr><td colspan="9" class="px-3 py-8 text-center text-slate-500">Belum ada data.</td></tr>
+                <tr><td colspan="10" class="px-3 py-8 text-center text-slate-500">Belum ada data.</td></tr>
             @endforelse
         </tbody>
     </table>

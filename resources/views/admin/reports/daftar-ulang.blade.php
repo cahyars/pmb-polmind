@@ -60,6 +60,7 @@
             <table class="w-full min-w-[900px] text-left text-sm">
                 <thead class="border-b border-slate-200 text-xs text-slate-400">
                     <tr>
+                        <th class="{{ $th }}">No</th>
                         <th class="{{ $th }}">Prodi</th>
                         <th class="{{ $th }} text-right">Diterima</th>
                         <th class="{{ $th }} text-right">Lunas</th>
@@ -73,6 +74,7 @@
                 <tbody class="table-zebra">
                     @foreach($report['programs'] as $program)
                         <tr>
+                            <td class="{{ $td }} text-slate-500">{{ $loop->iteration }}</td>
                             <td class="{{ $td }}"><span class="font-semibold text-slate-900">{{ $program['code'] }}</span> <span class="text-xs text-slate-500">{{ $program['name'] }}</span></td>
                             <td class="{{ $td }} text-right">{{ $number($program['accepted']) }}</td>
                             <td class="{{ $td }} text-right font-semibold text-slate-900">{{ $number($program['paid_off']) }}</td>

@@ -20,6 +20,7 @@ trait RegistersApplicants
         return array_merge([
             'full_name' => 'Ammar',
             'nik' => '21710116030799' . str_pad((string) $this->registeredCount, 2, '0', STR_PAD_LEFT),
+            'gender' => 'L',
             'email' => 'ammar@example.com',
             'phone' => '081234567890',
             'study_program_id' => StudyProgram::where('code', 'TRPL')->value('id'),

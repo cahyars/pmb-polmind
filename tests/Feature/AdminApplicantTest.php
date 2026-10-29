@@ -79,7 +79,44 @@ class AdminApplicantTest extends TestCase
             ->delete(route('admin.applicants.destroy', $peminat->registration_number))
             ->assertSessionHas('success');
 
-        $this->assertSoftDeleted($peminat);
+        $this->assertSame(0, Applicant::withTrashed()->whereKey($peminat->id)->count());
+        $this->assertDatabaseMissing('invoices', ['applicant_id' => $peminat->id]);
         $this->assertSame(1, Applicant::count());
+    }
+
+    public function test_deleting_latest_applicant_reuses_registration_and_invoice_numbers(): void
+    {
+        $admin = User::factory()->create();
+
+        $first = $this->registerApplicant(['email' => 'satu@example.com']);
+        $dummy = $this->registerApplicant(['email' => 'dummy@example.com']);
+
+        $this->assertSame('A120270002', $dummy->registration_number);
+        $this->assertSame('INV/PMB/2027/00002', $dummy->registrationInvoice->invoice_number);
+
+        $this->actingAs($admin, 'web')
+            ->delete(route('admin.applicants.destroy', $dummy->registration_number))
+            ->assertSessionHas('success');
+
+        auth('web')->logout();
+
+        // Email dan NIK camaba yang dihapus bisa dipakai mendaftar lagi.
+        $again = $this->registerApplicant(['email' => 'dummy@example.com', 'nik' => $dummy->nik]);
+
+        $this->assertSame('A120270002', $again->registration_number);
+        $this->assertSame('INV/PMB/2027/00002', $again->registrationInvoice->invoice_number);
+        $this->assertSame('A120270001', $first->refresh()->registration_number);
+    }
+
+    public function test_purge_command_cleans_previously_soft_deleted_applicants(): void
+    {
+        $this->registerApplicant(['email' => 'satu@example.com'])->delete();
+        $this->registerApplicant(['email' => 'dua@example.com'])->delete();
+
+        $this->artisan('pmb:hapus-permanen')->assertSuccessful();
+
+        $this->assertSame(0, Applicant::withTrashed()->count());
+
+        $this->assertSame('A120270001', $this->registerApplicant(['email' => 'baru@example.com'])->registration_number);
     }
 }

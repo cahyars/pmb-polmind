@@ -2,10 +2,12 @@
 
 namespace App\Models;
 
+use App\Services\SequenceRewinder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class Applicant extends Authenticatable
@@ -121,6 +123,28 @@ class Applicant extends Authenticatable
     {
         return in_array($this->payment_status, ['belum_bayar', 'ditolak', null], true)
             && blank($this->nim);
+    }
+
+    /**
+     * Hapus permanen beserta tagihan, pembayaran, dan file upload, lalu mundurkan
+     * nomor urut agar nomor pendaftar, invoice, dan pembayaran bisa dipakai lagi.
+     */
+    public function purge(): void
+    {
+        $files = $this->payments()->pluck('proof_file_path')
+            ->merge($this->documents()->pluck('file_path'))
+            ->filter()
+            ->all();
+
+        $pmbYear = $this->pmbYear;
+
+        $this->forceDelete();
+
+        Storage::disk('local')->delete($files);
+
+        if ($pmbYear) {
+            SequenceRewinder::rewind($pmbYear);
+        }
     }
 
     /**

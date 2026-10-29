@@ -70,6 +70,8 @@ class ReportTest extends TestCase
 
         $a->update(['gender' => 'L', 'second_study_program_id' => $trm, 'payment_status' => 'valid']);
         $b->update(['gender' => 'P']);
+        // Camaba lama yang mendaftar sebelum jenis kelamin wajib di form registrasi.
+        $c->update(['gender' => null]);
         $a->education->update(['major' => 'rpl ', 'graduation_year' => 2026]);
         $b->education->update(['major' => 'RPL', 'graduation_year' => 2027]);
 

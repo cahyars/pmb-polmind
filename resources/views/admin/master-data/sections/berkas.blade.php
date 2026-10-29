@@ -69,6 +69,7 @@
         <table class="w-full min-w-[1100px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Urutan</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Nama Berkas</th>
@@ -83,6 +84,7 @@
             <tbody class="table-zebra">
                 @forelse($documentTypes as $documentType)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-700">{{ $documentType->sort_order }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $documentType->code }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">
@@ -135,7 +137,7 @@
                     </tr>
 
                     <tr id="edit-document-type-{{ $documentType->id }}" class="hidden bg-slate-50">
-                        <td colspan="8" class="px-6 py-5">
+                        <td colspan="9" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.document-types.update', $documentType) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -187,7 +189,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="9" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data jenis berkas.
                         </td>
                     </tr>

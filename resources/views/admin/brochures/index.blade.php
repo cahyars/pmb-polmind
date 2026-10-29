@@ -54,6 +54,7 @@
             <table class="w-full min-w-[820px] text-left text-sm">
                 <thead class="border-b border-slate-200 text-xs text-slate-400 [&_th]:px-5 [&_th]:py-3.5 [&_th]:font-medium">
                     <tr>
+                        <th>No</th>
                         <th>Urutan</th>
                         <th>Brosur</th>
                         <th>File</th>
@@ -65,6 +66,7 @@
                 <tbody class="table-zebra">
                     @forelse($brochures as $brochure)
                         <tr>
+                            <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                             <td class="px-5 py-3.5 font-semibold text-slate-700">{{ $brochure->sort_order }}</td>
                             <td class="px-5 py-3.5">
                                 <p class="font-semibold text-slate-900">{{ $brochure->title }}</p>
@@ -106,7 +108,7 @@
                             </td>
                         </tr>
                         <tr id="edit-brochure-{{ $brochure->id }}" class="{{ (int) old('_brochure_id') === $brochure->id ? '' : 'hidden' }} bg-slate-50">
-                            <td colspan="6" class="px-6 py-5">
+                            <td colspan="7" class="px-6 py-5">
                                 <form action="{{ route('admin.brochures.update', $brochure) }}" method="POST" enctype="multipart/form-data" class="grid gap-5 md:grid-cols-3">
                                     @csrf
                                     @method('PUT')
@@ -123,7 +125,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                            <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                                 Belum ada brosur. Unggah brosur pertama agar dapat diunduh dari landing page.
                             </td>
                         </tr>

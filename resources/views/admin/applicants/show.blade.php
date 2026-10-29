@@ -334,6 +334,7 @@
                     <table class="w-full min-w-[760px] text-left text-sm">
                         <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                             <tr>
+                                <th class="px-4 py-3">No</th>
                                 <th class="px-4 py-3">Jenis Berkas</th>
                                 <th class="px-4 py-3">File</th>
                                 <th class="px-4 py-3">Status</th>
@@ -344,6 +345,7 @@
                         <tbody class="table-zebra">
                             @forelse($applicant->documents as $document)
                                 <tr>
+                                    <td class="px-4 py-4 text-slate-500">{{ $loop->iteration }}</td>
                                     <td class="px-4 py-4 font-medium text-slate-800">
                                         {{ $document->documentType?->name ?? '-' }}
                                     </td>
@@ -372,7 +374,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 py-8 text-center text-sm font-medium text-slate-500">
+                                    <td colspan="6" class="px-4 py-8 text-center text-sm font-medium text-slate-500">
                                         Belum ada berkas yang diupload.
                                     </td>
                                 </tr>

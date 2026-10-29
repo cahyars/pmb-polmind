@@ -232,6 +232,7 @@
             <table class="w-full min-w-[1450px] text-left text-sm">
                 <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
+                        <th class="px-5 py-3.5">No</th>
                         <th class="px-5 py-3.5">Camaba</th>
                         <th class="px-5 py-3.5">Invoice</th>
                         <th class="px-5 py-3.5">Progress Tagihan</th>
@@ -277,6 +278,7 @@
                         @endphp
 
                         <tr class="align-top transition hover:bg-slate-50">
+                            <td class="px-5 py-3.5 text-slate-500">{{ $payments->firstItem() + $loop->index }}</td>
                             <td class="px-5 py-3.5">
                                 <p class="font-bold text-polmind-blue">
                                     {{ $payment->applicant?->registration_number }}
@@ -465,6 +467,27 @@
                                                 class="rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white transition hover:bg-red-700">
                                             Tolak
                                         </button>
+                                    @elseif($payment->status === 'rejected')
+                                        <form action="{{ route('admin.payments.destroy', $payment) }}"
+                                              method="POST"
+                                              x-data
+                                              @submit.prevent="window.Swal.fire({
+                                                  icon: 'warning',
+                                                  title: 'Hapus pembayaran ditolak?',
+                                                  text: @js($payment->payment_number . ' beserta bukti transfernya akan dihapus permanen dari riwayat pembayaran.'),
+                                                  showCancelButton: true,
+                                                  confirmButtonText: 'Ya, hapus',
+                                                  cancelButtonText: 'Batal',
+                                                  confirmButtonColor: '#dc2626',
+                                              }).then((result) => result.isConfirmed && $el.submit())">
+                                            @csrf
+                                            @method('DELETE')
+
+                                            <button type="submit"
+                                                    class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-700 transition hover:bg-red-100">
+                                                Hapus
+                                            </button>
+                                        </form>
                                     @else
                                         <span class="rounded-lg bg-slate-100 px-3 py-2 text-xs font-semibold text-slate-500">
                                             Selesai
@@ -504,7 +527,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-12 text-center">
+                            <td colspan="8" class="px-6 py-12 text-center">
                                 <p class="text-sm font-semibold text-slate-600">
                                     Tidak ada data pembayaran ditemukan.
                                 </p>

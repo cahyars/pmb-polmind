@@ -64,6 +64,7 @@
         <table class="w-full min-w-[1000px] text-left text-sm">
             <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                 <tr>
+                    <th class="px-5 py-3.5">No</th>
                     <th class="px-5 py-3.5">Urutan</th>
                     <th class="px-5 py-3.5">Kode</th>
                     <th class="px-5 py-3.5">Nama Biaya</th>
@@ -77,6 +78,7 @@
             <tbody class="table-zebra">
                 @forelse($feeComponents as $fee)
                     <tr>
+                        <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-700">{{ $fee->sort_order }}</td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $fee->code }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $fee->name }}</td>
@@ -119,7 +121,7 @@
                     </tr>
 
                     <tr id="edit-fee-component-{{ $fee->id }}" class="hidden bg-slate-50">
-                        <td colspan="7" class="px-6 py-5">
+                        <td colspan="8" class="px-6 py-5">
                             <form action="{{ route('admin.master-data.fee-components.update', $fee) }}" method="POST">
                                 @csrf
                                 @method('PUT')
@@ -166,7 +168,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                        <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
                             Belum ada data komponen biaya.
                         </td>
                     </tr>

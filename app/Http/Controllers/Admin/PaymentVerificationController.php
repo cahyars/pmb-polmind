@@ -8,8 +8,10 @@ use App\Models\Payment;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
 use App\Services\ReceiptNumber;
+use App\Services\SequenceRewinder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class PaymentVerificationController extends Controller
 {
@@ -153,6 +155,31 @@ class PaymentVerificationController extends Controller
         return back()->with('success', 'Pembayaran berhasil ditolak dengan catatan.');
     }
 
+    /**
+     * Hapus riwayat pembayaran yang ditolak beserta bukti transfernya. Nomor
+     * pembayaran dimundurkan agar bisa dipakai lagi.
+     */
+    public function destroy(Payment $payment)
+    {
+        if ($payment->status !== 'rejected') {
+            return back()->withErrors('Hanya pembayaran yang ditolak yang dapat dihapus.');
+        }
+
+        DB::transaction(function () use ($payment) {
+            $payment->delete();
+
+            $this->refreshPaymentStatus($payment);
+        });
+
+        if ($payment->proof_file_path) {
+            Storage::disk('local')->delete($payment->proof_file_path);
+        }
+
+        SequenceRewinder::rewind($payment->applicant->pmbYear);
+
+        return back()->with('success', 'Pembayaran ' . $payment->payment_number . ' yang ditolak berhasil dihapus.');
+    }
+
     private function refreshPaymentStatus(Payment $payment, ?string $adminNote = null): void
     {
         $payment->load(['invoice', 'applicant']);
@@ -163,6 +190,10 @@ class PaymentVerificationController extends Controller
 
         $hasWaitingPayment = Payment::where('invoice_id', $payment->invoice_id)
             ->where('status', 'waiting_verification')
+            ->exists();
+
+        $hasRejectedPayment = Payment::where('invoice_id', $payment->invoice_id)
+            ->where('status', 'rejected')
             ->exists();
 
         $isFullyPaid = (float) $totalValidPaid >= (float) $payment->invoice->total_amount;
@@ -176,7 +207,7 @@ class PaymentVerificationController extends Controller
             $invoiceStatus = 'partial';
         } elseif ($hasWaitingPayment) {
             $invoiceStatus = 'waiting_verification';
-        } elseif ($payment->status === 'rejected') {
+        } elseif ($hasRejectedPayment) {
             $invoiceStatus = 'rejected';
         }
 
@@ -191,7 +222,7 @@ class PaymentVerificationController extends Controller
                 $paymentStatus = 'valid';
             } elseif ($hasWaitingPayment) {
                 $paymentStatus = 'menunggu_verifikasi';
-            } elseif (! $hasPartialPaid && $payment->status === 'rejected') {
+            } elseif (! $hasPartialPaid && $hasRejectedPayment) {
                 $paymentStatus = 'ditolak';
             }
 

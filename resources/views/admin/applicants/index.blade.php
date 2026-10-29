@@ -270,6 +270,7 @@
             {{-- Desktop (>= 1280px): tabel dengan lebar kolom tetap, tanpa scroll horizontal --}}
             <table class="hidden w-full table-fixed text-left text-sm xl:table">
                 <colgroup>
+                    <col class="w-[52px]">
                     <col class="w-[84px]">
                     <col class="w-[16%]">
                     <col class="w-[14%]">
@@ -280,6 +281,7 @@
                 </colgroup>
                 <thead class="border-b border-slate-200 bg-white text-xs text-slate-400 [&_th]:font-medium">
                     <tr>
+                        <th class="px-4 py-3.5">No</th>
                         <th class="px-4 py-3.5">Foto</th>
                         <th class="px-3 py-3.5">Nama &amp; Kode Pendaftar</th>
                         <th class="px-3 py-3.5">Jalur Pendaftaran</th>
@@ -294,6 +296,7 @@
                     @foreach($applicants as $applicant)
                         @php $row = $present($applicant); @endphp
                         <tr>
+                            <td class="px-4 py-3.5 text-slate-500">{{ $applicants->firstItem() + $loop->index }}</td>
                             <td class="px-4 py-3.5">
                                 @include('admin.applicants.partials.avatar', ['row' => $row, 'size' => 'h-16 w-14 text-lg'])
                             </td>

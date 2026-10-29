@@ -108,11 +108,12 @@
             <div class="overflow-x-auto lg:col-span-2">
                 <table class="w-full text-left text-sm">
                     <thead class="border-b border-slate-200 text-xs text-slate-400">
-                        <tr><th class="{{ $th }}">Prodi</th><th class="{{ $th }} text-right">Pilihan 1</th><th class="{{ $th }} text-right">Pilihan 2</th></tr>
+                        <tr><th class="{{ $th }}">No</th><th class="{{ $th }}">Prodi</th><th class="{{ $th }} text-right">Pilihan 1</th><th class="{{ $th }} text-right">Pilihan 2</th></tr>
                     </thead>
                     <tbody class="table-zebra">
                         @foreach($report['programs'] as $program)
                             <tr>
+                                <td class="{{ $td }} text-slate-500">{{ $loop->iteration }}</td>
                                 <td class="{{ $td }}"><span class="font-semibold text-slate-900">{{ $program['code'] }}</span> <span class="text-xs text-slate-500">{{ $program['name'] }}</span></td>
                                 <td class="{{ $td }} text-right font-semibold">{{ $number($program['first']) }}</td>
                                 <td class="{{ $td }} text-right">{{ $number($program['second']) }}</td>
@@ -121,6 +122,7 @@
                     </tbody>
                     <tfoot class="border-t border-slate-200 font-semibold">
                         <tr>
+                            <td class="{{ $td }}"></td>
                             <td class="{{ $td }}">Total</td>
                             <td class="{{ $td }} text-right">{{ $number($report['programs']->sum('first')) }}</td>
                             <td class="{{ $td }} text-right">{{ $number($report['programs']->sum('second')) }}</td>
@@ -227,11 +229,12 @@
             <div class="overflow-x-auto lg:col-span-2">
                 <table class="w-full text-left text-sm">
                     <thead class="border-b border-slate-200 text-xs text-slate-400">
-                        <tr><th class="{{ $th }}">Jenis</th><th class="{{ $th }} text-right">Negeri</th><th class="{{ $th }} text-right">Swasta</th><th class="{{ $th }} text-right">Total</th></tr>
+                        <tr><th class="{{ $th }}">No</th><th class="{{ $th }}">Jenis</th><th class="{{ $th }} text-right">Negeri</th><th class="{{ $th }} text-right">Swasta</th><th class="{{ $th }} text-right">Total</th></tr>
                     </thead>
                     <tbody class="table-zebra">
                         @foreach($report['schoolTypes'] as $row)
                             <tr>
+                                <td class="{{ $td }} text-slate-500">{{ $loop->iteration }}</td>
                                 <td class="{{ $td }} font-semibold text-slate-900">{{ $row['type'] }}</td>
                                 <td class="{{ $td }} text-right">{{ $number($row['negeri']) }}</td>
                                 <td class="{{ $td }} text-right">{{ $number($row['swasta']) }}</td>

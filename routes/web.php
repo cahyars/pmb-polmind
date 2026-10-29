@@ -139,6 +139,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/payments', [PaymentVerificationController::class, 'index'])->name('payments.index');
     Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');
     Route::patch('/payments/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payments.reject');
+    Route::delete('/payments/{payment}', [PaymentVerificationController::class, 'destroy'])->name('payments.destroy');
 
     Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
     Route::get('/selections/{registration_number}', [SelectionController::class, 'show'])->name('selections.show');
