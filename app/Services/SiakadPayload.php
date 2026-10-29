@@ -67,6 +67,47 @@ class SiakadPayload
     }
 
     /**
+     * Satu mahasiswa di API tarik SIAKAD: data akademik dari PMB, dan "record"
+     * yang bisa langsung dipakai sebagai body request biodata mahasiswa.
+     */
+    public static function student(Applicant $applicant): array
+    {
+        $applicant->loadMissing(['pmbYear', 'admissionWave', 'classType', 'reRegistration']);
+
+        $program = $applicant->enrolled_study_program;
+        $missingFields = self::missingFields($applicant);
+
+        return [
+            'id_pendaftar' => $applicant->registration_number,
+            'nim' => $applicant->nim,
+            'status_sinkron' => $applicant->sync_status,
+            'tahun_masuk' => $applicant->pmbYear ? (int) $applicant->pmbYear->year : null,
+            'program_studi' => [
+                'kode' => $program?->code,
+                'nama' => $program?->name,
+                'jenjang' => $program?->degree,
+                'kode_pddikti' => $program?->pddikti_code,
+                'id_siakad' => $program?->siakad_id,
+            ],
+            'kelas' => [
+                'kode' => $applicant->classType?->code,
+                'nama' => $applicant->classType?->name,
+            ],
+            'jalur' => [
+                'kode' => $applicant->registration_path,
+                'nama' => $applicant->registration_path_label,
+            ],
+            'gelombang' => $applicant->admissionWave?->name,
+            'tanggal_daftar_ulang' => $applicant->reRegistration?->validated_at?->toIso8601String(),
+            'tanggal_nim' => $applicant->nim_generated_at?->toIso8601String(),
+            'tanggal_sinkron' => $applicant->synced_at?->toIso8601String(),
+            'data_lengkap' => $missingFields === [],
+            'data_kurang' => $missingFields,
+            'record' => self::build($applicant)['record'],
+        ];
+    }
+
+    /**
      * Label data wajib yang masih kosong sebelum camaba boleh disinkronkan.
      *
      * @return list<string>

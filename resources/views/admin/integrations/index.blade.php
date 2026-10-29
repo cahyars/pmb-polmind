@@ -42,7 +42,7 @@
             [
                 'label' => 'Siap Sinkron',
                 'value' => $readySyncApplicants,
-                'desc' => 'Daftar ulang valid',
+                'desc' => 'Sudah ber-NIM, menunggu ditarik',
                 'class' => 'text-purple-700',
             ],
             [
@@ -54,7 +54,7 @@
             [
                 'label' => 'Sudah Sinkron',
                 'value' => $syncedApplicants,
-                'desc' => 'NIM sudah diterima',
+                'desc' => 'Sudah ditarik SIAKAD',
                 'class' => 'text-green-700',
             ],
             [
@@ -78,10 +78,10 @@
 
         <div class="mt-6 grid gap-4 md:grid-cols-4">
             @foreach([
-                ['step' => '01', 'title' => 'Daftar Ulang Valid', 'desc' => 'Camaba diterima dan pembayaran daftar ulang sudah lunas.'],
-                ['step' => '02', 'title' => 'Siap Sinkron', 'desc' => 'Admin menandai data siap diproses integrasi.'],
-                ['step' => '03', 'title' => 'Proses Sinkron', 'desc' => 'Data dikirim/ditarik ke SIAKAD dan menunggu NIM.'],
-                ['step' => '04', 'title' => 'NIM Diterima', 'desc' => 'NIM dari SIAKAD disimpan kembali ke PMB.'],
+                ['step' => '01', 'title' => 'Daftar Ulang Valid', 'desc' => 'Camaba diterima dan daftar ulang sudah valid.'],
+                ['step' => '02', 'title' => 'Siap Sinkron', 'desc' => 'Admin membubuhkan NIM di menu Kelulusan > Generate NIM.'],
+                ['step' => '03', 'title' => 'Ditarik SIAKAD', 'desc' => 'SIAKAD menarik data lewat API PMB (status siap atau proses sinkron).'],
+                ['step' => '04', 'title' => 'Sudah Sinkron', 'desc' => 'SIAKAD mengirim konfirmasi berhasil, NIM terkunci.'],
             ] as $flow)
                 <div class="rounded-lg border border-slate-200 bg-slate-50 p-5">
                     <span class="rounded-full bg-polmind-blue px-3 py-1 text-xs font-bold text-white">
@@ -202,14 +202,15 @@
                             @php
                                 $registrationPath = $applicant->registration_path ?? 'umum';
 
-                                $payload = \App\Services\SiakadPayload::build($applicant);
+                                $payload = \App\Services\SiakadPayload::student($applicant);
 
                                 $missingFields = collect(\App\Services\SiakadPayload::missingFields($applicant));
 
                                 $canProcess = in_array($applicant->sync_status, ['siap_sinkron', 'gagal_sinkron'])
-                                    && $missingFields->isEmpty();
+                                    && $missingFields->isEmpty()
+                                    && filled($applicant->nim);
 
-                                $canSetSuccess = $applicant->sync_status === 'proses_sinkron';
+                                $canSetSuccess = in_array($applicant->sync_status, ['siap_sinkron', 'proses_sinkron']) && filled($applicant->nim);
                                 $canSetFailed = in_array($applicant->sync_status, ['siap_sinkron', 'proses_sinkron', 'gagal_sinkron']);
                             @endphp
 
@@ -385,12 +386,10 @@
                                             @csrf
                                             @method('PATCH')
 
-                                            <input type="text"
-                                                   name="nim"
-                                                   required
-                                                   value="{{ old('nim', $applicant->nim) }}"
-                                                   placeholder="Masukkan NIM dari SIAKAD"
-                                                   class="w-full rounded-lg border border-green-200 px-3 py-2 text-xs outline-none focus:border-green-500 focus:ring-4 focus:ring-green-100">
+                                            <p class="text-xs leading-5 text-green-800">
+                                                Tandai NIM <span class="font-bold">{{ $applicant->nim }}</span> sudah masuk SIAKAD?
+                                                Gunakan bila SIAKAD tidak mengirim konfirmasi lewat API. NIM akan terkunci.
+                                            </p>
 
                                             <div class="mt-2 flex justify-end gap-2">
                                                 <button type="button"
@@ -444,7 +443,7 @@
                                         Belum ada data untuk integrasi.
                                     </p>
                                     <p class="mt-1 text-xs text-slate-500">
-                                        Pastikan camaba sudah daftar ulang valid dan sync_status siap_sinkron.
+                                        Data muncul setelah daftar ulang valid dan NIM dibubuhkan di menu Kelulusan > Generate NIM.
                                     </p>
                                 </td>
                             </tr>
@@ -512,11 +511,36 @@
             </div>
 
             <div class="rounded-xl border border-blue-200 bg-blue-50 p-6">
-                <h2 class="text-base font-semibold text-slate-900">Catatan Integrasi</h2>
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-base font-semibold text-slate-900">API untuk SIAKAD</h2>
+                    @if($apiEnabled)
+                        <span class="rounded-full bg-green-100 px-3 py-1 text-xs font-bold text-green-700">Aktif</span>
+                    @else
+                        <span class="rounded-full bg-slate-200 px-3 py-1 text-xs font-bold text-slate-600">Nonaktif</span>
+                    @endif
+                </div>
+
                 <p class="mt-3 text-sm leading-6 text-slate-700">
-                    Untuk flow real, PMB cukup menyediakan data camaba yang sudah daftar ulang valid.
-                    NIM tetap dibuat oleh SIAKAD, lalu dikirim balik ke PMB.
+                    SIAKAD menarik mahasiswa yang sudah ber-NIM, lalu mengirim konfirmasi per mahasiswa.
+                    Akses memakai header <code class="rounded bg-white px-1 text-xs">Authorization: Bearer &lt;token&gt;</code>.
                 </p>
+
+                <ul class="mt-4 space-y-2 text-xs">
+                    @foreach([
+                        ['GET', '/api/siakad/mahasiswa', 'Daftar siap ditarik'],
+                        ['GET', '/api/siakad/mahasiswa/{id_pendaftar}', 'Detail satu mahasiswa'],
+                        ['POST', '/api/siakad/mahasiswa/{id_pendaftar}/konfirmasi', 'Hasil: berhasil / gagal'],
+                    ] as [$method, $path, $label])
+                        <li class="rounded-lg bg-white p-3">
+                            <p class="font-semibold text-slate-700">{{ $label }}</p>
+                            <p class="mt-1 break-all font-mono text-slate-500"><span class="font-bold text-polmind-blue">{{ $method }}</span> {{ url($path) }}</p>
+                        </li>
+                    @endforeach
+                </ul>
+
+                @unless($apiEnabled)
+                    <p class="mt-4 text-xs leading-5 text-slate-600">Isi <code>SIAKAD_API_TOKEN</code> di file .env server untuk mengaktifkan API.</p>
+                @endunless
             </div>
         </aside>
     </div>

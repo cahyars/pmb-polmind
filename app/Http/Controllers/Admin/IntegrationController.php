@@ -9,7 +9,6 @@ use App\Models\IntegrationLog;
 use App\Models\StudyProgram;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Validation\Rule;
 
 class IntegrationController extends Controller
 {
@@ -88,7 +87,9 @@ class IntegrationController extends Controller
             'studyPrograms',
             'applicants',
             'latestLogs'
-        ));
+        ) + [
+            'apiEnabled' => filled(config('services.siakad.token')),
+        ]);
     }
 
     public function markProcessing(Applicant $applicant)
@@ -118,7 +119,7 @@ class IntegrationController extends Controller
                 'applicant_id' => $applicant->id,
                 'system_name' => 'SIAKAD',
                 'direction' => 'outbound',
-                'endpoint' => '/api/siakad/students',
+                'endpoint' => 'manual',
                 'method' => 'POST',
                 'status' => 'pending',
                 'request_payload' => $payload,
@@ -131,56 +132,46 @@ class IntegrationController extends Controller
         return back()->with('success', 'Camaba berhasil ditandai sedang proses sinkron ke SIAKAD.');
     }
 
-    public function markSynced(Request $request, Applicant $applicant)
+    /**
+     * Konfirmasi manual bila SIAKAD tidak memakai API konfirmasi. NIM berasal dari PMB.
+     */
+    public function markSynced(Applicant $applicant)
     {
-        if ($applicant->sync_status !== 'proses_sinkron') {
-            return back()->withErrors('Status camaba harus proses sinkron sebelum ditandai sukses.');
+        if (! in_array($applicant->sync_status, ['siap_sinkron', 'proses_sinkron'], true)) {
+            return back()->withErrors('Status camaba harus siap atau proses sinkron sebelum ditandai sukses.');
         }
 
-        $validated = $request->validate([
-            'nim' => [
-                'required',
-                'string',
-                'max:50',
-                Rule::unique('applicants', 'nim')->ignore($applicant->id),
-            ],
-        ]);
+        if (blank($applicant->nim)) {
+            return back()->withErrors('Camaba belum memiliki NIM. Bubuhkan NIM di menu Kelulusan > Generate NIM.');
+        }
 
-        DB::transaction(function () use ($applicant, $validated) {
+        DB::transaction(function () use ($applicant) {
             $payload = SiakadPayload::build($applicant);
 
             $applicant->update([
                 'sync_status' => 'sudah_sinkron',
-                'nim' => $validated['nim'],
                 'synced_at' => now(),
             ]);
-
-            if ($applicant->reRegistration) {
-                $applicant->reRegistration->update([
-                    'status' => 'valid',
-                    'ready_sync_at' => $applicant->reRegistration->ready_sync_at ?? now(),
-                ]);
-            }
 
             IntegrationLog::create([
                 'applicant_id' => $applicant->id,
                 'system_name' => 'SIAKAD',
                 'direction' => 'inbound',
-                'endpoint' => '/api/siakad/students/receive-nim',
-                'method' => 'POST',
+                'endpoint' => 'manual',
+                'method' => 'PATCH',
                 'status' => 'success',
                 'request_payload' => $payload,
                 'response_payload' => [
                     'registration_number' => $applicant->registration_number,
-                    'nim' => $validated['nim'],
-                    'message' => 'Data berhasil disinkronkan ke SIAKAD.',
+                    'nim' => $applicant->nim,
+                    'message' => 'Ditandai sudah sinkron oleh ' . $this->actorName() . '.',
                 ],
                 'error_message' => null,
                 'processed_at' => now(),
             ]);
         });
 
-        return back()->with('success', 'Camaba berhasil ditandai sudah sinkron dan NIM tersimpan.');
+        return back()->with('success', 'Camaba ' . $applicant->full_name . ' ditandai sudah sinkron dengan NIM ' . $applicant->nim . '.');
     }
 
     public function markFailed(Request $request, Applicant $applicant)
@@ -208,7 +199,7 @@ class IntegrationController extends Controller
                 'applicant_id' => $applicant->id,
                 'system_name' => 'SIAKAD',
                 'direction' => 'outbound',
-                'endpoint' => '/api/siakad/students',
+                'endpoint' => 'manual',
                 'method' => 'POST',
                 'status' => 'failed',
                 'request_payload' => $payload,
@@ -233,6 +224,10 @@ class IntegrationController extends Controller
 
         if ($applicant->re_registration_status !== 'daftar_ulang_valid') {
             return 'Daftar ulang camaba belum valid.';
+        }
+
+        if (blank($applicant->nim)) {
+            return 'Camaba belum memiliki NIM. Bubuhkan NIM di menu Kelulusan > Generate NIM.';
         }
 
         if (! $applicant->reRegistration || $applicant->reRegistration->status !== 'valid') {

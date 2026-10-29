@@ -28,6 +28,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Token yang dipakai SIAKAD untuk menarik data mahasiswa baru lewat /api/siakad.
+    // Kosong = API nonaktif. SIAKAD_ALLOWED_IPS opsional, dipisah koma.
+    'siakad' => [
+        'token' => env('SIAKAD_API_TOKEN'),
+        'allowed_ips' => env('SIAKAD_ALLOWED_IPS'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),
