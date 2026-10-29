@@ -281,6 +281,16 @@
                             @endforelse
                         </div>
 
+                        @if($invoice->hasInstallments())
+                            <div class="mt-6">
+                                <h3 class="text-sm font-black text-slate-900">Jadwal Pembayaran</h3>
+                                <p class="mt-1 text-xs leading-5 text-slate-500">Bayar setiap tagihan sebelum tanggal jatuh tempo melalui halaman Pembayaran.</p>
+                                <div class="mt-3">
+                                    @include('camaba.partials.installment-schedule', ['invoice' => $invoice])
+                                </div>
+                            </div>
+                        @endif
+
                         <div class="mt-6 flex flex-wrap gap-3">
                             @if($invoice->status !== 'paid')
                                 <a href="{{ route('camaba.payments.index') }}"
@@ -431,7 +441,11 @@
                 <div class="rounded-3xl border border-blue-200 bg-blue-50 p-6">
                     <h2 class="text-lg font-black text-polmind-blue">Informasi Penting</h2>
                     <p class="mt-3 text-sm leading-6 text-slate-700">
-                        Daftar ulang dianggap selesai setelah total pembayaran valid mencapai total tagihan dan divalidasi oleh admin PMB.
+                        @if($invoice?->hasInstallments())
+                            Daftar ulang dianggap selesai setelah pembayaran ke-1 sesuai jadwal divalidasi admin PMB. Tagihan berikutnya tetap dibayar sesuai jadwal.
+                        @else
+                            Daftar ulang dianggap selesai setelah total pembayaran valid mencapai total tagihan dan divalidasi oleh admin PMB.
+                        @endif
                     </p>
 
                     @if($deadline)

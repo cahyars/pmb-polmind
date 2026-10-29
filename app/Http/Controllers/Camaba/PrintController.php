@@ -45,7 +45,7 @@ class PrintController extends Controller
         abort_unless($invoice->applicant_id === $applicant->id, 404);
 
         $invoice->syncRegistrationFee();
-        $invoice->load(['items', 'payments', 'applicant.pmbYear', 'applicant.studyProgram', 'applicant.classType']);
+        $invoice->load(['items', 'payments', 'installments', 'applicant.pmbYear', 'applicant.studyProgram', 'applicant.classType']);
 
         $paymentMethods = $invoice->isPaid() ? collect() : PaymentMethod::active()->get();
 

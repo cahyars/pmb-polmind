@@ -500,11 +500,28 @@
 
             <div class="mt-8 divide-y divide-yellow-500/40">
                 @forelse($reRegistrationFees as $fee)
-                    <div class="flex items-baseline justify-between gap-4 py-4 first:pt-0 last:pb-0">
-                        <span class="font-semibold text-polmind-blue-dark">{{ $fee->name }}</span>
-                        <span class="shrink-0 font-black text-polmind-blue-dark">
-                            {{ $fee->amount > 0 ? 'Rp' . number_format($fee->amount, 0, ',', '.') : 'Segera diumumkan' }}
-                        </span>
+                    @php
+                        // Nominal bisa berbeda per jalur; ditampilkan rinci hanya jika memang berbeda.
+                        $pathAmounts = \App\Models\RegistrationPath::active()->map(fn ($path) => (float) $fee->amountFor($path->code));
+                        $amountLabel = fn ($amount) => $amount > 0 ? 'Rp' . number_format($amount, 0, ',', '.') : 'Segera diumumkan';
+                    @endphp
+                    <div class="py-4 first:pt-0 last:pb-0">
+                        <div class="flex items-baseline justify-between gap-4">
+                            <span class="font-semibold text-polmind-blue-dark">{{ $fee->name }}</span>
+                            @if($pathAmounts->unique()->count() <= 1)
+                                <span class="shrink-0 font-black text-polmind-blue-dark">{{ $amountLabel($pathAmounts->first() ?? (float) $fee->amount) }}</span>
+                            @endif
+                        </div>
+                        @if($pathAmounts->unique()->count() > 1)
+                            <dl class="mt-2 space-y-1 text-sm">
+                                @foreach($pathAmounts as $code => $amount)
+                                    <div class="flex items-baseline justify-between gap-4">
+                                        <dt class="text-polmind-blue-dark/80">Jalur {{ \App\Models\RegistrationPath::labelFor($code) }}</dt>
+                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $amountLabel($amount) }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        @endif
                     </div>
                 @empty
                     <p class="text-sm font-semibold text-polmind-blue-dark">Rincian SPI dan UKT segera diumumkan.</p>

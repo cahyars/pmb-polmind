@@ -43,7 +43,8 @@ class HomeController extends Controller
                     ->get()
                 : collect(),
             'registrationFee' => FeeComponent::registrationFee()?->amount,
-            'reRegistrationFees' => FeeComponent::where('type', 're_registration')
+            'reRegistrationFees' => FeeComponent::with('pathAmounts')
+                ->where('type', 're_registration')
                 ->where('is_active', true)
                 ->orderBy('sort_order')
                 ->get(),

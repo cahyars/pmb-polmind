@@ -297,12 +297,16 @@ class SelectionController extends Controller
 
     private function createReRegistrationInvoice(Applicant $applicant): void
     {
-        $fees = FeeComponent::where('type', 're_registration')
+        $fees = FeeComponent::with('pathAmounts')
+            ->where('type', 're_registration')
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
-        $totalAmount = $fees->sum('amount');
+        // Nominal UKT/SPI dapat berbeda per jalur pendaftaran.
+        $amounts = $fees->mapWithKeys(fn (FeeComponent $fee) => [$fee->id => $fee->amountFor($applicant->registration_path)]);
+
+        $totalAmount = $amounts->sum();
 
         $invoice = Invoice::where('applicant_id', $applicant->id)
             ->where('type', 're_registration')
@@ -320,7 +324,12 @@ class SelectionController extends Controller
                 'note' => 'Invoice daftar ulang otomatis setelah camaba dinyatakan diterima.',
             ]);
         } elseif (! in_array($invoice->status, ['waiting_verification', 'partial', 'paid'])) {
+            // Nominal bisa berubah, jadwal cicilan lama tidak lagi cocok.
+            $invoice->installments()->delete();
+
             $invoice->update([
+                'installment_enabled_at' => null,
+                'installment_enabled_by_name' => null,
                 'invoice_number' => $invoice->invoice_number ?: 'INV/DU/' . now()->format('Y') . '/' . $applicant->registration_number,
                 'issue_date' => now()->toDateString(),
                 'due_date' => now()->addDays(14)->toDateString(),
@@ -338,9 +347,9 @@ class SelectionController extends Controller
                 ],
                 [
                     'name' => $fee->name,
-                    'amount' => $fee->amount,
+                    'amount' => $amounts[$fee->id],
                     'quantity' => 1,
-                    'subtotal' => $fee->amount,
+                    'subtotal' => $amounts[$fee->id],
                     'sort_order' => $fee->sort_order,
                 ]
             );

@@ -21,6 +21,7 @@ class ReRegistrationController extends Controller
             'reRegistrationInvoice.items',
             'reRegistrationInvoice.latestPayment',
             'reRegistrationInvoice.payments',
+            'reRegistrationInvoice.installments',
         ]);
 
         $reRegistration = $applicant->reRegistration;

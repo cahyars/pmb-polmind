@@ -5,8 +5,8 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
-use App\Models\ReRegistration;
 use App\Models\StudyProgram;
+use App\Services\InvoiceStatus;
 use App\Services\ReceiptNumber;
 use App\Services\SequenceRewinder;
 use Illuminate\Http\Request;
@@ -109,7 +109,7 @@ class PaymentVerificationController extends Controller
 
             ReceiptNumber::assign($payment);
 
-            $this->refreshPaymentStatus($payment);
+            InvoiceStatus::refresh($payment->invoice, $this->actorName());
         });
 
         $payment->refresh();
@@ -149,7 +149,7 @@ class PaymentVerificationController extends Controller
                 'verified_by_name' => $this->actorName(),
             ]);
 
-            $this->refreshPaymentStatus($payment, $validated['admin_note']);
+            InvoiceStatus::refresh($payment->invoice, $this->actorName(), $validated['admin_note']);
         });
 
         return back()->with('success', 'Pembayaran berhasil ditolak dengan catatan.');
@@ -168,7 +168,7 @@ class PaymentVerificationController extends Controller
         DB::transaction(function () use ($payment) {
             $payment->delete();
 
-            $this->refreshPaymentStatus($payment);
+            InvoiceStatus::refresh($payment->invoice, $this->actorName());
         });
 
         if ($payment->proof_file_path) {
@@ -178,88 +178,5 @@ class PaymentVerificationController extends Controller
         SequenceRewinder::rewind($payment->applicant->pmbYear);
 
         return back()->with('success', 'Pembayaran ' . $payment->payment_number . ' yang ditolak berhasil dihapus.');
-    }
-
-    private function refreshPaymentStatus(Payment $payment, ?string $adminNote = null): void
-    {
-        $payment->load(['invoice', 'applicant']);
-
-        $totalValidPaid = Payment::where('invoice_id', $payment->invoice_id)
-            ->where('status', 'valid')
-            ->sum('amount');
-
-        $hasWaitingPayment = Payment::where('invoice_id', $payment->invoice_id)
-            ->where('status', 'waiting_verification')
-            ->exists();
-
-        $hasRejectedPayment = Payment::where('invoice_id', $payment->invoice_id)
-            ->where('status', 'rejected')
-            ->exists();
-
-        $isFullyPaid = (float) $totalValidPaid >= (float) $payment->invoice->total_amount;
-        $hasPartialPaid = (float) $totalValidPaid > 0;
-
-        $invoiceStatus = 'unpaid';
-
-        if ($isFullyPaid) {
-            $invoiceStatus = 'paid';
-        } elseif ($hasPartialPaid) {
-            $invoiceStatus = 'partial';
-        } elseif ($hasWaitingPayment) {
-            $invoiceStatus = 'waiting_verification';
-        } elseif ($hasRejectedPayment) {
-            $invoiceStatus = 'rejected';
-        }
-
-        $payment->invoice->update([
-            'status' => $invoiceStatus,
-        ]);
-
-        if ($payment->invoice->type === 'registration') {
-            $paymentStatus = 'belum_bayar';
-
-            if ($isFullyPaid) {
-                $paymentStatus = 'valid';
-            } elseif ($hasWaitingPayment) {
-                $paymentStatus = 'menunggu_verifikasi';
-            } elseif (! $hasPartialPaid && $hasRejectedPayment) {
-                $paymentStatus = 'ditolak';
-            }
-
-            $payment->applicant->update([
-                'payment_status' => $paymentStatus,
-            ]);
-        }
-
-        if ($payment->invoice->type === 're_registration') {
-            $reRegistrationStatus = 'belum_daftar_ulang';
-            $syncStatus = 'belum_siap';
-
-            if ($isFullyPaid) {
-                $reRegistrationStatus = 'daftar_ulang_valid';
-                $syncStatus = 'siap_sinkron';
-            } elseif ($hasWaitingPayment) {
-                $reRegistrationStatus = 'menunggu_verifikasi';
-            }
-
-            ReRegistration::updateOrCreate(
-                ['applicant_id' => $payment->applicant_id],
-                [
-                    'invoice_id' => $payment->invoice_id,
-                    'status' => $isFullyPaid ? 'valid' : $reRegistrationStatus,
-                    'validated_at' => $isFullyPaid ? now() : null,
-                    'validated_by_name' => $isFullyPaid ? $this->actorName() : null,
-                    'ready_sync_at' => $isFullyPaid ? now() : null,
-                    'admin_note' => $isFullyPaid
-                        ? null
-                        : ($adminNote ?? ($hasPartialPaid ? 'Pembayaran sudah masuk sebagian. Menunggu pelunasan sisa tagihan.' : null)),
-                ]
-            );
-
-            $payment->applicant->update([
-                're_registration_status' => $reRegistrationStatus,
-                'sync_status' => $syncStatus,
-            ]);
-        }
     }
 }

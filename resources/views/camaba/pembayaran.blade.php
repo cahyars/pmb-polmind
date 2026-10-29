@@ -57,6 +57,8 @@
             // Tagihan aktif tanpa nominal (komponen biaya belum diatur admin).
             'noAmount' => ! $isClosed && $waitingPaid <= 0 && $remaining <= 0,
             'lastRejected' => $latestPayment?->status === 'rejected' ? $latestPayment : null,
+            // Jadwal dari admin untuk camaba tertentu; selain itu daftar ulang dibayar sekaligus.
+            'nextDue' => $invoice->type === 're_registration' && $invoice->hasInstallments() ? $invoice->nextInstallmentDue() : null,
         ];
     })->values();
 
@@ -161,8 +163,8 @@
                 </span>
 
                 <span class="hidden text-right sm:block">
-                    <span class="block text-xs text-slate-500">{{ $card['needsAction'] ? 'Perlu dibayar' : 'Total' }}</span>
-                    <span class="block text-lg font-black text-slate-900">{{ $rupiah($card['needsAction'] ? $card['remaining'] : $invoice->total_amount) }}</span>
+                    <span class="block text-xs text-slate-500">{{ $card['needsAction'] ? ($card['nextDue'] ? 'Tagihan berikutnya' : 'Perlu dibayar') : 'Total' }}</span>
+                    <span class="block text-lg font-black text-slate-900">{{ $rupiah($card['needsAction'] ? ($card['nextDue']['amount'] ?? $card['remaining']) : $invoice->total_amount) }}</span>
                 </span>
 
                 <svg class="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -221,6 +223,13 @@
                                         @endforeach
                                     </ul>
                                 </details>
+                            @endif
+
+                            @if($invoice->hasInstallments())
+                                <div class="mt-4">
+                                    <p class="mb-2 text-xs font-bold text-slate-500">Jadwal pembayaran</p>
+                                    @include('camaba.partials.installment-schedule', ['invoice' => $invoice])
+                                </div>
                             @endif
                         @endunless
                     </div>
@@ -336,14 +345,24 @@
 
                                 <div>
                                     <label for="amount_{{ $invoice->id }}" class="text-sm font-bold text-slate-700">Nominal Bayar</label>
+                                    @php
+                                        $nextDue = $card['nextDue'];
+                                        $suggestedAmount = $nextDue ? min($nextDue['amount'], $card['remaining']) : $card['remaining'];
+                                    @endphp
                                     <input id="amount_{{ $invoice->id }}" type="number" name="amount" required
                                            min="1"
                                            max="{{ $card['remaining'] }}"
-                                           value="{{ $isRegistration || ! $hasFailedUpload ? $card['remaining'] : old('amount', $card['remaining']) }}"
-                                           @readonly($isRegistration)
+                                           value="{{ ! $nextDue || ! $hasFailedUpload ? $suggestedAmount : old('amount', $suggestedAmount) }}"
+                                           @readonly(! $nextDue)
                                            class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none read-only:bg-slate-50 focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                                     <p class="mt-1.5 text-xs text-slate-500">
-                                        {{ $isRegistration ? 'Sesuai biaya formulir.' : 'Boleh dicicil; maksimal sisa tagihan ' . $rupiah($card['remaining']) . '.' }}
+                                        @if($isRegistration)
+                                            Sesuai biaya formulir.
+                                        @elseif($nextDue)
+                                            Tagihan berikutnya {{ $rupiah($nextDue['amount']) }}, jatuh tempo {{ $nextDue['due_date']->translatedFormat('d M Y') }}.
+                                        @else
+                                            Sesuai sisa tagihan daftar ulang.
+                                        @endif
                                     </p>
                                 </div>
 

@@ -32,6 +32,7 @@ class PaymentController extends Controller
             'reRegistrationInvoice.latestPayment',
             'registrationInvoice.payments.paymentMethod',
             'reRegistrationInvoice.payments.paymentMethod',
+            'reRegistrationInvoice.installments',
         ]);
 
         $paymentMethods = PaymentMethod::active()->get();
@@ -95,6 +96,13 @@ class PaymentController extends Controller
         if ($invoice->type === 'registration' && $paidAmount !== $remainingAmount) {
             return back()
                 ->withErrors('Nominal pembayaran formulir harus sesuai tagihan: Rp' . number_format($remainingAmount, 0, ',', '.') . '.')
+                ->withInput();
+        }
+
+        // Tanpa skema cicilan dari admin, daftar ulang dibayar sekaligus.
+        if ($invoice->type === 're_registration' && ! $invoice->hasInstallments() && $paidAmount !== $remainingAmount) {
+            return back()
+                ->withErrors('Nominal pembayaran daftar ulang harus sesuai sisa tagihan: Rp' . number_format($remainingAmount, 0, ',', '.') . '.')
                 ->withInput();
         }
 
@@ -164,7 +172,8 @@ class PaymentController extends Controller
                 ]);
             }
 
-            if ($invoice->type === 're_registration') {
+            // Daftar ulang yang sudah valid (angsuran ke-1 lunas) tidak kembali menunggu verifikasi.
+            if ($invoice->type === 're_registration' && $applicant->re_registration_status !== 'daftar_ulang_valid') {
                 $applicant->update([
                     're_registration_status' => 'menunggu_verifikasi',
                     'sync_status' => 'belum_siap',

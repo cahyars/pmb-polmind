@@ -87,6 +87,34 @@
     </tfoot>
 </table>
 
+@if($invoice->hasInstallments())
+    <section class="mt-6 text-sm">
+        <h2 class="font-black uppercase tracking-wide text-polmind-blue">Jadwal Pembayaran</h2>
+        <table class="mt-2 w-full border-collapse">
+            <thead>
+                <tr class="bg-slate-100 text-left">
+                    <th class="border border-slate-300 px-3 py-2 font-semibold">No</th>
+                    <th class="border border-slate-300 px-3 py-2 font-semibold">Uraian</th>
+                    <th class="border border-slate-300 px-3 py-2 font-semibold">Jatuh Tempo</th>
+                    <th class="border border-slate-300 px-3 py-2 text-right font-semibold">Jumlah</th>
+                    <th class="border border-slate-300 px-3 py-2 font-semibold">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach($invoice->installmentSchedule() as $row)
+                    <tr>
+                        <td class="w-12 border border-slate-300 px-3 py-2">{{ $loop->iteration }}</td>
+                        <td class="border border-slate-300 px-3 py-2">{{ $row['installment']->name }} (ke-{{ $row['installment']->sequence }})</td>
+                        <td class="border border-slate-300 px-3 py-2">{{ $row['installment']->due_date->translatedFormat('j F Y') }}</td>
+                        <td class="border border-slate-300 px-3 py-2 text-right">{{ $rupiah($row['installment']->amount) }}</td>
+                        <td class="border border-slate-300 px-3 py-2">{{ ['lunas' => 'Lunas', 'sebagian' => 'Sebagian', 'belum' => 'Belum dibayar'][$row['status']] }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    </section>
+@endif
+
 @if($invoice->isWaived())
     <p class="mt-4 text-sm text-slate-700">Biaya formulir dibebaskan oleh Panitia PMB. Tidak perlu melakukan pembayaran.</p>
 @elseif($remainingAmount > 0 && $paymentMethods->isNotEmpty())

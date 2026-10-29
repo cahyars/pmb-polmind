@@ -440,6 +440,10 @@
                 @endforeach
             </div>
 
+            @if($applicant->reRegistrationInvoice && auth('web')->user()?->isAdmin())
+                @include('admin.applicants.partials.installments', ['invoice' => $applicant->reRegistrationInvoice])
+            @endif
+
         </div>
 
         {{-- Sidebar --}}
@@ -463,7 +467,9 @@
             </div>
 
             {{-- Formulir Gratis --}}
-            @php($registrationInvoice = $applicant->registrationInvoice)
+            @php
+                $registrationInvoice = $applicant->registrationInvoice;
+            @endphp
             @if($registrationInvoice && ($registrationInvoice->isWaived() || $registrationInvoice->canBeWaived()))
                 <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                     <h2 class="text-base font-semibold text-slate-900">Formulir Gratis</h2>
@@ -500,27 +506,37 @@
                 </div>
             @endif
 
-            {{-- Action --}}
+            {{-- Action: shortcut ke halaman proses, langsung tersaring ke camaba ini --}}
+            @php
+                $rn = $applicant->registration_number;
+                $waitingDocuments = $applicant->documents->where('status', 'menunggu_verifikasi')->count();
+                $waitingPayments = $applicant->registrationInvoice?->payments->where('status', 'waiting_verification')->count()
+                    + ($applicant->reRegistrationInvoice?->payments->where('status', 'waiting_verification')->count() ?? 0);
+                $shortcuts = [
+                    ['label' => 'Verifikasi Berkas', 'desc' => $waitingDocuments ? $waitingDocuments . ' berkas menunggu' : 'Cek & validasi berkas', 'url' => route('admin.documents.show', $rn), 'icon' => 'document-text', 'color' => 'bg-polmind-blue text-white'],
+                    ['label' => 'Verifikasi Pembayaran', 'desc' => $waitingPayments ? $waitingPayments . ' pembayaran menunggu' : 'Riwayat & validasi bayar', 'url' => route('admin.payments.index', ['keyword' => $rn]), 'icon' => 'card', 'color' => 'bg-green-600 text-white'],
+                    ['label' => 'Seleksi & Keputusan', 'desc' => 'Nilai tes, set diterima', 'url' => route('admin.selections.show', $rn), 'icon' => 'clipboard-check', 'color' => 'bg-purple-600 text-white'],
+                    ['label' => 'Daftar Ulang', 'desc' => 'Tagihan DU & NIM', 'url' => route('admin.re-registrations.index', ['keyword' => $rn]), 'icon' => 'cap', 'color' => 'bg-teal-600 text-white'],
+                    ['label' => 'Follow Up', 'desc' => 'Catatan & jadwal kontak', 'url' => route('admin.follow-ups.index', ['keyword' => $rn]), 'icon' => 'chat', 'color' => 'bg-polmind-yellow text-polmind-blue-dark'],
+                    ['label' => 'Integrasi SIAKAD', 'desc' => 'Payload & status sinkron', 'url' => route('admin.integrations.index', ['keyword' => $rn]), 'icon' => 'sync', 'color' => 'bg-slate-700 text-white'],
+                ];
+            @endphp
+
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
                 <h2 class="text-base font-semibold text-slate-900">Aksi Admin</h2>
+                <p class="mt-1 text-xs text-slate-500">Buka halaman proses untuk camaba ini.</p>
 
-                <div class="mt-5 space-y-3">
-                    @foreach([
-                        ['label' => 'Validasi Berkas', 'color' => 'bg-polmind-blue text-white'],
-                        ['label' => 'Validasi Pembayaran', 'color' => 'bg-green-600 text-white'],
-                        ['label' => 'Set Diterima', 'color' => 'bg-purple-600 text-white'],
-                        ['label' => 'Tandai Follow Up', 'color' => 'bg-polmind-yellow text-polmind-blue-dark'],
-                    ] as $action)
-                        <button type="button"
-                                onclick="Swal.fire({
-                                    title: '{{ $action['label'] }}',
-                                    text: 'Aksi ini akan kita sambungkan ke controller update di tahap berikutnya.',
-                                    icon: 'info',
-                                    confirmButtonColor: '#003B82'
-                                })"
-                                class="w-full rounded-lg px-4 py-3 text-sm font-bold transition hover:brightness-95 {{ $action['color'] }}">
-                            {{ $action['label'] }}
-                        </button>
+                <div class="mt-5 space-y-2.5">
+                    @foreach($shortcuts as $shortcut)
+                        <a href="{{ $shortcut['url'] }}"
+                           class="flex items-center gap-3 rounded-lg px-4 py-3 transition hover:brightness-95 {{ $shortcut['color'] }}">
+                            <x-icon :name="$shortcut['icon']" class="h-5 w-5 shrink-0" stroke-width="1.8" />
+                            <span class="min-w-0 flex-1">
+                                <span class="block text-sm font-bold">{{ $shortcut['label'] }}</span>
+                                <span class="block text-xs opacity-80">{{ $shortcut['desc'] }}</span>
+                            </span>
+                            <x-icon name="arrow-up-right" class="h-4 w-4 shrink-0 opacity-70" stroke-width="2" />
+                        </a>
                     @endforeach
                 </div>
             </div>

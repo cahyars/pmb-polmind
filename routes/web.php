@@ -13,6 +13,7 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
+use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
@@ -129,6 +130,10 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
 
     // Hanya Admin PMB: tujuan pembayaran.
     Route::middleware(AdminAccess::class . ':admin')->group(function () {
+        // Skema cicilan daftar ulang bersifat rahasia, khusus Admin PMB.
+        Route::put('/applicants/{registration_number}/installments', [InstallmentController::class, 'update'])->name('applicants.installments.update');
+        Route::delete('/applicants/{registration_number}/installments', [InstallmentController::class, 'destroy'])->name('applicants.installments.destroy');
+
         Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
         Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
         Route::put('/payment-methods/{paymentMethod}', [PaymentMethodController::class, 'update'])->name('payment-methods.update');
@@ -189,6 +194,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::post('/master-data/fee-components', [MasterDataController::class, 'storeFeeComponent'])->name('master-data.fee-components.store');
         Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
         Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
+        Route::put('/master-data/registration-paths/{registrationPath}/fees', [MasterDataController::class, 'updatePathFees'])->name('master-data.registration-paths.fees');
 
         Route::post('/master-data/pmb-years', [MasterDataController::class, 'storePmbYear'])->name('master-data.pmb-years.store');
         Route::put('/master-data/pmb-years/{pmbYear}', [MasterDataController::class, 'updatePmbYear'])->name('master-data.pmb-years.update');

@@ -21,10 +21,14 @@ class Invoice extends Model
         'waived_by_name',
         'waiver_reason',
         'note',
+        'installment_enabled_at',
+        'installment_enabled_by_name',
+        'installment_note',
     ];
 
     protected $casts = [
         'waived_at' => 'datetime',
+        'installment_enabled_at' => 'datetime',
         'issue_date' => 'date',
         'due_date' => 'date',
         'total_amount' => 'decimal:2',
@@ -81,6 +85,79 @@ class Invoice extends Model
     public function latestPayment()
     {
         return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    public function installments()
+    {
+        return $this->hasMany(InvoiceInstallment::class)->orderBy('due_date')->orderBy('sequence')->orderBy('id');
+    }
+
+    /**
+     * Skema cicilan hanya ada jika diaktifkan admin untuk camaba ini.
+     */
+    public function hasInstallments(): bool
+    {
+        return $this->installment_enabled_at !== null;
+    }
+
+    /**
+     * Total angsuran ke-1 semua komponen; daftar ulang valid setelah nominal ini terbayar.
+     */
+    public function firstInstallmentAmount(): float
+    {
+        return (float) $this->installments->where('sequence', 1)->sum('amount');
+    }
+
+    public function validPaidAmount(): float
+    {
+        return (float) $this->payments->where('status', 'valid')->sum('amount');
+    }
+
+    /**
+     * Jadwal angsuran beserta statusnya. Pembayaran valid dialokasikan
+     * berurutan mulai dari jatuh tempo paling awal.
+     *
+     * @return \Illuminate\Support\Collection<int, array{installment: InvoiceInstallment, paid: float, remaining: float, status: string, overdue: bool}>
+     */
+    public function installmentSchedule(): \Illuminate\Support\Collection
+    {
+        $available = $this->validPaidAmount();
+
+        return $this->installments->map(function (InvoiceInstallment $installment) use (&$available) {
+            $paid = min((float) $installment->amount, max(0, $available));
+            $available -= $paid;
+            $remaining = (float) $installment->amount - $paid;
+
+            return [
+                'installment' => $installment,
+                'paid' => $paid,
+                'remaining' => $remaining,
+                'status' => $remaining <= 0 ? 'lunas' : ($paid > 0 ? 'sebagian' : 'belum'),
+                'overdue' => $remaining > 0 && $installment->due_date->lt(today()),
+            ];
+        })->values();
+    }
+
+    /**
+     * Tagihan berikutnya: sisa semua angsuran pada tanggal jatuh tempo belum lunas yang paling awal.
+     *
+     * @return array{due_date: \Illuminate\Support\Carbon, amount: float}|null
+     */
+    public function nextInstallmentDue(): ?array
+    {
+        $unpaid = $this->installmentSchedule()->filter(fn ($row) => $row['remaining'] > 0);
+        $first = $unpaid->first();
+
+        if (! $first) {
+            return null;
+        }
+
+        $dueDate = $first['installment']->due_date;
+
+        return [
+            'due_date' => $dueDate,
+            'amount' => (float) $unpaid->filter(fn ($row) => $row['installment']->due_date->equalTo($dueDate))->sum('remaining'),
+        ];
     }
 
     public function isPaid(): bool

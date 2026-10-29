@@ -92,7 +92,7 @@ class ApplicantController extends Controller
         ));
     }
 
-    public function show(string $registration_number)
+    public function show(Request $request, string $registration_number)
     {
         $applicant = Applicant::query()
             ->with([
@@ -110,6 +110,7 @@ class ApplicantController extends Controller
                 'registrationInvoice.payments',
                 'reRegistrationInvoice.items.feeComponent',
                 'reRegistrationInvoice.payments',
+                'reRegistrationInvoice.installments',
                 'selection.scores.component',
                 'acceptedStudyProgram',
                 'reRegistration.invoice',
@@ -120,7 +121,11 @@ class ApplicantController extends Controller
             ->where('registration_number', $registration_number)
             ->firstOrFail();
 
-        return view('admin.applicants.show', compact('applicant'));
+        $installmentRows = $applicant->reRegistrationInvoice && $request->user('web')?->isAdmin()
+            ? InstallmentController::formRows($applicant, $applicant->reRegistrationInvoice)
+            : collect();
+
+        return view('admin.applicants.show', compact('applicant', 'installmentRows'));
     }
 
     /**

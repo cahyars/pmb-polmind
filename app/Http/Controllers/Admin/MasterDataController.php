@@ -7,6 +7,8 @@ use App\Models\AdmissionWave;
 use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
+use App\Models\FeeComponentPathAmount;
+use App\Models\FeeInstallmentTemplate;
 use App\Models\PmbYear;
 use App\Models\RegistrationPath;
 use App\Models\SelectionComponent;
@@ -15,6 +17,7 @@ use App\Models\StudyProgram;
 use App\Services\NimGenerator;
 use App\Services\ReceiptNumber;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
 class MasterDataController extends Controller
@@ -71,6 +74,12 @@ class MasterDataController extends Controller
             ],
             'biaya' => [
                 'feeComponents' => FeeComponent::orderBy('type')->orderBy('sort_order')->get(),
+                'reRegistrationFees' => FeeComponent::with(['pathAmounts', 'installmentTemplates'])
+                    ->where('type', 're_registration')
+                    ->where('is_active', true)
+                    ->orderBy('sort_order')
+                    ->get(),
+                'registrationPaths' => RegistrationPath::orderBy('sort_order')->orderBy('id')->get(),
             ],
             'penomoran' => [
                 'studyPrograms' => StudyProgram::orderBy('code')->get(),
@@ -245,6 +254,7 @@ class MasterDataController extends Controller
             'name' => $validated['name'],
             'type' => $validated['type'],
             'amount' => $validated['amount'],
+            'is_installable' => $validated['type'] === 're_registration' && $request->boolean('is_installable'),
             'sort_order' => $validated['sort_order'],
             'is_active' => $request->boolean('is_active'),
         ]);
@@ -267,11 +277,81 @@ class MasterDataController extends Controller
             'name' => $validated['name'],
             'type' => $validated['type'],
             'amount' => $validated['amount'],
+            'is_installable' => $validated['type'] === 're_registration' && $request->boolean('is_installable'),
             'sort_order' => $validated['sort_order'],
             'is_active' => $request->boolean('is_active'),
         ]);
 
         return back()->with('success', 'Komponen biaya berhasil diperbarui.');
+    }
+
+    /**
+     * Nominal daftar ulang dan template skema cicilan untuk satu jalur.
+     * Nominal kosong berarti memakai nominal default komponen.
+     */
+    public function updatePathFees(Request $request, RegistrationPath $registrationPath)
+    {
+        $fees = FeeComponent::where('type', 're_registration')->where('is_active', true)->orderBy('sort_order')->get();
+
+        $validated = $request->validate([
+            'amounts' => ['nullable', 'array'],
+            'amounts.*' => ['nullable', 'numeric', 'min:0'],
+            'installments' => ['nullable', 'array'],
+            'installments.*' => ['array'],
+            'installments.*.*.amount' => ['required', 'numeric', 'min:1'],
+            'installments.*.*.due_date' => ['required', 'date'],
+        ], [], [
+            'amounts.*' => 'nominal',
+            'installments.*.*.amount' => 'nominal angsuran',
+            'installments.*.*.due_date' => 'tanggal jatuh tempo',
+        ]);
+
+        $errors = [];
+
+        foreach ($fees as $fee) {
+            $amount = $validated['amounts'][$fee->id] ?? null;
+            $effective = filled($amount) ? (float) $amount : (float) $fee->amount;
+            $rows = $fee->is_installable ? ($validated['installments'][$fee->id] ?? []) : [];
+
+            if ($rows && round(collect($rows)->sum('amount'), 2) !== round($effective, 2)) {
+                $errors[] = 'Total angsuran ' . $fee->name . ' harus sama dengan nominalnya: Rp' . number_format($effective, 0, ',', '.') . '.';
+            }
+        }
+
+        if ($errors) {
+            return back()->withErrors($errors)->withInput();
+        }
+
+        DB::transaction(function () use ($fees, $validated, $registrationPath) {
+            foreach ($fees as $fee) {
+                $amount = $validated['amounts'][$fee->id] ?? null;
+                $match = ['fee_component_id' => $fee->id, 'registration_path_id' => $registrationPath->id];
+
+                if (filled($amount)) {
+                    FeeComponentPathAmount::updateOrCreate($match, ['amount' => $amount]);
+                } else {
+                    FeeComponentPathAmount::where($match)->delete();
+                }
+
+                FeeInstallmentTemplate::where($match)->delete();
+
+                $rows = collect($fee->is_installable ? ($validated['installments'][$fee->id] ?? []) : [])
+                    ->sortBy('due_date')
+                    ->values();
+
+                foreach ($rows as $index => $row) {
+                    FeeInstallmentTemplate::create($match + [
+                        'sequence' => $index + 1,
+                        'amount' => $row['amount'],
+                        'due_date' => $row['due_date'],
+                    ]);
+                }
+            }
+        });
+
+        return back()
+            ->with('success', 'Biaya daftar ulang jalur ' . $registrationPath->name . ' berhasil disimpan.')
+            ->with('fee_path_tab', $registrationPath->id);
     }
 
     public function toggleFeeComponent(FeeComponent $feeComponent)
