@@ -115,10 +115,20 @@ class CamabaAuthController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
+        $validated = $request->validate([
+            'email' => ['required', 'string', 'max:255'],
             'password' => ['required', 'string'],
+        ], [], [
+            'email' => 'email atau ID pendaftar',
         ]);
+
+        // Boleh masuk dengan email atau ID Pendaftar (nomor pendaftaran), contoh dari pesan info login.
+        $identifier = trim($validated['email']);
+        $email = str_contains($identifier, '@')
+            ? mb_strtolower($identifier)
+            : Applicant::where('registration_number', mb_strtoupper($identifier))->value('email');
+
+        $credentials = ['email' => (string) $email, 'password' => $validated['password']];
 
         $remember = $request->boolean('remember');
 
@@ -130,7 +140,7 @@ class CamabaAuthController extends Controller
         }
 
         return back()
-            ->withErrors('Email atau password tidak sesuai.')
+            ->withErrors('Email/ID pendaftar atau password tidak sesuai.')
             ->onlyInput('email');
     }
 

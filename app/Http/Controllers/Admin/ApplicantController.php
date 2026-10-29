@@ -5,9 +5,11 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
+use App\Models\FollowUp;
 use App\Models\Invoice;
 use App\Models\ReRegistration;
 use App\Models\StudyProgram;
+use App\Services\LoginInfoMessage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -125,7 +127,47 @@ class ApplicantController extends Controller
             ? InstallmentController::formRows($applicant, $applicant->reRegistrationInvoice)
             : collect();
 
-        return view('admin.applicants.show', compact('applicant', 'installmentRows'));
+        $loginPin = LoginInfoMessage::activePin($applicant);
+
+        return view('admin.applicants.show', [
+            'applicant' => $applicant,
+            'installmentRows' => $installmentRows,
+            'loginPin' => $loginPin,
+            'loginInfoText' => $loginPin ? LoginInfoMessage::text($applicant, $loginPin) : null,
+        ]);
+    }
+
+    /**
+     * Buka WhatsApp camaba dengan pesan Informasi Pendaftar (ID Pendaftar + PIN),
+     * dan catat sebagai follow up supaya terlihat kapan info login terakhir dikirim.
+     */
+    public function sendLoginInfo(string $registration_number)
+    {
+        $applicant = Applicant::where('registration_number', $registration_number)->firstOrFail();
+
+        $pin = LoginInfoMessage::activePin($applicant);
+
+        if (! $pin) {
+            return back()->withErrors('Info login tidak dapat dikirim karena ' . $applicant->full_name . ' sudah memakai password sendiri (bukan tanggal lahir) atau tanggal lahir belum diisi.');
+        }
+
+        $url = LoginInfoMessage::whatsappUrl($applicant, LoginInfoMessage::text($applicant, $pin));
+
+        if (! $url) {
+            return back()->withErrors('Nomor HP/WhatsApp ' . $applicant->full_name . ' belum diisi.');
+        }
+
+        FollowUp::create([
+            'applicant_id' => $applicant->id,
+            'status' => 'sudah_dihubungi',
+            'priority' => 'sedang',
+            'contact_method' => 'whatsapp',
+            'contacted_at' => now(),
+            'note' => 'Mengirim informasi login (ID Pendaftar dan PIN) lewat WhatsApp.',
+            'officer_name' => $this->actorName(),
+        ]);
+
+        return redirect()->away($url);
     }
 
     /**

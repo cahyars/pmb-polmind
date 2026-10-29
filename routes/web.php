@@ -124,6 +124,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
     Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
+    Route::post('/applicants/{registration_number}/login-info', [ApplicantController::class, 'sendLoginInfo'])->name('applicants.login-info');
     Route::patch('/applicants/{registration_number}/waive-registration-fee', [ApplicantController::class, 'waiveRegistrationFee'])->name('applicants.waive-registration-fee');
 
     Route::get('/documents', [DocumentVerificationController::class, 'index'])->name('documents.index');

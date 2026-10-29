@@ -14,7 +14,7 @@
                 Login Camaba
             </h1>
             <p class="mt-3 text-sm leading-6 text-slate-600">
-                Masuk menggunakan email dan password yang sudah didaftarkan.
+                Masuk menggunakan email atau ID Pendaftar, dan password/PIN akun Anda.
             </p>
         </div>
 
@@ -39,18 +39,20 @@
             @csrf
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Email</label>
-                <input type="email"
+                <label for="login-email" class="text-sm font-bold text-slate-700">Email atau ID Pendaftar</label>
+                <input type="text"
+                       id="login-email"
                        name="email"
                        value="{{ old('email') }}"
                        x-model="email"
                        required
-                       placeholder="email@example.com"
+                       autocomplete="username"
+                       placeholder="email@example.com atau A120270001"
                        class="mt-2 w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
             </div>
 
             <div>
-                <label class="text-sm font-bold text-slate-700">Password</label>
+                <label class="text-sm font-bold text-slate-700">Password / PIN</label>
                 <input type="password"
                        name="password"
                        required
@@ -69,7 +71,7 @@
                 <span>
                     Lupa kata sandi? Silakan
                     <a href="{{ \App\Services\AdminWhatsApp::url($forgotMessage) }}"
-                       :href="@js(\App\Services\AdminWhatsApp::url(null)) + '?text=' + encodeURIComponent(@js($forgotMessage) + (email.trim() ? ' Email akun: ' + email.trim() : ''))"
+                       :href="@js(\App\Services\AdminWhatsApp::url(null)) + '?text=' + encodeURIComponent(@js($forgotMessage) + (email.trim() ? ' Email/ID pendaftar: ' + email.trim() : ''))"
                        target="_blank"
                        rel="noopener"
                        class="font-black text-green-700 underline decoration-green-300 underline-offset-2 hover:text-green-800">chat admin</a>

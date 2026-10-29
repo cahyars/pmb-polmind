@@ -52,46 +52,17 @@
         </div>
     @endif
 
-    @if($walkInAccount = session('walk_in_account'))
-        @php
-            $waNumber = preg_replace('/\D/', '', (string) $applicant->phone);
-            $waNumber = str_starts_with($waNumber, '0') ? '62' . substr($waNumber, 1) : $waNumber;
-            $waText = 'Halo ' . $applicant->full_name . ', pendaftaran PMB Politeknik Mitra Industri Anda sudah tercatat dengan nomor pendaftaran '
-                . $applicant->registration_number . ".\n\nLogin di " . route('login') . "\nEmail: " . $walkInAccount['email']
-                . "\nPassword: " . $walkInAccount['password'] . " (tanggal lahir ddmmyyyy)\n\nSilakan lengkapi biodata dan upload berkas melalui akun tersebut. Terima kasih.";
-        @endphp
+    @if(session('walk_in_account') && $loginPin)
         <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-6">
             <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900">
                 <x-icon name="key" class="h-5 w-5 text-amber-600" stroke-width="2" />
-                Akun login camaba
+                Kirim informasi login ke camaba
             </h2>
-            <div class="mt-4 grid gap-3 text-sm md:grid-cols-3">
-                <div class="rounded-lg bg-white p-3">
-                    <p class="text-xs text-slate-500">Halaman login</p>
-                    <p class="mt-1 break-all font-mono text-slate-800">{{ route('login') }}</p>
-                </div>
-                <div class="rounded-lg bg-white p-3">
-                    <p class="text-xs text-slate-500">Email</p>
-                    <p class="mt-1 break-all font-mono font-semibold text-slate-800">{{ $walkInAccount['email'] }}</p>
-                </div>
-                <div class="rounded-lg bg-white p-3">
-                    <p class="text-xs text-slate-500">Password awal (tanggal lahir)</p>
-                    <p class="mt-1 font-mono font-semibold text-slate-800">{{ $walkInAccount['password'] }}</p>
-                </div>
-            </div>
-            <div class="mt-4 flex flex-wrap gap-3">
-                @if($waNumber)
-                    <a href="https://wa.me/{{ $waNumber }}?text={{ rawurlencode($waText) }}" target="_blank" rel="noopener"
-                       class="rounded-lg bg-green-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-green-700">
-                        Kirim info akun ke WhatsApp camaba
-                    </a>
-                @endif
-                <button type="button" x-data="{ copied: false }"
-                        @click="navigator.clipboard.writeText(@js($waText)).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
-                        class="rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                    <span x-text="copied ? 'Tersalin' : 'Salin teks info akun'">Salin teks info akun</span>
-                </button>
-            </div>
+            <p class="mt-1 text-sm text-slate-600">
+                Camaba login dengan ID Pendaftar <span class="font-mono font-semibold">{{ $applicant->registration_number }}</span>
+                (atau email {{ $applicant->email }}) dan PIN <span class="font-mono font-semibold">{{ $loginPin }}</span> (tanggal lahir).
+            </p>
+            @include('admin.applicants.partials.login-info-button', ['large' => true])
         </div>
     @endif
 
@@ -575,6 +546,8 @@
                 <p class="mt-1 text-xs text-slate-500">Buka halaman proses untuk camaba ini.</p>
 
                 <div class="mt-5 space-y-2.5">
+                    @include('admin.applicants.partials.login-info-button', ['large' => false])
+
                     @foreach($shortcuts as $shortcut)
                         <a href="{{ $shortcut['url'] }}"
                            class="flex items-center gap-3 rounded-lg px-4 py-3 transition hover:brightness-95 {{ $shortcut['color'] }}">

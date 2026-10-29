@@ -118,15 +118,62 @@ class WalkInApplicantTest extends TestCase
 
         $this->actingAs($operator, 'web')
             ->get(route('admin.applicants.show', $applicant->registration_number))
-            ->assertSee('Akun login camaba')
-            ->assertSee('15052007')
-            ->assertSee('https://wa.me/6281298765432', false)
+            ->assertSee('Kirim informasi login ke camaba')
+            ->assertSee('Kirim Info Login ke WhatsApp')
+            ->assertSee(route('admin.applicants.login-info', $applicant->registration_number))
             ->assertSee('Datang ke kampus, diinput oleh Pak Operator');
+
+        // Pesan persis format Informasi Pendaftar, dibuka di WhatsApp camaba, dan tercatat sebagai follow up.
+        $redirect = $this->actingAs($operator, 'web')
+            ->post(route('admin.applicants.login-info', $applicant->registration_number))
+            ->assertRedirect()
+            ->headers->get('Location');
+
+        $this->assertStringStartsWith('https://wa.me/6281298765432?text=', $redirect);
+        $this->assertSame(implode("\n", [
+            'Informasi Pendaftar PMB Politeknik Mitra Industri TA 2027',
+            '',
+            'Halo, selamat datang di Politeknik Mitra Industri 👋',
+            'Mohon segera melengkapi profil pendaftar pada portal berikut:',
+            '🔗 ' . route('login'),
+            '',
+            '*Akses Masuk*',
+            '> Nama Pendaftar : SITI RAHMA',
+            '> ID Pendaftar : *B120270001*',
+            '> PIN : *15052007*',
+            '',
+            '👉 Lengkapi data diri Anda agar proses seleksi dan administrasi berjalan lancar.',
+            '',
+            'Terima kasih atas kerja samanya 🙏',
+            '*Politeknik Mitra Industri*',
+        ]), rawurldecode(substr($redirect, strlen('https://wa.me/6281298765432?text='))));
+
+        $followUp = $applicant->followUps()->sole();
+        $this->assertSame('whatsapp', $followUp->contact_method);
+        $this->assertSame('Pak Operator', $followUp->officer_name);
 
         auth('web')->logout();
 
+        // Camaba masuk dengan ID Pendaftar + PIN dari pesan, atau dengan email.
+        $this->post('/login', ['email' => 'b120270001', 'password' => '15052007'])
+            ->assertRedirect('/camaba/dashboard');
+        auth('applicant')->logout();
+
         $this->post('/login', ['email' => 'siti.rahma@example.com', 'password' => '15052007'])
             ->assertRedirect('/camaba/dashboard');
+        auth('applicant')->logout();
+
+        $this->post('/login', ['email' => 'B120270001', 'password' => 'salah'])
+            ->assertSessionHasErrors();
+
+        // Pendaftar online memakai password sendiri: tombol info login tidak muncul.
+        $online = $this->registerApplicant(['email' => 'online@example.com']);
+        $this->actingAs($operator, 'web')
+            ->get(route('admin.applicants.show', $online->registration_number))
+            ->assertDontSee('Kirim Info Login ke WhatsApp');
+        $this->actingAs($operator, 'web')
+            ->post(route('admin.applicants.login-info', $online->registration_number))
+            ->assertSessionHasErrors();
     }
 
     public function test_complete_paper_form_paid_at_campus_is_ready_for_next_steps(): void
