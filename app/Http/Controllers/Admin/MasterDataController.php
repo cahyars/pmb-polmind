@@ -18,6 +18,7 @@ use App\Services\NimGenerator;
 use App\Services\ReceiptNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 
 class MasterDataController extends Controller
@@ -207,6 +208,10 @@ class MasterDataController extends Controller
             'receipt_digits' => ['required', 'integer', 'min:3', 'max:8'],
             'receipt_signer_name' => ['nullable', 'string', 'max:100'],
             'receipt_signer_title' => ['required', 'string', 'max:100'],
+            'receipt_signature' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:1024'],
+            'receipt_stamp' => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:1024'],
+            'remove_receipt_signature' => ['nullable', 'boolean'],
+            'remove_receipt_stamp' => ['nullable', 'boolean'],
         ], [
             'receipt_format.regex' => 'Format kwitansi hanya boleh berisi huruf, angka, titik, strip, garis miring, dan kode {JENIS}, {TAHUN}, {BULAN}, {ROMAWI}, {URUT}.',
         ], [
@@ -214,6 +219,8 @@ class MasterDataController extends Controller
             'receipt_digits' => 'panjang nomor urut',
             'receipt_signer_name' => 'nama penandatangan',
             'receipt_signer_title' => 'jabatan penandatangan',
+            'receipt_signature' => 'gambar tanda tangan',
+            'receipt_stamp' => 'gambar stempel',
         ]);
 
         if (substr_count($validated['receipt_format'], '{URUT}') !== 1) {
@@ -227,7 +234,33 @@ class MasterDataController extends Controller
             'receipt.signer_title' => $validated['receipt_signer_title'],
         ]);
 
+        foreach (['signature', 'stamp'] as $image) {
+            $this->updateReceiptImage($request, $image);
+        }
+
         return back()->with('success', 'Pengaturan kwitansi berhasil disimpan. Format nomor baru berlaku untuk kwitansi berikutnya.');
+    }
+
+    /**
+     * Ganti atau hapus gambar tanda tangan/stempel kwitansi (disimpan privat di storage lokal).
+     */
+    private function updateReceiptImage(Request $request, string $image): void
+    {
+        $key = 'receipt.' . $image . '_path';
+        $current = Setting::get($key);
+        $file = $request->file('receipt_' . $image);
+
+        if (! $file && ! $request->boolean('remove_receipt_' . $image)) {
+            return;
+        }
+
+        if ($current) {
+            Storage::disk('local')->delete($current);
+        }
+
+        Setting::put([
+            $key => $file?->storeAs('settings', 'kwitansi-' . $image . '-' . now()->format('YmdHis') . '.' . strtolower($file->extension()), 'local'),
+        ]);
     }
 
     public function toggleStudyProgram(StudyProgram $studyProgram)

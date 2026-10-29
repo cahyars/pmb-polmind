@@ -416,7 +416,8 @@
                                 @endif
 
                                 @if($payment->admin_note)
-                                    <div class="mt-3 rounded-lg border border-red-200 bg-red-50 p-3 text-xs leading-5 text-red-700">
+                                    {{-- Merah hanya untuk alasan penolakan; catatan lain (mis. bayar di kampus) netral. --}}
+                                    <div class="mt-3 rounded-lg border p-3 text-xs leading-5 {{ $payment->status === 'rejected' ? 'border-red-200 bg-red-50 text-red-700' : 'border-slate-200 bg-slate-50 text-slate-600' }}">
                                         <p class="font-bold">Catatan</p>
                                         <p class="mt-1">{{ $payment->admin_note }}</p>
                                     </div>
@@ -424,6 +425,26 @@
                             </td>
 
                             <td class="px-5 py-3.5">
+                                @if($payment->invoice)
+                                    <div class="mb-2 flex justify-end gap-1.5">
+                                        <a href="{{ route('admin.invoices.print', $payment->invoice) }}" target="_blank" rel="noopener"
+                                           title="Cetak invoice {{ $payment->invoice->invoice_number }}"
+                                           class="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2 py-1 text-[11px] font-semibold text-slate-600 transition hover:bg-slate-50">
+                                            <x-icon name="document-text" class="h-3.5 w-3.5" stroke-width="2" />
+                                            Invoice
+                                        </a>
+
+                                        @if($payment->status === 'valid')
+                                            <a href="{{ route('admin.payments.receipt', $payment) }}" target="_blank" rel="noopener"
+                                               title="Cetak kwitansi {{ $payment->receipt_number ?? $payment->payment_number }}"
+                                               class="inline-flex items-center gap-1 rounded-md border border-green-200 bg-green-50 px-2 py-1 text-[11px] font-semibold text-green-700 transition hover:bg-green-100">
+                                                <x-icon name="document-text" class="h-3.5 w-3.5" stroke-width="2" />
+                                                Kwitansi
+                                            </a>
+                                        @endif
+                                    </div>
+                                @endif
+
                                 <div class="flex justify-end gap-2">
                                     <a href="{{ url('/admin/applicants/' . $payment->applicant?->registration_number) }}"
                                        class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50">

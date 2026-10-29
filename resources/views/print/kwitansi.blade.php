@@ -1,7 +1,7 @@
 @extends('layouts.print')
 
 @section('title', 'Kwitansi ' . $payment->receipt_number)
-@section('back_url', route('camaba.payments.index'))
+@section('back_url', $backUrl ?? route('camaba.payments.index'))
 
 @section('content')
 @php
@@ -61,7 +61,14 @@
     <div class="w-56 text-center text-sm">
         <p class="text-slate-700">Divalidasi {{ ($payment->verified_at ?? now())->translatedFormat('j F Y') }}</p>
         <p class="mt-1 text-slate-700">{{ $signer['title'] }}</p>
-        <div class="h-20"></div>
+        <div class="relative h-20">
+            @if($signer['stamp'])
+                <img src="{{ $signer['stamp'] }}" alt="Stempel" class="absolute -left-6 top-0 h-24 w-24 object-contain opacity-90">
+            @endif
+            @if($signer['signature'])
+                <img src="{{ $signer['signature'] }}" alt="Tanda tangan {{ $signer['name'] }}" class="absolute inset-x-0 bottom-0 mx-auto h-20 max-w-full object-contain">
+            @endif
+        </div>
         <p class="min-h-7 border-t border-slate-400 pt-1 font-semibold">{{ $signer['name'] }}</p>
     </div>
 </div>

@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\NimController;
+use App\Http\Controllers\Admin\PrintController as AdminPrintController;
 use App\Http\Controllers\Admin\SiakadApiController;
 use App\Http\Controllers\Admin\WalkInApplicantController;
 use App\Http\Controllers\Admin\IntegrationController;
@@ -152,6 +153,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::patch('/payments/{payment}/accept', [PaymentVerificationController::class, 'accept'])->name('payments.accept');
     Route::patch('/payments/{payment}/reject', [PaymentVerificationController::class, 'reject'])->name('payments.reject');
     Route::delete('/payments/{payment}', [PaymentVerificationController::class, 'destroy'])->name('payments.destroy');
+    Route::get('/payments/{payment}/kwitansi', [AdminPrintController::class, 'receipt'])->name('payments.receipt');
+    Route::get('/invoices/{invoice}/cetak', [AdminPrintController::class, 'invoice'])->name('invoices.print');
 
     Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
     Route::get('/selections/{registration_number}', [SelectionController::class, 'show'])->name('selections.show');

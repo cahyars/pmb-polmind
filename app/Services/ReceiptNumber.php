@@ -6,6 +6,7 @@ use App\Models\Payment;
 use App\Models\RegistrationSequence;
 use App\Models\Setting;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 /**
  * Nomor kwitansi untuk setiap pembayaran yang sudah divalidasi admin.
@@ -49,7 +50,23 @@ class ReceiptNumber
         return [
             'name' => Setting::get('receipt.signer_name'),
             'title' => Setting::get('receipt.signer_title', self::DEFAULT_SIGNER_TITLE),
+            'signature' => self::imageData(Setting::get('receipt.signature_path')),
+            'stamp' => self::imageData(Setting::get('receipt.stamp_path')),
         ];
+    }
+
+    /**
+     * Gambar tanda tangan/stempel disimpan privat, lalu disematkan ke halaman cetak sebagai data URI.
+     */
+    private static function imageData(?string $path): ?string
+    {
+        if (blank($path) || ! Storage::disk('local')->exists($path)) {
+            return null;
+        }
+
+        $disk = Storage::disk('local');
+
+        return 'data:' . $disk->mimeType($path) . ';base64,' . base64_encode($disk->get($path));
     }
 
     public static function render(string $format, int $digits, array $values): string

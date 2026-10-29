@@ -129,6 +129,7 @@
 {{-- Nomor Kwitansi --}}
 <form action="{{ route('admin.master-data.numbering.receipt') }}"
       method="POST"
+      enctype="multipart/form-data"
       x-data="{
           format: @js(old('receipt_format', $receiptFormat)),
           digits: @js((int) old('receipt_digits', $receiptDigits)),
@@ -198,7 +199,7 @@
 
         <div class="border-t border-slate-200 pt-5 md:col-span-3">
             <h3 class="text-sm font-semibold text-slate-900">Penandatangan Kwitansi</h3>
-            <p class="mt-1 text-xs leading-5 text-slate-500">Tampil di bagian tanda tangan kwitansi. Kosongkan nama jika kwitansi ditandatangani manual.</p>
+            <p class="mt-1 text-xs leading-5 text-slate-500">Tampil di bagian tanda tangan kwitansi. Kosongkan nama dan gambar tanda tangan jika kwitansi ditandatangani manual.</p>
         </div>
 
         <div>
@@ -214,6 +215,30 @@
                    value="{{ old('receipt_signer_name', $receiptSigner['name']) }}" placeholder="Contoh: Siti Rahmawati, S.E."
                    class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
         </div>
+
+        @foreach([
+            'signature' => ['Gambar Tanda Tangan', 'PNG latar transparan, hasil scan tanda tangan admin keuangan.'],
+            'stamp' => ['Gambar Stempel', 'PNG latar transparan. Dicetak di samping tanda tangan.'],
+        ] as $image => [$imageLabel, $imageHint])
+            <div class="rounded-lg border border-slate-200 p-4 md:col-span-3 xl:col-span-1" x-data="{ remove: false }">
+                <label for="receipt_{{ $image }}" class="text-sm font-semibold text-slate-700">{{ $imageLabel }} <span class="font-normal text-slate-400">(opsional)</span></label>
+
+                @if($receiptSigner[$image])
+                    <div class="mt-2 flex items-center gap-4" :class="remove && 'opacity-40'">
+                        <div class="flex h-20 w-40 items-center justify-center rounded-lg border border-dashed border-slate-300 bg-[repeating-conic-gradient(#f1f5f9_0_25%,white_0_50%)] bg-[length:16px_16px]">
+                            <img src="{{ $receiptSigner[$image] }}" alt="{{ $imageLabel }} saat ini" class="max-h-18 max-w-36 object-contain">
+                        </div>
+                        <label class="flex items-center gap-2 text-xs font-semibold text-red-700">
+                            <input type="checkbox" name="remove_receipt_{{ $image }}" value="1" x-model="remove"> Hapus gambar
+                        </label>
+                    </div>
+                @endif
+
+                <input type="file" id="receipt_{{ $image }}" name="receipt_{{ $image }}" accept="image/png,image/jpeg"
+                       class="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-polmind-blue">
+                <p class="mt-1 text-xs text-slate-500">{{ $imageHint }} Maks. 1 MB.{{ $receiptSigner[$image] ? ' Pilih file baru untuk mengganti.' : '' }}</p>
+            </div>
+        @endforeach
     </div>
 
     <div class="flex justify-end border-t border-slate-200 p-6">

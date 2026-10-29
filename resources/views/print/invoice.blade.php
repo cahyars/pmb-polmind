@@ -1,7 +1,7 @@
 @extends('layouts.print')
 
 @section('title', 'Invoice ' . $invoice->invoice_number)
-@section('back_url', route('camaba.payments.index'))
+@section('back_url', $backUrl ?? route('camaba.payments.index'))
 
 @section('content')
 @php

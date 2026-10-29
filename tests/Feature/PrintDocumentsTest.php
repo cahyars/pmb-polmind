@@ -12,6 +12,8 @@ use App\Services\Terbilang;
 use Database\Seeders\PmbMasterSeeder;
 use Database\Seeders\ReferenceSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\Concerns\RegistersApplicants;
 use Tests\TestCase;
 
@@ -167,6 +169,95 @@ class PrintDocumentsTest extends TestCase
             ->assertSee('Kartu Peserta Ujian Seleksi')
             ->assertSee('ZAIDAN AZFFA')
             ->assertSee($applicant->registration_number);
+    }
+
+    public function test_admin_prints_invoice_and_receipt_from_payment_table(): void
+    {
+        $applicant = $this->registerApplicant(['full_name' => 'Nadia Putri']);
+        $waiting = $this->waitingPayment($this->registerApplicant(['email' => 'tunggu@example.com']));
+        $payment = $this->waitingPayment($applicant);
+        $admin = User::factory()->create();
+        $operator = User::factory()->operator()->create();
+
+        $this->actingAs($admin, 'web')->patch('/admin/payments/' . $payment->id . '/accept');
+        $payment->refresh();
+
+        foreach ([$admin, $operator] as $user) {
+            $this->actingAs($user, 'web')
+                ->get('/admin/payments')
+                ->assertOk()
+                ->assertSee(route('admin.invoices.print', $payment->invoice_id))
+                ->assertSee(route('admin.payments.receipt', $payment))
+                ->assertSee(route('admin.invoices.print', $waiting->invoice_id))
+                ->assertDontSee(route('admin.payments.receipt', $waiting));
+
+            $this->actingAs($user, 'web')
+                ->get(route('admin.payments.receipt', $payment))
+                ->assertOk()
+                ->assertSee($payment->receipt_number)
+                ->assertSee('NADIA PUTRI')
+                ->assertSee('href="' . route('admin.payments.index') . '"', false);
+
+            $this->actingAs($user, 'web')
+                ->get(route('admin.invoices.print', $payment->invoice_id))
+                ->assertOk()
+                ->assertSee($payment->invoice->invoice_number);
+        }
+
+        $this->actingAs($admin, 'web')->get(route('admin.payments.receipt', $waiting))->assertNotFound();
+
+        // Halaman admin tidak bisa dibuka camaba.
+        auth('web')->logout();
+        $this->actingAs($applicant, 'applicant')->get(route('admin.payments.receipt', $payment))->assertRedirect(route('admin.login'));
+    }
+
+    public function test_receipt_shows_uploaded_signature_and_stamp(): void
+    {
+        Storage::fake('local');
+
+        $admin = User::factory()->create();
+        $settings = [
+            'receipt_format' => 'KW/{JENIS}/{TAHUN}/{URUT}',
+            'receipt_digits' => 5,
+            'receipt_signer_title' => 'Bendahara PMB',
+            'receipt_signer_name' => 'Siti Rahmawati, S.E.',
+        ];
+
+        $this->actingAs($admin, 'web')
+            ->put('/admin/master-data/numbering/receipt', $settings + [
+                'receipt_signature' => UploadedFile::fake()->image('ttd.png', 300, 120),
+                'receipt_stamp' => UploadedFile::fake()->image('stempel.png', 200, 200),
+            ])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin, 'web')
+            ->put('/admin/master-data/numbering/receipt', $settings + ['receipt_signature' => UploadedFile::fake()->create('ttd.pdf', 10, 'application/pdf')])
+            ->assertSessionHasErrors('receipt_signature');
+
+        $this->actingAs($admin, 'web')->get('/admin/master-data/penomoran')->assertSee('Gambar Tanda Tangan')->assertSee('Hapus gambar');
+
+        $applicant = $this->registerApplicant();
+        $payment = $this->waitingPayment($applicant);
+        $this->actingAs($admin, 'web')->patch('/admin/payments/' . $payment->id . '/accept');
+
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/cetak/kwitansi/' . $payment->id)
+            ->assertOk()
+            ->assertSee('alt="Tanda tangan Siti Rahmawati, S.E."', false)
+            ->assertSee('alt="Stempel"', false)
+            ->assertSee('src="data:image/png;base64,', false);
+
+        // Hapus tanda tangan: kwitansi kembali ditandatangani manual, stempel tetap.
+        $this->actingAs($admin, 'web')
+            ->put('/admin/master-data/numbering/receipt', $settings + ['remove_receipt_signature' => 1])
+            ->assertSessionHasNoErrors();
+
+        $this->actingAs($admin, 'web')
+            ->get(route('admin.payments.receipt', $payment))
+            ->assertDontSee('alt="Tanda tangan', false)
+            ->assertSee('alt="Stempel"', false);
+
+        $this->assertCount(1, Storage::disk('local')->files('settings'));
     }
 
     private function waitingPayment(Applicant $applicant): Payment
