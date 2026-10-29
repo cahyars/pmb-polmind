@@ -189,7 +189,11 @@ class PrintDocumentsTest extends TestCase
                 ->assertSee(route('admin.invoices.print', $payment->invoice_id))
                 ->assertSee(route('admin.payments.receipt', $payment))
                 ->assertSee(route('admin.invoices.print', $waiting->invoice_id))
-                ->assertDontSee(route('admin.payments.receipt', $waiting));
+                ->assertDontSee(route('admin.payments.receipt', $waiting))
+                // Progress tagihan cukup satu status terbaru per baris.
+                ->assertSeeInOrder(['Menunggu verifikasi', 'Jika divalidasi: lunas'])
+                ->assertSee('Rp300.000 terbayar')
+                ->assertDontSee('Sisa Sekarang');
 
             $this->actingAs($user, 'web')
                 ->get(route('admin.payments.receipt', $payment))

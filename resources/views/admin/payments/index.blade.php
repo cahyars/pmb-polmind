@@ -239,7 +239,6 @@
                             $totalAmount = (float) ($invoice?->total_amount ?? 0);
 
                             $validPaidAmount = (float) ($invoice?->payments?->where('status', 'valid')->sum('amount') ?? 0);
-                            $waitingPaidAmount = (float) ($invoice?->payments?->where('status', 'waiting_verification')->sum('amount') ?? 0);
 
                             $remainingNow = max(0, $totalAmount - $validPaidAmount);
 
@@ -251,10 +250,6 @@
 
                             $progressPercentage = $totalAmount > 0
                                 ? min(100, round(($validPaidAmount / $totalAmount) * 100))
-                                : 0;
-
-                            $afterValidationPercentage = $totalAmount > 0
-                                ? min(100, round(($afterValidationPaid / $totalAmount) * 100))
                                 : 0;
 
                             $willFullyPaid = $payment->status === 'waiting_verification' && $remainingAfterValidation <= 0;
@@ -310,60 +305,31 @@
                             </td>
 
                             <td class="px-5 py-3.5">
-                                <div class="w-72 rounded-lg bg-slate-50 p-4">
-                                    <div class="grid grid-cols-2 gap-3 text-xs">
-                                        <div>
-                                            <p class="font-semibold text-slate-500">Valid</p>
-                                            <p class="mt-1 font-bold text-polmind-blue">
-                                                Rp{{ number_format($validPaidAmount, 0, ',', '.') }}
-                                            </p>
-                                        </div>
+                                {{-- Satu status terbaru: menunggu verifikasi, lunas, cicilan, atau belum dibayar. --}}
+                                @php
+                                    $rupiahShort = fn ($amount) => 'Rp' . number_format($amount, 0, ',', '.');
 
-                                        <div>
-                                            <p class="font-semibold text-slate-500">Menunggu</p>
-                                            <p class="mt-1 font-bold text-yellow-700">
-                                                Rp{{ number_format($waitingPaidAmount, 0, ',', '.') }}
-                                            </p>
-                                        </div>
+                                    [$progressLabel, $progressClass, $progressDetail] = match (true) {
+                                        $payment->status === 'waiting_verification' => [
+                                            'Menunggu verifikasi',
+                                            'text-yellow-700',
+                                            $willFullyPaid ? 'Jika divalidasi: lunas' : 'Jika divalidasi: sisa ' . $rupiahShort($remainingAfterValidation),
+                                        ],
+                                        $remainingNow <= 0 && $totalAmount > 0 => ['Lunas', 'text-green-700', $rupiahShort($validPaidAmount) . ' terbayar'],
+                                        $validPaidAmount > 0 => ['Cicilan', 'text-polmind-blue', 'Sisa ' . $rupiahShort($remainingNow) . ' dari ' . $rupiahShort($totalAmount)],
+                                        default => ['Belum dibayar', 'text-red-600', 'Sisa ' . $rupiahShort($remainingNow)],
+                                    };
+                                @endphp
 
-                                        <div>
-                                            <p class="font-semibold text-slate-500">Sisa Sekarang</p>
-                                            <p class="mt-1 font-bold text-red-600">
-                                                Rp{{ number_format($remainingNow, 0, ',', '.') }}
-                                            </p>
-                                        </div>
-
-                                        <div>
-                                            <p class="font-semibold text-slate-500">Progress</p>
-                                            <p class="mt-1 font-bold text-slate-700">
-                                                {{ $progressPercentage }}%
-                                            </p>
-                                        </div>
+                                <div class="w-52">
+                                    <div class="flex items-baseline justify-between gap-2 text-xs">
+                                        <p class="font-bold {{ $progressClass }}">{{ $progressLabel }}</p>
+                                        <p class="font-semibold text-slate-500">{{ $progressPercentage }}%</p>
                                     </div>
-
-                                    <div class="mt-4 h-2 overflow-hidden rounded-full bg-slate-200">
-                                        <div class="h-full rounded-full bg-polmind-blue"
-                                             style="width: {{ $progressPercentage }}%"></div>
+                                    <div class="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-200">
+                                        <div class="h-full rounded-full {{ $remainingNow <= 0 ? 'bg-green-600' : 'bg-polmind-blue' }}" style="width: {{ $progressPercentage }}%"></div>
                                     </div>
-
-                                    @if($payment->status === 'waiting_verification')
-                                        <div class="mt-4 rounded-lg border {{ $willFullyPaid ? 'border-green-200 bg-green-50 text-green-700' : 'border-blue-200 bg-blue-50 text-polmind-blue' }} p-3 text-xs leading-5">
-                                            <p class="font-bold">
-                                                {{ $willFullyPaid ? 'Jika divalidasi: Tagihan Lunas' : 'Jika divalidasi: Masih Cicilan' }}
-                                            </p>
-                                            <p class="mt-1">
-                                                Sisa setelah validasi:
-                                                <span class="font-bold">
-                                                    Rp{{ number_format($remainingAfterValidation, 0, ',', '.') }}
-                                                </span>
-                                            </p>
-
-                                            <div class="mt-3 h-2 overflow-hidden rounded-full bg-white/70">
-                                                <div class="h-full rounded-full {{ $willFullyPaid ? 'bg-green-600' : 'bg-polmind-blue' }}"
-                                                     style="width: {{ $afterValidationPercentage }}%"></div>
-                                            </div>
-                                        </div>
-                                    @endif
+                                    <p class="mt-1.5 text-xs text-slate-500">{{ $progressDetail }}</p>
                                 </div>
                             </td>
 
