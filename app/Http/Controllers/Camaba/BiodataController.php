@@ -6,10 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Applicant;
 use App\Models\ApplicantEducation;
 use App\Models\ClassType;
-use App\Models\RefOption;
 use App\Models\RefRegion;
 use App\Models\RegistrationPath;
 use App\Models\StudyProgram;
+use App\Services\ApplicantBiodata;
 use App\Services\ApplicantJourney;
 use App\Services\RegistrationNumber;
 use Illuminate\Http\Request;
@@ -44,16 +44,7 @@ class BiodataController extends Controller
             ? $request->query('step')
             : $journey->firstIncompleteSection();
 
-        $references = collect([
-            RefOption::AGAMA,
-            RefOption::PENDIDIKAN,
-            RefOption::PEKERJAAN,
-            RefOption::PENGHASILAN,
-            RefOption::JENIS_TINGGAL,
-            RefOption::ALAT_TRANSPORTASI,
-            RefOption::KEBUTUHAN_KHUSUS,
-            RefOption::KEWARGANEGARAAN,
-        ])->mapWithKeys(fn (string $group) => [$group => RefOption::optionsFor($group)]);
+        $references = ApplicantBiodata::references();
 
         return view('camaba.biodata', [
             'applicant' => $applicant,
@@ -110,54 +101,14 @@ class BiodataController extends Controller
 
     private function savePersonal(Request $request, Applicant $applicant): ?string
     {
-        $request->merge([
-            'full_name' => mb_strtoupper(trim((string) $request->input('full_name'))),
-            'email' => mb_strtolower(trim((string) $request->input('email'))),
-            'nik' => preg_replace('/\s+/', '', (string) $request->input('nik')),
-        ]);
+        ApplicantBiodata::prepare($request);
 
-        $validated = $request->validate([
-            'full_name' => ['required', 'string', 'max:255'],
-            'nik' => Applicant::nikRules($applicant->admission_wave_id, $applicant->id),
-            'nisn' => ['nullable', 'digits:10'],
-            'npwp' => ['nullable', 'regex:/^[0-9]{15,16}$/'],
-            'gender' => ['required', 'in:L,P'],
-            'birth_place' => ['required', 'string', 'max:100'],
-            'birth_date' => ['required', 'date', 'before:today'],
-            'religion_id' => ['required', $this->refRule(RefOption::AGAMA)],
-            'citizenship' => ['required', $this->refRule(RefOption::KEWARGANEGARAAN)],
-            'special_need_id' => ['required', $this->refRule(RefOption::KEBUTUHAN_KHUSUS)],
-            'kps_recipient' => ['required', 'boolean'],
-            'kps_number' => ['nullable', 'required_if:kps_recipient,1', 'string', 'max:50'],
-            'email' => ['required', 'email', 'max:255', Rule::unique('applicants', 'email')->ignore($applicant->id)],
-            'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
-            'home_phone' => ['nullable', 'string', 'regex:/^[0-9]{6,15}$/'],
-            'transportation_id' => ['nullable', $this->refRule(RefOption::ALAT_TRANSPORTASI)],
-        ], [
-            'phone.regex' => 'Nomor HP hanya boleh berisi angka (9-15 digit).',
-            'home_phone.regex' => 'Telepon rumah hanya boleh berisi angka.',
-            'npwp.regex' => 'NPWP harus 15 atau 16 digit angka.',
-            'kps_number.required_if' => 'Nomor KPS wajib diisi untuk penerima KPS.',
-        ] + Applicant::nikMessages($applicant->admissionWave));
+        $validated = $request->validate(
+            ApplicantBiodata::personalRules($applicant->admission_wave_id, $applicant->id),
+            ApplicantBiodata::personalMessages($applicant->admissionWave)
+        );
 
-        $applicant->update([
-            'full_name' => $validated['full_name'],
-            'nik' => $validated['nik'],
-            'nisn' => $this->blankToNull($validated['nisn'] ?? null),
-            'npwp' => $this->blankToNull($validated['npwp'] ?? null),
-            'gender' => $validated['gender'],
-            'birth_place' => $validated['birth_place'],
-            'birth_date' => $validated['birth_date'],
-            'religion_id' => $validated['religion_id'],
-            'citizenship' => $validated['citizenship'],
-            'special_need_id' => $validated['special_need_id'],
-            'kps_recipient' => (bool) $validated['kps_recipient'],
-            'kps_number' => $validated['kps_recipient'] ? $this->blankToNull($validated['kps_number'] ?? null) : null,
-            'email' => $validated['email'],
-            'phone' => $validated['phone'],
-            'home_phone' => $this->blankToNull($validated['home_phone'] ?? null),
-            'transportation_id' => $this->blankToNull($validated['transportation_id'] ?? null),
-        ]);
+        $applicant->update(ApplicantBiodata::personalAttributes($validated));
 
         return null;
     }
@@ -206,41 +157,9 @@ class BiodataController extends Controller
 
     private function saveAddress(Request $request, Applicant $applicant): ?string
     {
-        $validated = $request->validate([
-            'address' => ['required', 'string', 'max:500'],
-            'hamlet' => ['nullable', 'string', 'max:100'],
-            'rt' => ['nullable', 'digits_between:1,3'],
-            'rw' => ['nullable', 'digits_between:1,3'],
-            'village_name' => ['required', 'string', 'max:100'],
-            'region_id' => ['required', Rule::exists('ref_regions', 'id')->where('level', RefRegion::LEVEL_DISTRICT)],
-            'postal_code' => ['nullable', 'digits:5'],
-            'residence_type_id' => ['nullable', $this->refRule(RefOption::JENIS_TINGGAL)],
-        ], [
-            'region_id.required' => 'Pilih provinsi, kabupaten/kota, dan kecamatan.',
-        ]);
+        $validated = $request->validate(ApplicantBiodata::addressRules(), ApplicantBiodata::addressMessages());
 
-        $district = RefRegion::with('parent.parent')->findOrFail($validated['region_id']);
-
-        $applicant->address()->updateOrCreate(
-            ['applicant_id' => $applicant->id],
-            [
-                'address' => $validated['address'],
-                'hamlet' => $this->blankToNull($validated['hamlet'] ?? null),
-                'rt' => $this->padNumber($validated['rt'] ?? null),
-                'rw' => $this->padNumber($validated['rw'] ?? null),
-                'village_code' => null,
-                'village_name' => $validated['village_name'],
-                'region_id' => $district->id,
-                'district_code' => $district->id,
-                'district_name' => $district->name,
-                'regency_code' => $district->parent?->id,
-                'regency_name' => $district->parent?->name,
-                'province_code' => $district->parent?->parent?->id,
-                'province_name' => $district->parent?->parent?->name,
-                'postal_code' => $this->blankToNull($validated['postal_code'] ?? null),
-                'residence_type_id' => $this->blankToNull($validated['residence_type_id'] ?? null),
-            ]
-        );
+        ApplicantBiodata::saveAddress($applicant, $validated);
 
         return null;
     }
@@ -267,52 +186,16 @@ class BiodataController extends Controller
 
     private function saveParents(Request $request, Applicant $applicant): ?string
     {
-        $person = fn (string $prefix, bool $nameRequired = false) => [
-            "{$prefix}_name" => [$nameRequired ? 'required' : 'nullable', 'string', 'max:255'],
-            "{$prefix}_nik" => ['nullable', 'digits:16'],
-            "{$prefix}_birth_date" => ['nullable', 'date', 'before:today'],
-            "{$prefix}_education_id" => ['nullable', $this->refRule(RefOption::PENDIDIKAN)],
-            "{$prefix}_job_id" => ['nullable', $this->refRule(RefOption::PEKERJAAN)],
-            "{$prefix}_income_id" => ['nullable', $this->refRule(RefOption::PENGHASILAN)],
-            "{$prefix}_phone" => ['nullable', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
-        ];
+        $validated = $request->validate(ApplicantBiodata::parentRules(), ApplicantBiodata::parentMessages());
 
-        $validated = $request->validate(
-            $person('father')
-            + $person('mother', true)
-            + $person('guardian')
-            + [
-                'father_special_need_id' => ['required', $this->refRule(RefOption::KEBUTUHAN_KHUSUS)],
-                'mother_special_need_id' => ['required', $this->refRule(RefOption::KEBUTUHAN_KHUSUS)],
-                'guardian_relation' => ['nullable', 'string', 'max:100'],
-            ],
-            ['*_phone.regex' => 'Nomor HP hanya boleh berisi angka (9-15 digit).']
-        );
-
-        $data = collect($validated)->map(fn ($value) => $this->blankToNull($value))->all();
-
-        $data['mother_name'] = mb_strtoupper($validated['mother_name']);
-        $data['father_special_need_id'] = $validated['father_special_need_id'];
-        $data['mother_special_need_id'] = $validated['mother_special_need_id'];
-
-        $applicant->parentData()->updateOrCreate(['applicant_id' => $applicant->id], $data);
+        $applicant->parentData()->updateOrCreate(['applicant_id' => $applicant->id], ApplicantBiodata::parentAttributes($validated));
 
         return null;
     }
 
-    private function refRule(string $group)
-    {
-        return Rule::in(RefOption::codesFor($group));
-    }
-
     private function blankToNull($value)
     {
-        return filled($value) ? $value : null;
-    }
-
-    private function padNumber(?string $value): ?string
-    {
-        return filled($value) ? str_pad(ltrim($value, '0') ?: '0', 3, '0', STR_PAD_LEFT) : null;
+        return ApplicantBiodata::blankToNull($value);
     }
 
     /**

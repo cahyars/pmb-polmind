@@ -17,6 +17,7 @@
             'Agama' => $applicant->religion_name,
             'Email' => $applicant->email,
             'Nomor HP' => $applicant->phone,
+            'Ukuran Jas Almamater' => $applicant->almamater_size,
         ],
         'prodi' => [
             'Pilihan Pertama' => $applicant->studyProgram?->name,

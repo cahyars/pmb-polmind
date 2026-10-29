@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\NimController;
 use App\Http\Controllers\Admin\SiakadApiController;
+use App\Http\Controllers\Admin\WalkInApplicantController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
@@ -117,6 +118,9 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
+    // Pendaftar yang datang langsung ke kampus (sebelum route {registration_number}).
+    Route::get('/applicants/create', [WalkInApplicantController::class, 'create'])->name('applicants.create');
+    Route::post('/applicants', [WalkInApplicantController::class, 'store'])->middleware('throttle:30,1')->name('applicants.store');
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
     Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');

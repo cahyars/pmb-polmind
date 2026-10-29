@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
-use App\Models\RegistrationSequence;
 use App\Models\ReRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -146,7 +145,7 @@ class PaymentController extends Controller
                 'applicant_id' => $applicant->id,
                 'invoice_id' => $invoice->id,
                 'payment_method_id' => $validated['payment_method_id'] ?? null,
-                'payment_number' => $existingPayment?->payment_number ?? $this->generatePaymentNumber($invoice),
+                'payment_number' => $existingPayment?->payment_number ?? Payment::nextNumber($invoice),
                 'transfer_date' => $validated['transfer_date'],
                 'sender_name' => $validated['sender_name'],
                 'sender_bank' => $validated['sender_bank'],
@@ -192,17 +191,5 @@ class PaymentController extends Controller
         });
 
         return back()->with('payment_submitted', true);
-    }
-
-    private function generatePaymentNumber(Invoice $invoice): string
-    {
-        $invoice->loadMissing('applicant.pmbYear');
-
-        $prefix = $invoice->type === 're_registration' ? 'PAY/DU' : 'PAY/PMB';
-        $pmbYear = $invoice->applicant->pmbYear;
-
-        $number = RegistrationSequence::next($pmbYear->id, $invoice->type === 're_registration' ? 'pembayaran-du' : 'pembayaran-pmb');
-
-        return $prefix . '/' . $pmbYear->year . '/' . str_pad($number, 5, '0', STR_PAD_LEFT);
     }
 }

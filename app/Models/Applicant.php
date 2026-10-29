@@ -41,9 +41,12 @@ class Applicant extends Authenticatable
         'kps_recipient',
         'kps_number',
         'special_need_id',
+        'almamater_size',
 
         'source_information',
         'registration_path',
+        'registered_via',
+        'registered_by_name',
 
         'registration_status',
         'document_status',
@@ -56,6 +59,13 @@ class Applicant extends Authenticatable
         'nim_generated_at',
         'synced_at',
     ];
+
+    public const ALMAMATER_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
+
+    /**
+     * Pilihan sumber informasi di form registrasi online dan form pendaftar di kampus.
+     */
+    public const SOURCE_OPTIONS = ['Instagram', 'TikTok', 'Website', 'Roadshow Sekolah', 'Teman/Keluarga', 'WhatsApp', 'Brosur/Poster', 'Spanduk/Banner', 'Lainnya'];
 
     protected $hidden = [
         'password',

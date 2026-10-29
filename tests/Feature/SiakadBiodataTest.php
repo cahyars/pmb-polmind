@@ -578,6 +578,7 @@ class SiakadBiodataTest extends TestCase
             'special_need_id' => 0,
             'kps_recipient' => 0,
             'kps_number' => '',
+            'almamater_size' => 'L',
 
             'study_program_id' => StudyProgram::where('code', 'TRPL')->value('id'),
             'second_study_program_id' => StudyProgram::where('code', 'BD')->value('id'),

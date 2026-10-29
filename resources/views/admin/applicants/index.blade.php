@@ -65,16 +65,22 @@
                 </p>
             </div>
 
-            <button type="button"
-                    onclick="Swal.fire({
-                        title: 'Export Excel',
-                        text: 'Fitur export akan kita sambungkan setelah modul laporan aktif.',
-                        icon: 'info',
-                        confirmButtonColor: '#003B82'
-                    })"
-                    class="rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
-                Export Excel
-            </button>
+            <div class="flex flex-wrap gap-3">
+                <a href="{{ route('admin.applicants.create') }}"
+                   class="inline-flex items-center gap-2 rounded-lg bg-polmind-blue px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:brightness-110">
+                    <x-icon name="user-plus" class="h-5 w-5" stroke-width="2" />
+                    Tambah Pendaftar
+                </a>
+
+                <a href="{{ route('admin.reports.export-applicants', array_filter([
+                        'admission_wave' => request('wave'),
+                        'study_program' => request('study_program'),
+                        'registration_path' => request('registration_path'),
+                    ])) }}"
+                   class="rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                    Export Excel
+                </a>
+            </div>
         </div>
 
         <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">

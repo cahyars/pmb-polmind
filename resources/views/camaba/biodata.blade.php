@@ -184,6 +184,8 @@
                             <p class="{{ $hint }}">Pilih "Tidak ada" jika tidak memiliki kebutuhan khusus.</p>
                         </div>
 
+                        @include('camaba.partials.almamater-size', ['current' => $applicant->almamater_size])
+
                         <div class="md:col-span-2 border-t border-slate-200 pt-5">
                             <p class="text-sm font-black text-slate-900">Kontak</p>
                         </div>

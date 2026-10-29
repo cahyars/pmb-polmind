@@ -8,14 +8,11 @@ use App\Models\Applicant;
 use App\Models\ApplicantEducation;
 use App\Models\ClassType;
 use App\Models\FeeComponent;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\PmbYear;
 use App\Models\RefRegion;
 use App\Models\RegistrationPath;
-use App\Models\RegistrationSequence;
 use App\Models\StudyProgram;
-use App\Services\RegistrationNumber;
+use App\Services\ApplicantRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -86,41 +83,19 @@ class CamabaAuthController extends Controller
         ] + Applicant::nikMessages($activeWave) + ApplicantEducation::schoolMessages());
 
         $applicant = DB::transaction(function () use ($validated, $activePmbYear, $activeWave) {
-            $classType = ClassType::findOrFail($validated['class_type_id']);
-
-            $applicant = new Applicant([
-                'pmb_year_id' => $activePmbYear->id,
-                'admission_wave_id' => $activeWave->id,
+            $applicant = ApplicantRegistration::create([
                 'study_program_id' => $validated['study_program_id'],
-                'class_type_id' => $classType->id,
-
                 'full_name' => $validated['full_name'],
                 'nik' => $validated['nik'],
                 'gender' => $validated['gender'],
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'phone' => $validated['phone'],
-
                 'source_information' => $validated['source_information'] ?? null,
                 'registration_path' => $validated['registration_path'],
-
-                'registration_status' => 'registrasi_awal',
-                'document_status' => 'belum_upload',
-                'payment_status' => 'belum_bayar',
-                'selection_status' => 'belum_diseleksi',
-                're_registration_status' => 'belum_daftar_ulang',
-                'sync_status' => 'belum_siap',
-            ]);
-
-            // Kelas sudah dipilih, sehingga nomor pendaftaran final langsung dibuat.
-            $applicant->setRelation('pmbYear', $activePmbYear);
-            $applicant->setRelation('admissionWave', $activeWave);
-            $applicant->registration_number = RegistrationNumber::final($applicant, $classType);
-            $applicant->save();
+            ], $activePmbYear, $activeWave, ClassType::findOrFail($validated['class_type_id']));
 
             $applicant->education()->create(ApplicantEducation::schoolAttributes($validated));
-
-            $this->createRegistrationInvoice($applicant, $activeWave);
 
             return $applicant;
         });
@@ -167,34 +142,5 @@ class CamabaAuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect('/login')->with('success', 'Anda berhasil logout.');
-    }
-
-    private function createRegistrationInvoice(Applicant $applicant, AdmissionWave $activeWave): void
-    {
-        $registrationFee = FeeComponent::registrationFee();
-
-        $amount = $registrationFee?->amount ?? $activeWave->registration_fee ?? 0;
-
-        $invoice = Invoice::create([
-            'applicant_id' => $applicant->id,
-            'invoice_number' => 'INV/PMB/' . $applicant->pmbYear->year . '/'
-                . str_pad(RegistrationSequence::next($applicant->pmb_year_id, 'invoice-pendaftaran'), 5, '0', STR_PAD_LEFT),
-            'type' => 'registration',
-            'issue_date' => now()->toDateString(),
-            'due_date' => now()->addDays(7)->toDateString(),
-            'total_amount' => $amount,
-            'status' => 'unpaid',
-            'note' => 'Biaya formulir pendaftaran PMB.',
-        ]);
-
-        InvoiceItem::create([
-            'invoice_id' => $invoice->id,
-            'fee_component_id' => $registrationFee?->id,
-            'name' => $registrationFee?->name ?? 'Biaya Formulir Pendaftaran',
-            'amount' => $amount,
-            'quantity' => 1,
-            'subtotal' => $amount,
-            'sort_order' => 1,
-        ]);
     }
 }

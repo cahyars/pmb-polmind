@@ -78,6 +78,7 @@ class ApplicantJourney
                 $applicant->citizenship,
                 $applicant->phone,
                 $applicant->email,
+                $applicant->almamater_size,
             ],
             'prodi' => [
                 $applicant->study_program_id,
