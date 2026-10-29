@@ -138,6 +138,41 @@ class ApplicantController extends Controller
     }
 
     /**
+     * Camaba lupa password: kembalikan ke PIN tanggal lahir (ddmmyyyy), lalu admin
+     * mengirimkannya lewat tombol Kirim Info Login (hanya ke nomor HP terdaftar).
+     */
+    public function resetPassword(string $registration_number)
+    {
+        $applicant = Applicant::where('registration_number', $registration_number)->firstOrFail();
+
+        $pin = LoginInfoMessage::defaultPin($applicant);
+
+        if (! $pin) {
+            return back()->withErrors('PIN tidak dapat direset karena tanggal lahir ' . $applicant->full_name . ' belum diisi. Lengkapi biodata camaba terlebih dahulu.');
+        }
+
+        DB::transaction(function () use ($applicant, $pin) {
+            $applicant->password = $pin;
+            $applicant->setRememberToken(null);
+            $applicant->save();
+
+            FollowUp::create([
+                'applicant_id' => $applicant->id,
+                'status' => 'sudah_dihubungi',
+                'priority' => 'sedang',
+                'contact_method' => 'direct',
+                'contacted_at' => now(),
+                'note' => 'Password camaba direset ke PIN tanggal lahir.',
+                'officer_name' => $this->actorName(),
+            ]);
+        });
+
+        return back()
+            ->with('success', 'PIN ' . $applicant->full_name . ' direset ke tanggal lahir. Kirim info login ke WhatsApp camaba.')
+            ->with('login_reset', true);
+    }
+
+    /**
      * Buka WhatsApp camaba dengan pesan Informasi Pendaftar (ID Pendaftar + PIN),
      * dan catat sebagai follow up supaya terlihat kapan info login terakhir dikirim.
      */

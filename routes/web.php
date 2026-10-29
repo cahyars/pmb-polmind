@@ -28,6 +28,7 @@ use App\Http\Controllers\Auth\CamabaAuthController;
 use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
+use App\Http\Controllers\Camaba\AccountController as CamabaAccountController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
 use App\Http\Controllers\Camaba\FileController as CamabaFileController;
@@ -83,6 +84,11 @@ Route::middleware('auth:applicant')
 
         Route::get('/upload-berkas/{document}/file', [CamabaFileController::class, 'document'])->name('documents.file');
 
+        Route::get('/akun', [CamabaAccountController::class, 'edit'])->name('account.edit');
+        Route::put('/akun/password', [CamabaAccountController::class, 'updatePassword'])
+            ->middleware('throttle:10,1')
+            ->name('account.password');
+
         // Terbuka setelah pembayaran formulir diverifikasi admin.
         Route::middleware(EnsureRegistrationPaid::class)->group(function () {
             Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
@@ -125,6 +131,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
     Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
+    Route::patch('/applicants/{registration_number}/reset-password', [ApplicantController::class, 'resetPassword'])->middleware('throttle:20,1')->name('applicants.reset-password');
     Route::post('/applicants/{registration_number}/login-info', [ApplicantController::class, 'sendLoginInfo'])->name('applicants.login-info');
     Route::patch('/applicants/{registration_number}/waive-registration-fee', [ApplicantController::class, 'waiveRegistrationFee'])->name('applicants.waive-registration-fee');
 

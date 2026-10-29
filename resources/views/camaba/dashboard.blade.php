@@ -70,6 +70,15 @@
         </div>
     @endif
 
+    {{-- Pengingat ganti PIN awal dari admin (tanggal lahir) --}}
+    @if($usingDefaultPin)
+        <a href="{{ route('camaba.account.edit') }}"
+           class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm leading-6 text-amber-900 transition hover:border-amber-300">
+            <x-icon name="key" class="mt-0.5 h-5 w-5 shrink-0 text-amber-600" stroke-width="2" />
+            <span>Anda masih login dengan <span class="font-bold">PIN tanggal lahir</span> dari admin. <span class="font-bold underline">Ganti password sekarang</span> agar akun tidak mudah dibuka orang lain.</span>
+        </a>
+    @endif
+
     {{-- Pengingat tagihan formulir --}}
     @if(! $registrationPaid && $registrationInvoice)
         <div class="overflow-hidden rounded-3xl border-2 {{ $journey->paymentWaiting() ? 'border-yellow-300 bg-yellow-50' : 'border-red-200 bg-red-50' }} p-6 shadow-sm">

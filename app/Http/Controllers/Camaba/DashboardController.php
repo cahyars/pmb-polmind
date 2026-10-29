@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Camaba;
 
 use App\Http\Controllers\Controller;
 use App\Services\ApplicantJourney;
+use App\Services\LoginInfoMessage;
 use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
@@ -46,6 +47,7 @@ class DashboardController extends Controller
             'biodataSections' => $journey->biodataSections(),
             'registrationInvoice' => $applicant->registrationInvoice,
             'reRegistrationInvoice' => $applicant->reRegistrationInvoice,
+            'usingDefaultPin' => LoginInfoMessage::activePin($applicant) !== null,
         ]);
     }
 }

@@ -52,7 +52,7 @@
         </div>
     @endif
 
-    @if(session('walk_in_account') && $loginPin)
+    @if((session('walk_in_account') || session('login_reset')) && $loginPin)
         <div class="rounded-xl border-2 border-amber-300 bg-amber-50 p-6">
             <h2 class="flex items-center gap-2 text-base font-semibold text-slate-900">
                 <x-icon name="key" class="h-5 w-5 text-amber-600" stroke-width="2" />

@@ -83,6 +83,12 @@
                     'icon' => 'cap',
                     'active' => request()->is('camaba/daftar-ulang*'),
                 ],
+                [
+                    'label' => 'Ganti Password',
+                    'url' => '/camaba/akun',
+                    'icon' => 'key',
+                    'active' => request()->is('camaba/akun*'),
+                ],
             ];
         @endphp
 
