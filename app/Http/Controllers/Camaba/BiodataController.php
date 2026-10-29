@@ -8,6 +8,7 @@ use App\Models\ApplicantEducation;
 use App\Models\ClassType;
 use App\Models\RefOption;
 use App\Models\RefRegion;
+use App\Models\RegistrationPath;
 use App\Models\StudyProgram;
 use App\Services\ApplicantJourney;
 use App\Services\RegistrationNumber;
@@ -173,7 +174,8 @@ class BiodataController extends Controller
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'second_study_program_id' => ['nullable', 'different:study_program_id', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'class_type_id' => [Rule::excludeIf($classLocked), 'required', Rule::exists('class_types', 'id')->where('is_active', true)],
-            'registration_path' => ['required', Rule::in(array_keys(Applicant::REGISTRATION_PATHS))],
+            // Jalur yang sudah dinonaktifkan tetap sah untuk camaba yang terlanjur memilihnya.
+            'registration_path' => ['required', Rule::in(RegistrationPath::active()->keys()->push($applicant->registration_path)->filter()->all())],
         ], [
             'second_study_program_id.different' => 'Pilihan prodi kedua harus berbeda dengan pilihan pertama.',
         ]);

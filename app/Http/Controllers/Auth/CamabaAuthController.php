@@ -12,6 +12,7 @@ use App\Models\Invoice;
 use App\Models\InvoiceItem;
 use App\Models\PmbYear;
 use App\Models\RefRegion;
+use App\Models\RegistrationPath;
 use App\Models\RegistrationSequence;
 use App\Models\StudyProgram;
 use App\Services\RegistrationNumber;
@@ -28,6 +29,8 @@ class CamabaAuthController extends Controller
 
         $activeWave = AdmissionWave::current($activePmbYear)?->load('selectionSchedules');
 
+        $registrationPaths = RegistrationPath::active();
+
         $registrationFee = FeeComponent::registrationFee()?->amount ?? $activeWave?->registration_fee;
 
         return view('auth.register', [
@@ -39,9 +42,9 @@ class CamabaAuthController extends Controller
             'provinces' => RefRegion::where('level', RefRegion::LEVEL_PROVINCE)->orderBy('name')->get(['id', 'name']),
             'schoolRegion' => RefRegion::chainFor(old('school_region_id')),
             'schoolTypes' => ApplicantEducation::SCHOOL_TYPES,
-            'registrationPaths' => Applicant::REGISTRATION_PATHS,
+            'registrationPaths' => $registrationPaths,
             // Jalur dari kartu jalur di landing page (/register?jalur=prestasi).
-            'selectedPath' => old('registration_path', array_key_exists((string) $request->query('jalur'), Applicant::REGISTRATION_PATHS) ? $request->query('jalur') : null),
+            'selectedPath' => old('registration_path', $registrationPaths->has((string) $request->query('jalur')) ? $request->query('jalur') : null),
         ]);
     }
 
@@ -70,7 +73,7 @@ class CamabaAuthController extends Controller
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'class_type_id' => ['required', Rule::exists('class_types', 'id')->where('is_active', true)],
-            'registration_path' => ['required', Rule::in(array_keys(Applicant::REGISTRATION_PATHS))],
+            'registration_path' => ['required', Rule::in(RegistrationPath::active()->keys()->all())],
             'source_information' => ['nullable', 'string', 'max:255'],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ] + ApplicantEducation::schoolRules($request->boolean('is_manual_school')), [

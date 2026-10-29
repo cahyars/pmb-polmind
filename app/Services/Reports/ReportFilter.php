@@ -3,8 +3,10 @@
 namespace App\Services\Reports;
 
 use App\Models\Applicant;
+use App\Models\RegistrationPath;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 /**
  * Filter bersama untuk semua laporan. Tahun PMB sudah dibatasi oleh
@@ -33,7 +35,7 @@ class ReportFilter
             'admission_wave' => ['nullable', 'integer'],
             'study_program' => ['nullable', 'integer'],
             'class_type' => ['nullable', 'integer'],
-            'registration_path' => ['nullable', 'string', 'in:' . implode(',', array_keys(Applicant::REGISTRATION_PATHS))],
+            'registration_path' => ['nullable', 'string', Rule::in(RegistrationPath::ordered()->keys()->all())],
         ]);
 
         return new self(array_filter($values, fn ($value) => filled($value)));

@@ -318,8 +318,9 @@
                         <div>
                             <label for="registration_path" class="{{ $label }}">Jalur Pendaftaran {!! $required !!}</label>
                             <select id="registration_path" name="registration_path" required @disabled($programLocked) class="{{ $field }}">
-                                @foreach(\App\Models\Applicant::REGISTRATION_PATHS as $value => $path)
-                                    <option value="{{ $value }}" @selected(old('registration_path', $applicant->registration_path ?? 'umum') === $value)>{{ $path['label'] }}</option>
+                                {{-- Jalur nonaktif tetap muncul untuk camaba yang sudah memilihnya. --}}
+                                @foreach(\App\Models\RegistrationPath::ordered()->filter(fn ($path) => $path->is_active || $path->code === $applicant->registration_path) as $path)
+                                    <option value="{{ $path->code }}" @selected(old('registration_path', $applicant->registration_path) === $path->code)>{{ $path->name }}</option>
                                 @endforeach
                             </select>
                         </div>

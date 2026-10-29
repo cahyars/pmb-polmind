@@ -164,18 +164,18 @@
                     <p class="{{ $label }}">Pilih Jalur {!! $required !!}</p>
 
                     <div class="mt-2 grid gap-3 sm:grid-cols-3">
-                        @foreach($registrationPaths as $value => $path)
+                        @foreach($registrationPaths as $path)
                             <label class="flex cursor-pointer gap-3 rounded-2xl border border-slate-300 p-4 transition hover:border-polmind-blue has-checked:border-polmind-blue has-checked:bg-blue-50 has-checked:ring-2 has-checked:ring-blue-100">
                                 <input type="radio"
                                        name="registration_path"
-                                       value="{{ $value }}"
-                                       data-label="Jalur {{ $path['label'] }}"
+                                       value="{{ $path->code }}"
+                                       data-label="Jalur {{ $path->name }}"
                                        required
                                        class="mt-1"
-                                       @checked($selectedPath === $value)>
+                                       @checked($selectedPath === $path->code)>
                                 <span class="min-w-0">
-                                    <span class="block font-black text-slate-900">Jalur {{ $path['label'] }}</span>
-                                    <span class="mt-1 block text-xs leading-5 text-slate-600">{{ $path['description'] }}</span>
+                                    <span class="block font-black text-slate-900">Jalur {{ $path->name }}</span>
+                                    <span class="mt-1 block text-xs leading-5 text-slate-600">{{ $path->description }}</span>
                                 </span>
                             </label>
                         @endforeach

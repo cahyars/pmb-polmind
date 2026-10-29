@@ -107,29 +107,15 @@
 
     {{-- Registration Path Stats --}}
     <div class="grid gap-5 md:grid-cols-3">
-        @foreach([
-            [
-                'label' => 'Jalur Umum',
-                'value' => $registrationPathStats['umum'] ?? 0,
-                'desc' => 'Pendaftar jalur umum',
-                'class' => 'text-polmind-blue',
-                'url' => '/admin/applicants?registration_path=umum',
-            ],
-            [
-                'label' => 'Jalur Prestasi',
-                'value' => $registrationPathStats['prestasi'] ?? 0,
-                'desc' => 'Pendaftar jalur prestasi',
-                'class' => 'text-green-700',
-                'url' => '/admin/applicants?registration_path=prestasi',
-            ],
-            [
-                'label' => 'Jalur Undangan',
-                'value' => $registrationPathStats['undangan'] ?? 0,
-                'desc' => 'Pendaftar jalur undangan',
-                'class' => 'text-purple-700',
-                'url' => '/admin/applicants?registration_path=undangan',
-            ],
-        ] as $card)
+        @foreach(\App\Models\RegistrationPath::ordered()
+            ->filter(fn ($path) => $path->is_active || ($registrationPathStats[$path->code] ?? 0) > 0)
+            ->map(fn ($path) => [
+                'label' => 'Jalur ' . $path->name,
+                'value' => $registrationPathStats[$path->code] ?? 0,
+                'desc' => 'Pendaftar jalur ' . mb_strtolower($path->name),
+                'class' => \App\Models\RegistrationPath::textClass($path->code),
+                'url' => '/admin/applicants?registration_path=' . $path->code,
+            ]) as $card)
             <a href="{{ url($card['url']) }}"
             class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>

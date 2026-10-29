@@ -23,11 +23,10 @@ class ApplicantController extends Controller
 
         $validReRegistrations = ReRegistration::where('status', 'valid')->count();
 
-        $registrationPathStats = [
-            'umum' => Applicant::where('registration_path', 'umum')->count(),
-            'prestasi' => Applicant::where('registration_path', 'prestasi')->count(),
-            'undangan' => Applicant::where('registration_path', 'undangan')->count(),
-        ];
+        $registrationPathStats = Applicant::query()
+            ->selectRaw('registration_path, count(*) as total')
+            ->groupBy('registration_path')
+            ->pluck('total', 'registration_path');
 
         $waves = AdmissionWave::orderBy('id')->get();
 

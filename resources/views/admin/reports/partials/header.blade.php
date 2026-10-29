@@ -57,8 +57,8 @@
                 <label for="registration_path" class="text-xs font-semibold text-slate-600">Jalur</label>
                 <select id="registration_path" name="registration_path" class="{{ $input }}">
                     <option value="">Semua jalur</option>
-                    @foreach(\App\Models\Applicant::REGISTRATION_PATHS as $key => $path)
-                        <option value="{{ $key }}" @selected(($filters['registration_path'] ?? '') === $key)>{{ $path['label'] }}</option>
+                    @foreach(\App\Models\RegistrationPath::ordered() as $path)
+                        <option value="{{ $path->code }}" @selected(($filters['registration_path'] ?? '') === $path->code)>{{ $path->name }}</option>
                     @endforeach
                 </select>
             </div>

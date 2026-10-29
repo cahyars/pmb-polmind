@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Models\Applicant;
+use App\Models\RegistrationPath;
 use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use Illuminate\Support\Collection;
@@ -47,7 +48,7 @@ class SelectionReport
                 'rejected' => $applicants->where('selection_status', 'ditolak')->count(),
             ],
             'programs' => self::programs($applicants),
-            'paths' => self::groupRows($applicants, 'registration_path', collect(Applicant::REGISTRATION_PATHS)->map(fn ($path) => $path['label'])),
+            'paths' => self::groupRows($applicants, 'registration_path', RegistrationPath::ordered()->map(fn (RegistrationPath $path) => $path->name)),
             'waves' => self::groupRows(
                 $applicants,
                 'admission_wave_id',

@@ -198,6 +198,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/master-data/admission-waves/{admissionWave}', [MasterDataController::class, 'updateAdmissionWave'])->name('master-data.admission-waves.update');
         Route::patch('/master-data/admission-waves/{admissionWave}/toggle', [MasterDataController::class, 'toggleAdmissionWave'])->name('master-data.admission-waves.toggle');
 
+        Route::post('/master-data/registration-paths', [MasterDataController::class, 'storeRegistrationPath'])->name('master-data.registration-paths.store');
+        Route::put('/master-data/registration-paths/{registrationPath}', [MasterDataController::class, 'updateRegistrationPath'])->name('master-data.registration-paths.update');
+        Route::patch('/master-data/registration-paths/{registrationPath}/toggle', [MasterDataController::class, 'toggleRegistrationPath'])->name('master-data.registration-paths.toggle');
+        Route::delete('/master-data/registration-paths/{registrationPath}', [MasterDataController::class, 'destroyRegistrationPath'])->name('master-data.registration-paths.destroy');
+
         Route::post('/master-data/class-types', [MasterDataController::class, 'storeClassType'])->name('master-data.class-types.store');
         Route::put('/master-data/class-types/{classType}', [MasterDataController::class, 'updateClassType'])->name('master-data.class-types.update');
         Route::patch('/master-data/class-types/{classType}/toggle', [MasterDataController::class, 'toggleClassType'])->name('master-data.class-types.toggle');

@@ -14,24 +14,6 @@ class Applicant extends Authenticatable
 {
     use HasFactory, Notifiable, SoftDeletes;
 
-    /**
-     * Jalur pendaftaran yang dipilih camaba saat registrasi.
-     */
-    public const REGISTRATION_PATHS = [
-        'umum' => [
-            'label' => 'Umum',
-            'description' => 'Untuk lulusan SMA/SMK/MA atau sederajat. Mengikuti ujian seleksi sesuai jadwal gelombang.',
-        ],
-        'prestasi' => [
-            'label' => 'Prestasi',
-            'description' => 'Untuk pendaftar dengan prestasi akademik maupun non-akademik. Lampirkan sertifikat penghargaan.',
-        ],
-        'undangan' => [
-            'label' => 'Undangan',
-            'description' => 'Untuk siswa yang mendapat rekomendasi atau undangan dari sekolah asal.',
-        ],
-    ];
-
     protected $fillable = [
         'pmb_year_id',
         'admission_wave_id',
@@ -172,7 +154,7 @@ class Applicant extends Authenticatable
 
     public function getRegistrationPathLabelAttribute(): string
     {
-        return self::REGISTRATION_PATHS[$this->registration_path]['label'] ?? self::REGISTRATION_PATHS['umum']['label'];
+        return RegistrationPath::labelFor($this->registration_path);
     }
 
     /**

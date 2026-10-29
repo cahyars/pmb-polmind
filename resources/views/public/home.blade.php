@@ -181,16 +181,19 @@
         </div>
 
         <div class="grid gap-4 sm:grid-cols-2 lg:col-span-2">
-            @foreach(\App\Models\Applicant::REGISTRATION_PATHS as $key => $path)
+            @php
+                $registrationPaths = \App\Models\RegistrationPath::active();
+            @endphp
+            @foreach($registrationPaths as $path)
                 {{-- Membuka form registrasi dengan jalur ini sudah terpilih. --}}
-                <a href="{{ route('register', ['jalur' => $key]) }}"
+                <a href="{{ route('register', ['jalur' => $path->code]) }}"
                    class="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-polmind-blue hover:shadow-lg">
                     <p class="text-sm font-black text-polmind-blue">{{ str_pad($loop->iteration, 2, '0', STR_PAD_LEFT) }}</p>
                     <div class="mt-2 flex items-center justify-between gap-3">
-                        <h3 class="text-lg font-black text-slate-900 transition group-hover:text-polmind-blue">Jalur {{ $path['label'] }}</h3>
+                        <h3 class="text-lg font-black text-slate-900 transition group-hover:text-polmind-blue">Jalur {{ $path->name }}</h3>
                         <span class="text-lg font-black text-polmind-yellow opacity-0 transition group-hover:opacity-100" aria-hidden="true">»</span>
                     </div>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">{{ $path['description'] }}</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-500">{{ $path->description }}</p>
                     <p class="mt-4 text-xs font-black text-polmind-blue opacity-0 transition group-hover:opacity-100">Daftar lewat jalur ini →</p>
                 </a>
             @endforeach
@@ -199,7 +202,7 @@
                target="_blank"
                rel="noopener"
                class="group flex flex-col justify-between rounded-2xl bg-polmind-blue p-6 text-white shadow-lg shadow-blue-900/20 transition hover:-translate-y-0.5 hover:bg-polmind-blue-dark">
-                <p class="text-sm font-black text-polmind-yellow">04</p>
+                <p class="text-sm font-black text-polmind-yellow">{{ str_pad($registrationPaths->count() + 1, 2, '0', STR_PAD_LEFT) }}</p>
                 <div>
                     <h3 class="mt-2 text-lg font-black">Belum yakin jalur yang cocok?</h3>
                     <p class="mt-2 text-sm leading-6 text-blue-100">Konsultasi gratis dengan admin PMB lewat WhatsApp.</p>

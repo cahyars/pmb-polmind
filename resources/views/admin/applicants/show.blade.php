@@ -35,11 +35,10 @@
 
     $badgeClass = function ($status) {
         return match ($status) {
-            'valid', 'diterima', 'paid', 'success', 'prestasi' => 'bg-green-100 text-green-700',
+            'valid', 'diterima', 'paid', 'success' => 'bg-green-100 text-green-700',
             'menunggu_verifikasi', 'waiting_verification', 'pending', 'sebagian_upload' => 'bg-yellow-100 text-yellow-700',
             'ditolak', 'rejected', 'failed' => 'bg-red-100 text-red-700',
-            'biodata_lengkap', 'umum' => 'bg-blue-100 text-polmind-blue',
-            'undangan' => 'bg-purple-100 text-purple-700',
+            'biodata_lengkap' => 'bg-blue-100 text-polmind-blue',
             default => 'bg-slate-100 text-slate-600',
         };
     };
@@ -453,18 +452,12 @@
                 <div class="mt-5 rounded-lg bg-slate-50 p-5">
                     <p class="text-xs font-semibold text-slate-500">Kategori Jalur</p>
 
-                    <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ $badgeClass($applicant->registration_path ?? 'umum') }}">
+                    <span class="mt-3 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ \App\Models\RegistrationPath::badgeClass($applicant->registration_path) }}">
                         {{ $applicant->registration_path_label }}
                     </span>
 
                     <p class="mt-4 text-xs leading-5 text-slate-600">
-                        @if(($applicant->registration_path ?? 'umum') === 'prestasi')
-                            Camaba mendaftar melalui jalur prestasi. Pastikan dokumen pendukung prestasi telah diverifikasi.
-                        @elseif(($applicant->registration_path ?? 'umum') === 'undangan')
-                            Camaba mendaftar melalui jalur undangan. Pastikan data rekomendasi/undangan sesuai ketentuan PMB.
-                        @else
-                            Camaba mendaftar melalui jalur umum dengan alur seleksi reguler.
-                        @endif
+                        {{ \App\Models\RegistrationPath::forCode($applicant->registration_path)?->description ?? 'Keterangan jalur belum diisi di Master Data.' }}
                     </p>
                 </div>
             </div>

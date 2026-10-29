@@ -20,11 +20,6 @@
         'gagal_sinkron' => 'bg-red-100 text-red-700',
     ];
 
-    $registrationPathClasses = [
-        'umum' => 'bg-blue-50 text-polmind-blue',
-        'prestasi' => 'bg-green-100 text-green-700',
-        'undangan' => 'bg-purple-100 text-purple-700',
-    ];
 @endphp
 
 <div class="space-y-8">
@@ -136,9 +131,9 @@
                 <select name="registration_path"
                         class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Jalur</option>
-                    <option value="umum" @selected(request('registration_path') === 'umum')>Umum</option>
-                    <option value="prestasi" @selected(request('registration_path') === 'prestasi')>Prestasi</option>
-                    <option value="undangan" @selected(request('registration_path') === 'undangan')>Undangan</option>
+                    @foreach(\App\Models\RegistrationPath::ordered() as $pathOption)
+                        <option value="{{ $pathOption->code }}" @selected(request('registration_path') === $pathOption->code)>{{ $pathOption->name }}</option>
+                    @endforeach
                 </select>
             </div>
 
@@ -239,7 +234,7 @@
                                 </td>
 
                                 <td class="px-5 py-3.5">
-                                    <span class="rounded-full px-3 py-1 text-xs font-bold {{ $registrationPathClasses[$registrationPath] ?? 'bg-slate-100 text-slate-600' }}">
+                                    <span class="rounded-full px-3 py-1 text-xs font-bold {{ \App\Models\RegistrationPath::badgeClass($registrationPath) }}">
                                         {{ $applicant->registration_path_label }}
                                     </span>
                                 </td>

@@ -37,26 +37,14 @@
 
     {{-- Registration Path Stats --}}
     <div class="grid gap-5 md:grid-cols-3">
-        @foreach([
-            [
-                'label' => 'Jalur Umum',
-                'value' => $registrationPathStats['umum'] ?? 0,
-                'desc' => 'Pendaftar jalur umum',
-                'class' => 'text-polmind-blue',
-            ],
-            [
-                'label' => 'Jalur Prestasi',
-                'value' => $registrationPathStats['prestasi'] ?? 0,
-                'desc' => 'Pendaftar jalur prestasi',
-                'class' => 'text-green-700',
-            ],
-            [
-                'label' => 'Jalur Undangan',
-                'value' => $registrationPathStats['undangan'] ?? 0,
-                'desc' => 'Pendaftar jalur undangan',
-                'class' => 'text-purple-700',
-            ],
-        ] as $card)
+        @foreach(\App\Models\RegistrationPath::ordered()
+            ->filter(fn ($path) => $path->is_active || ($registrationPathStats[$path->code] ?? 0) > 0)
+            ->map(fn ($path) => [
+                'label' => 'Jalur ' . $path->name,
+                'value' => $registrationPathStats[$path->code] ?? 0,
+                'desc' => 'Pendaftar jalur ' . mb_strtolower($path->name),
+                'class' => \App\Models\RegistrationPath::textClass($path->code),
+            ]) as $card)
             <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
                 <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
                 <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
@@ -150,15 +138,9 @@
                 <select name="registration_path"
                         class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
                     <option value="">Semua Jalur</option>
-                    <option value="umum" @selected(request('registration_path') === 'umum')>
-                        Umum
-                    </option>
-                    <option value="prestasi" @selected(request('registration_path') === 'prestasi')>
-                        Prestasi
-                    </option>
-                    <option value="undangan" @selected(request('registration_path') === 'undangan')>
-                        Undangan
-                    </option>
+                    @foreach(\App\Models\RegistrationPath::ordered() as $pathOption)
+                        <option value="{{ $pathOption->code }}" @selected(request('registration_path') === $pathOption->code)>{{ $pathOption->name }}</option>
+                    @endforeach
                 </select>
             </div>
 

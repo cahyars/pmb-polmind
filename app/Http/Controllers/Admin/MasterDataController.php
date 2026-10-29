@@ -8,6 +8,7 @@ use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
 use App\Models\PmbYear;
+use App\Models\RegistrationPath;
 use App\Models\SelectionComponent;
 use App\Models\Setting;
 use App\Models\StudyProgram;
@@ -28,6 +29,7 @@ class MasterDataController extends Controller
         'komponen-tes' => ['label' => 'Komponen Tes', 'description' => 'Jenis tes yang diikuti camaba saat seleksi.'],
         'pic-tes' => ['label' => 'PIC Tes Seleksi', 'description' => 'Dosen penanggung jawab setiap jadwal tes seleksi.'],
         'prodi' => ['label' => 'Program Studi', 'description' => 'Program studi, kuota, dan kode PDDikti/SIAKAD.'],
+        'jalur' => ['label' => 'Jalur Pendaftaran', 'description' => 'Pilihan jalur pendaftaran yang tampil di landing page dan form registrasi.'],
         'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
         'berkas' => ['label' => 'Jenis Berkas', 'description' => 'Dokumen yang wajib atau opsional diunggah camaba.'],
         'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI, UKT, dan komponen daftar ulang.'],
@@ -57,6 +59,9 @@ class MasterDataController extends Controller
             ],
             'prodi' => [
                 'studyPrograms' => StudyProgram::orderBy('code')->get(),
+            ],
+            'jalur' => [
+                'registrationPaths' => RegistrationPath::withCount('applicants')->orderBy('sort_order')->orderBy('id')->get(),
             ],
             'kelas' => [
                 'classTypes' => ClassType::orderBy('code')->get(),
@@ -445,6 +450,83 @@ class MasterDataController extends Controller
         }
 
         return back()->with('success', 'Status aktif gelombang berhasil diubah.');
+    }
+
+    public function storeRegistrationPath(Request $request)
+    {
+        $validated = $this->validateRegistrationPath($request);
+
+        RegistrationPath::create($validated + [
+            'code' => RegistrationPath::makeCode($validated['name']),
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jalur pendaftaran berhasil ditambahkan.');
+    }
+
+    public function updateRegistrationPath(Request $request, RegistrationPath $registrationPath)
+    {
+        $validated = $this->validateRegistrationPath($request, $registrationPath);
+
+        if (! $request->boolean('is_active') && $this->isLastActivePath($registrationPath)) {
+            return back()->withErrors('Minimal harus ada satu jalur pendaftaran yang aktif.');
+        }
+
+        // Kode tidak diubah karena tersimpan di data camaba dan link ?jalur= landing page.
+        $registrationPath->update($validated + [
+            'is_active' => $request->boolean('is_active'),
+        ]);
+
+        return back()->with('success', 'Jalur pendaftaran berhasil diperbarui.');
+    }
+
+    public function toggleRegistrationPath(RegistrationPath $registrationPath)
+    {
+        if ($this->isLastActivePath($registrationPath)) {
+            return back()->withErrors('Minimal harus ada satu jalur pendaftaran yang aktif.');
+        }
+
+        $registrationPath->update([
+            'is_active' => ! $registrationPath->is_active,
+        ]);
+
+        return back()->with('success', 'Status jalur pendaftaran berhasil diubah.');
+    }
+
+    public function destroyRegistrationPath(RegistrationPath $registrationPath)
+    {
+        if ($registrationPath->applicants()->withTrashed()->exists()) {
+            return back()->withErrors('Jalur ' . $registrationPath->name . ' sudah dipakai camaba sehingga tidak dapat dihapus. Nonaktifkan saja agar tidak tampil di form registrasi.');
+        }
+
+        if ($this->isLastActivePath($registrationPath)) {
+            return back()->withErrors('Minimal harus ada satu jalur pendaftaran yang aktif.');
+        }
+
+        $registrationPath->delete();
+
+        return back()->with('success', 'Jalur ' . $registrationPath->name . ' berhasil dihapus.');
+    }
+
+    private function validateRegistrationPath(Request $request, ?RegistrationPath $registrationPath = null): array
+    {
+        return $request->validate([
+            'name' => ['required', 'string', 'max:100', Rule::unique('registration_paths', 'name')->ignore($registrationPath?->id)],
+            'description' => ['nullable', 'string', 'max:500'],
+            'sort_order' => ['required', 'integer', 'min:0', 'max:999'],
+        ], [
+            'name.unique' => 'Nama jalur ini sudah ada.',
+        ], [
+            'name' => 'nama jalur',
+            'description' => 'keterangan',
+            'sort_order' => 'urutan',
+        ]);
+    }
+
+    private function isLastActivePath(RegistrationPath $registrationPath): bool
+    {
+        return $registrationPath->is_active
+            && ! RegistrationPath::where('is_active', true)->whereKeyNot($registrationPath->id)->exists();
     }
 
     public function storeClassType(Request $request)
