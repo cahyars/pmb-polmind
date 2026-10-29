@@ -12,8 +12,9 @@ use Illuminate\Support\Collection;
 
 /**
  * Rekap harian pendaftaran untuk dikirim ke grup WhatsApp pimpinan, mengikuti template PMB.
- * Pendaftar resmi = formulir sudah dibayar (divalidasi) atau dibebaskan; peminat yang baru
- * membuat akun tidak dihitung. Tanggal resmi = tanggal pembayaran formulir divalidasi/dibebaskan.
+ * Pendaftar resmi = semua yang sudah registrasi (sudah bayar formulir atau belum).
+ * Hari rekap ditutup pukul 18.00 WIB: pertambahan hari H dihitung dari H-1 18.00 sampai
+ * H 18.00, sehingga pendaftar malam hari masuk laporan sore keesokan harinya.
  */
 class DailyRecap
 {
@@ -21,6 +22,8 @@ class DailyRecap
      * Sekolah mitra yang lulusannya dihitung terpisah (poin 8).
      */
     public const PARTNER_SCHOOL = 'SMK Mitra Industri';
+
+    public const CUTOFF_HOUR = 18;
 
     private const SCHOOL_TYPE_ORDER = ['SMA', 'SMK', 'MA', 'MAK', 'Paket C', 'Lainnya'];
 
@@ -32,13 +35,13 @@ class DailyRecap
 
     public static function for(?PmbYear $pmbYear, ?AdmissionWave $wave, Carbon $date): self
     {
-        return new self($pmbYear, $wave, $date->copy()->endOfDay());
+        return new self($pmbYear, $wave, $date->copy()->startOfDay());
     }
 
     public function text(): string
     {
         $official = $this->officialApplicants();
-        $today = $official->filter(fn (Applicant $applicant) => $this->officialAt($applicant)?->isSameDay($this->date));
+        $today = $official->filter(fn (Applicant $applicant) => $applicant->created_at->gte($this->windowStart()));
         $todayOffline = $today->where('registered_via', 'kampus')->count();
         $shortDate = $this->date->format('j/n/Y');
         $partner = $official->filter(fn (Applicant $applicant) => str_contains(
@@ -95,24 +98,33 @@ class DailyRecap
     /**
      * @return Collection<int, Applicant>
      */
+    /**
+     * Awal pertambahan hari H: H-1 pukul 18.00 WIB.
+     */
+    public function windowStart(): Carbon
+    {
+        return $this->date->copy()->subDay()->setTime(self::CUTOFF_HOUR, 0);
+    }
+
+    /**
+     * Batas rekap hari H: H pukul 18.00 WIB (pendaftar setelahnya masuk rekap besok).
+     */
+    public function windowEnd(): Carbon
+    {
+        return $this->date->copy()->setTime(self::CUTOFF_HOUR, 0);
+    }
+
+    /**
+     * @return Collection<int, Applicant>
+     */
     private function officialApplicants(): Collection
     {
         return Applicant::query()
-            ->with(['studyProgram', 'classType', 'education', 'registrationInvoice.payments'])
+            ->with(['studyProgram', 'classType', 'education'])
             ->when($this->pmbYear, fn ($query) => $query->where('pmb_year_id', $this->pmbYear->id))
             ->when($this->wave, fn ($query) => $query->where('admission_wave_id', $this->wave->id))
-            ->where('payment_status', 'valid')
-            ->get()
-            ->filter(fn (Applicant $applicant) => ($this->officialAt($applicant) ?? $applicant->created_at)->lte($this->date))
-            ->values();
-    }
-
-    private function officialAt(Applicant $applicant): ?Carbon
-    {
-        $invoice = $applicant->registrationInvoice;
-
-        return $invoice?->waived_at
-            ?? $invoice?->payments->where('status', 'valid')->max('verified_at');
+            ->where('created_at', '<', $this->windowEnd())
+            ->get();
     }
 
     private function byStudyProgram(Collection $applicants): array

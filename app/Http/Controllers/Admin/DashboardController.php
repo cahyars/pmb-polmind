@@ -128,19 +128,22 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Rekap harian untuk grup WhatsApp: default gelombang berjalan dan hari ini.
+        // Rekap harian untuk grup WhatsApp: default gelombang berjalan dan hari ini (ditutup 18.00 WIB).
         $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
         $recapWaves = AdmissionWave::orderBy('start_date')->orderBy('id')->get();
         $recapWaveId = $request->query('rekap_gelombang', AdmissionWave::current($pmbYear)?->id ?? 'semua');
         $recapWave = $recapWaves->firstWhere('id', (int) $recapWaveId);
         $recapDate = rescue(fn () => Carbon::parse((string) $request->query('rekap_tanggal', now()->toDateString())), now(), false);
-        $recapText = DailyRecap::for($pmbYear, $recapWave, $recapDate)->text();
+        $recap = DailyRecap::for($pmbYear, $recapWave, $recapDate);
+        $recapText = $recap->text();
+        $recapWindow = [$recap->windowStart(), $recap->windowEnd()];
 
         return view('admin.dashboard', compact(
             'recapWaves',
             'recapWave',
             'recapDate',
             'recapText',
+            'recapWindow',
             'totalApplicants',
             'biodataComplete',
             'pendingDocuments',
