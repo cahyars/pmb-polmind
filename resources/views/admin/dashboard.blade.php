@@ -442,41 +442,40 @@
                 </a>
             </div>
 
-            {{-- Quick Report --}}
-            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                <h2 class="text-base font-semibold text-slate-900">
-                    Laporan Singkat
-                </h2>
-
+            {{-- Rekap harian untuk grup WhatsApp --}}
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm" x-data="{ copied: false }">
+                <h2 class="text-base font-semibold text-slate-900">Laporan Singkat</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
-                    Ringkasan sementara untuk bahan laporan pimpinan.
+                    Rekap harian pendaftar resmi (formulir sudah dibayar) untuk dikirim ke grup.
                 </p>
 
-                <div class="mt-5 rounded-lg border border-slate-200 bg-slate-50 p-5">
-                    <p class="text-sm leading-6 text-slate-700">
-                        Total pendaftar sementara <span class="font-bold text-polmind-blue">{{ $totalApplicants }} camaba</span>,
-                        dengan <span class="font-bold text-green-700">{{ $acceptedApplicants }} diterima</span>,
-                        <span class="font-bold text-polmind-blue">{{ $validReRegistrations }} sudah daftar ulang valid</span>,
-                        dan <span class="font-bold text-purple-700">{{ $readySyncApplicants }} siap sinkron SIAKAD</span>.
-                        Total pembayaran valid sementara sebesar
-                        <span class="font-bold text-green-700">Rp{{ number_format($totalValidPayment, 0, ',', '.') }}</span>.
-                    </p>
+                <form action="{{ route('admin.dashboard') }}" method="GET" class="mt-4 grid grid-cols-2 gap-2">
+                    <select name="rekap_gelombang" aria-label="Gelombang rekap" onchange="this.form.submit()"
+                            class="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue">
+                        <option value="semua" @selected(! $recapWave)>Semua gelombang</option>
+                        @foreach($recapWaves as $wave)
+                            <option value="{{ $wave->id }}" @selected($recapWave?->id === $wave->id)>{{ $wave->name }}</option>
+                        @endforeach
+                    </select>
+                    <input type="date" name="rekap_tanggal" aria-label="Tanggal rekap" value="{{ $recapDate->toDateString() }}" max="{{ now()->toDateString() }}"
+                           onchange="this.form.submit()"
+                           class="rounded-lg border border-slate-300 px-3 py-2 text-xs outline-none focus:border-polmind-blue">
+                </form>
+
+                <pre class="mt-3 max-h-96 overflow-y-auto whitespace-pre-wrap rounded-lg border border-slate-200 bg-slate-50 p-4 font-sans text-xs leading-5 text-slate-700">{{ $recapText }}</pre>
+
+                <div class="mt-4 grid grid-cols-2 gap-2">
+                    <button type="button"
+                            @click="navigator.clipboard.writeText(@js($recapText)).then(() => { copied = true; setTimeout(() => copied = false, 2000) })"
+                            class="rounded-lg border border-polmind-blue bg-white px-3 py-2.5 text-sm font-semibold text-polmind-blue transition hover:bg-blue-50">
+                        <span x-text="copied ? 'Tersalin' : 'Salin Teks'">Salin Teks</span>
+                    </button>
+                    <a href="https://wa.me/?text={{ rawurlencode($recapText) }}" target="_blank" rel="noopener"
+                       class="rounded-lg bg-green-600 px-3 py-2.5 text-center text-sm font-semibold text-white transition hover:bg-green-700">
+                        Kirim ke WhatsApp
+                    </a>
                 </div>
-
-                <button type="button"
-                    onclick="navigator.clipboard.writeText(`Selamat pagi Bapak/Ibu, izin menyampaikan update sementara PMB Polmind.
-
-                Total pendaftar sementara: {{ $totalApplicants }} camaba.
-                Biodata lengkap: {{ $biodataComplete }} camaba.
-                Diterima: {{ $acceptedApplicants }} camaba.
-                Daftar ulang valid: {{ $validReRegistrations }} camaba.
-                Siap sinkron SIAKAD: {{ $readySyncApplicants }} camaba.
-                Total pembayaran valid: Rp{{ number_format($totalValidPayment, 0, ',', '.') }}.
-
-                Demikian update sementara yang dapat kami sampaikan. Terima kasih.`); Swal.fire({title: 'Narasi disalin', text: 'Teks laporan singkat sudah disalin ke clipboard.', icon: 'success', confirmButtonColor: '#003B82'})"
-                        class="mt-5 w-full rounded-lg border border-polmind-blue bg-white px-5 py-3 text-sm font-semibold text-polmind-blue transition hover:bg-blue-50">
-                    Copy Narasi Laporan
-                </button>
+                <p class="mt-2 text-xs leading-5 text-slate-500">"Kirim ke WhatsApp" membuka WhatsApp untuk memilih grup tujuan.</p>
             </div>
 
             {{-- Admin Notes --}}

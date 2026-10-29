@@ -3,16 +3,22 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SelectAdminPmbYear;
+use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\ApplicantDocument;
 use App\Models\IntegrationLog;
 use App\Models\Payment;
 use App\Models\ReRegistration;
+use App\Models\PmbYear;
 use App\Models\StudyProgram;
+use App\Services\Reports\DailyRecap;
+use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         $totalApplicants = Applicant::count();
 
@@ -122,7 +128,19 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Rekap harian untuk grup WhatsApp: default gelombang berjalan dan hari ini.
+        $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
+        $recapWaves = AdmissionWave::orderBy('start_date')->orderBy('id')->get();
+        $recapWaveId = $request->query('rekap_gelombang', AdmissionWave::current($pmbYear)?->id ?? 'semua');
+        $recapWave = $recapWaves->firstWhere('id', (int) $recapWaveId);
+        $recapDate = rescue(fn () => Carbon::parse((string) $request->query('rekap_tanggal', now()->toDateString())), now(), false);
+        $recapText = DailyRecap::for($pmbYear, $recapWave, $recapDate)->text();
+
         return view('admin.dashboard', compact(
+            'recapWaves',
+            'recapWave',
+            'recapDate',
+            'recapText',
             'totalApplicants',
             'biodataComplete',
             'pendingDocuments',
