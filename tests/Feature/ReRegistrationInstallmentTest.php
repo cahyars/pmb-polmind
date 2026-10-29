@@ -223,8 +223,12 @@ class ReRegistrationInstallmentTest extends TestCase
 
         $applicant->refresh();
         $this->assertSame('daftar_ulang_valid', $applicant->re_registration_status);
-        $this->assertSame('siap_sinkron', $applicant->sync_status);
         $this->assertSame('partial', $invoice->refresh()->status);
+
+        // Siap ditarik SIAKAD setelah NIM dibubuhkan.
+        $this->assertSame('belum_siap', $applicant->sync_status);
+        $this->actingAs($this->admin, 'web')->post(route('admin.nim.generate-one', $applicant))->assertSessionHasNoErrors();
+        $this->assertSame('siap_sinkron', $applicant->refresh()->sync_status);
 
         // Angsuran berikutnya tidak membuat status daftar ulang turun lagi.
         $applicant->update(['sync_status' => 'sudah_sinkron']);

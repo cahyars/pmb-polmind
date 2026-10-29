@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
  * milik data yang dihapus dipakai lagi. Penghitung hanya mundur sampai nomor
  * tertinggi yang masih terpakai, jadi nomor kosong di tengah tidak diisi ulang.
  * Kwitansi tidak ikut karena hanya terbit untuk pembayaran valid, yang tidak bisa dihapus.
+ * NIM hanya dikenali jika masih mengikuti format NIM saat ini.
  */
 class SequenceRewinder
 {
@@ -44,6 +45,17 @@ class SequenceRewinder
             Invoice::where('invoice_number', 'like', 'INV/PMB/' . $pmbYear->year . '/%')->pluck('invoice_number'),
             '#^INV/PMB/' . $year . '/(\d+)$#'
         ));
+
+        $nimKeys = RegistrationSequence::where('pmb_year_id', $pmbYear->id)
+            ->where(fn ($query) => $query->where('key', 'nim')->orWhere('key', 'like', 'nim-%'))
+            ->pluck('key');
+
+        foreach ($nimKeys as $key) {
+            self::rewindKey($pmbYear->id, $key, fn () => self::highest(
+                Applicant::withTrashed()->where('pmb_year_id', $pmbYear->id)->whereNotNull('nim')->pluck('nim'),
+                NimGenerator::pattern($key, (int) $pmbYear->year)
+            ));
+        }
 
         foreach (['pembayaran-pmb' => 'PAY/PMB', 'pembayaran-du' => 'PAY/DU'] as $key => $prefix) {
             self::rewindKey($pmbYear->id, $key, fn () => self::highest(

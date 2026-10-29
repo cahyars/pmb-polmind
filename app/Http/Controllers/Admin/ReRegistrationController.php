@@ -102,7 +102,6 @@ class ReRegistrationController extends Controller
 
         $pmbYear = $this->selectedPmbYear($request);
         $nimCandidates = $pmbYear ? NimGenerator::eligible($pmbYear) : collect();
-        $nimExample = NimGenerator::example(year: $pmbYear?->year);
 
         return view('admin.re-registrations.index', compact(
             'acceptedApplicants',
@@ -113,39 +112,8 @@ class ReRegistrationController extends Controller
             'totalPaidReRegistration',
             'studyPrograms',
             'reRegistrations',
-            'nimCandidates',
-            'nimExample'
+            'nimCandidates'
         ));
-    }
-
-    /**
-     * Bubuhkan NIM ke camaba yang sudah membayar daftar ulang, berurutan
-     * dari tanggal daftar ulang paling awal.
-     */
-    public function generateNim(Request $request)
-    {
-        $pmbYear = $this->selectedPmbYear($request);
-
-        if (! $pmbYear) {
-            return back()->withErrors('Pilih Tahun PMB terlebih dahulu.');
-        }
-
-        ['generated' => $generated, 'skipped' => $skipped] = NimGenerator::generate($pmbYear);
-
-        if ($generated->isEmpty() && $skipped->isEmpty()) {
-            return back()->withErrors('Belum ada camaba yang memenuhi syarat untuk dibubuhkan NIM.');
-        }
-
-        if ($skipped->isNotEmpty()) {
-            $programs = $skipped->map(fn ($applicant) => $applicant->enrolled_study_program?->code ?? '-')->unique()->implode(', ');
-
-            $message = $generated->count() . ' NIM berhasil dibuat. ' . $skipped->count()
-                . ' camaba dilewati karena kode NIM prodi (' . $programs . ') belum diisi di Master Data Program Studi.';
-
-            return $generated->isEmpty() ? back()->withErrors($message) : back()->with('success', $message);
-        }
-
-        return back()->with('success', $generated->count() . ' NIM berhasil dibuat sesuai urutan tanggal daftar ulang.');
     }
 
     public function validateReRegistration(ReRegistration $reRegistration)
@@ -159,11 +127,13 @@ class ReRegistrationController extends Controller
         DB::transaction(function () use ($reRegistration) {
             $reRegistration->load(['applicant', 'invoice.payments']);
 
+            $hasNim = filled($reRegistration->applicant->nim);
+
             $reRegistration->update([
                 'status' => 'valid',
                 'validated_at' => now(),
                 'validated_by_name' => $this->actorName(),
-                'ready_sync_at' => now(),
+                'ready_sync_at' => $hasNim ? now() : null,
                 'admin_note' => null,
             ]);
 
@@ -171,13 +141,14 @@ class ReRegistrationController extends Controller
                 'status' => 'paid',
             ]);
 
+            // Siap ditarik SIAKAD setelah NIM dibubuhkan di menu Generate NIM.
             $reRegistration->applicant->update([
                 're_registration_status' => 'daftar_ulang_valid',
-                'sync_status' => 'siap_sinkron',
+                'sync_status' => $hasNim ? 'siap_sinkron' : 'belum_siap',
             ]);
         });
 
-        return back()->with('success', 'Daftar ulang berhasil divalidasi dan camaba siap sinkron ke SIAKAD.');
+        return back()->with('success', 'Daftar ulang berhasil divalidasi. Lanjutkan pembubuhan NIM di menu Kelulusan > Generate NIM.');
     }
 
     public function reject(Request $request, ReRegistration $reRegistration)
@@ -225,6 +196,10 @@ class ReRegistrationController extends Controller
 
         if ($reRegistration->status !== 'valid') {
             return back()->withErrors('Hanya daftar ulang yang sudah valid yang dapat ditandai siap sinkron.');
+        }
+
+        if (blank($reRegistration->applicant->nim)) {
+            return back()->withErrors('Camaba belum memiliki NIM. Bubuhkan NIM dulu di menu Kelulusan > Generate NIM.');
         }
 
         if ($message = $this->guardCanValidate($reRegistration)) {

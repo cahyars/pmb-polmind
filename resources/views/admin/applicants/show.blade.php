@@ -516,7 +516,8 @@
                     ['label' => 'Verifikasi Berkas', 'desc' => $waitingDocuments ? $waitingDocuments . ' berkas menunggu' : 'Cek & validasi berkas', 'url' => route('admin.documents.show', $rn), 'icon' => 'document-text', 'color' => 'bg-polmind-blue text-white'],
                     ['label' => 'Verifikasi Pembayaran', 'desc' => $waitingPayments ? $waitingPayments . ' pembayaran menunggu' : 'Riwayat & validasi bayar', 'url' => route('admin.payments.index', ['keyword' => $rn]), 'icon' => 'card', 'color' => 'bg-green-600 text-white'],
                     ['label' => 'Seleksi & Keputusan', 'desc' => 'Nilai tes, set diterima', 'url' => route('admin.selections.show', $rn), 'icon' => 'clipboard-check', 'color' => 'bg-purple-600 text-white'],
-                    ['label' => 'Daftar Ulang', 'desc' => 'Tagihan DU & NIM', 'url' => route('admin.re-registrations.index', ['keyword' => $rn]), 'icon' => 'cap', 'color' => 'bg-teal-600 text-white'],
+                    ['label' => 'Daftar Ulang', 'desc' => 'Tagihan & validasi daftar ulang', 'url' => route('admin.re-registrations.index', ['keyword' => $rn]), 'icon' => 'cap', 'color' => 'bg-teal-600 text-white'],
+                    ['label' => 'Generate NIM', 'desc' => $applicant->nim ? 'NIM ' . $applicant->nim : 'Bubuhkan NIM otomatis/manual', 'url' => route('admin.nim.index', ['keyword' => $rn]), 'icon' => 'badge-check', 'color' => 'bg-sky-600 text-white'],
                     ['label' => 'Follow Up', 'desc' => 'Catatan & jadwal kontak', 'url' => route('admin.follow-ups.index', ['keyword' => $rn]), 'icon' => 'chat', 'color' => 'bg-polmind-yellow text-polmind-blue-dark'],
                     ['label' => 'Integrasi SIAKAD', 'desc' => 'Payload & status sinkron', 'url' => route('admin.integrations.index', ['keyword' => $rn]), 'icon' => 'sync', 'color' => 'bg-slate-700 text-white'],
                 ];

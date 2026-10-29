@@ -49,7 +49,15 @@
                     ['label' => 'Verifikasi Berkas', 'url' => '/admin/documents', 'icon' => 'document', 'badge' => $badges['documents'], 'badgeTitle' => 'berkas menunggu verifikasi', 'active' => request()->is('admin/documents*')],
                     ['label' => 'Verifikasi Pembayaran', 'url' => '/admin/payments', 'icon' => 'card', 'badge' => $badges['payments'], 'badgeTitle' => 'pembayaran menunggu verifikasi', 'active' => request()->is('admin/payments*')],
                     ['label' => 'Seleksi', 'url' => '/admin/selections', 'icon' => 'check', 'active' => request()->is('admin/selections*')],
-                    ['label' => 'Daftar Ulang', 'url' => '/admin/re-registrations', 'icon' => 'cap', 'active' => request()->is('admin/re-registrations*')],
+                    [
+                        'label' => 'Kelulusan',
+                        'icon' => 'cap',
+                        'active' => request()->is('admin/re-registrations*', 'admin/nim*'),
+                        'children' => [
+                            ['label' => 'Daftar Ulang', 'url' => route('admin.re-registrations.index'), 'active' => request()->is('admin/re-registrations*')],
+                            ['label' => 'Generate NIM', 'url' => route('admin.nim.index'), 'active' => request()->is('admin/nim*')],
+                        ],
+                    ],
                     ['label' => 'Follow Up', 'url' => '/admin/follow-ups', 'icon' => 'chat', 'active' => request()->is('admin/follow-ups*')],
                     [
                         'label' => 'Laporan',

@@ -42,15 +42,14 @@ class NimGenerationTest extends TestCase
         $admin = User::factory()->create();
 
         $this->actingAs($admin, 'web')
-            ->get('/admin/re-registrations')
+            ->get('/admin/nim')
             ->assertOk()
-            ->assertSee('Pembubuhan NIM')
             ->assertSee('Generate NIM (3)')
             ->assertSee('A20270001');
 
         $this->actingAs($admin, 'web')
-            ->post('/admin/re-registrations/generate-nim')
-            ->assertSessionHas('success', '3 NIM berhasil dibuat sesuai urutan tanggal daftar ulang.');
+            ->post('/admin/nim/generate')
+            ->assertSessionHas('success', '3 NIM berhasil dibuat sesuai urutan tanggal daftar ulang. Data siap ditarik SIAKAD.');
 
         $this->assertSame('A20270001', $early->refresh()->nim);
         $this->assertSame('A20270002', $late->refresh()->nim);
@@ -61,14 +60,57 @@ class NimGenerationTest extends TestCase
         // Mahasiswa yang daftar ulang belakangan melanjutkan nomor urut, NIM lama tidak berubah.
         $next = $this->reRegistered('next@example.com', 'TRPL', '2027-04-02');
 
-        $this->actingAs($admin, 'web')->post('/admin/re-registrations/generate-nim');
+        $this->actingAs($admin, 'web')->post('/admin/nim/generate');
 
         $this->assertSame('A20270003', $next->refresh()->nim);
         $this->assertSame('A20270001', $early->refresh()->nim);
 
         $this->actingAs($admin, 'web')
-            ->post('/admin/re-registrations/generate-nim')
+            ->post('/admin/nim/generate')
             ->assertSessionHasErrors();
+    }
+
+    public function test_nim_page_supports_manual_nim_and_release_until_pulled_by_siakad(): void
+    {
+        $admin = User::factory()->create();
+        $first = $this->reRegistered('satu@example.com', 'TRPL', '2027-04-05');
+        $second = $this->reRegistered('dua@example.com', 'TRPL', '2027-04-06');
+        $waiting = $this->reRegistered('tunggu@example.com', 'TRPL', '2027-04-07', 'waiting_verification');
+
+        $this->actingAs($admin, 'web')
+            ->get('/admin/nim')
+            ->assertOk()
+            ->assertSee('Kelulusan')
+            ->assertSee('href="' . route('admin.nim.index') . '"', false)
+            ->assertSeeInOrder([$first->full_name, 'Menunggu daftar ulang'])
+            ->assertSee('Generate NIM (2)');
+
+        // Belum daftar ulang valid: tidak bisa diberi NIM.
+        $this->actingAs($admin, 'web')->post(route('admin.nim.generate-one', $waiting))->assertSessionHasErrors();
+        $this->actingAs($admin, 'web')->put(route('admin.nim.update', $waiting), ['nim' => 'X1'])->assertSessionHasErrors();
+
+        $this->actingAs($admin, 'web')->post(route('admin.nim.generate-one', $first))->assertSessionHasNoErrors();
+        $this->assertSame('A20270001', $first->refresh()->nim);
+        $this->assertSame('siap_sinkron', $first->sync_status);
+
+        // NIM manual dan tidak boleh kembar.
+        $this->actingAs($admin, 'web')->put(route('admin.nim.update', $second), ['nim' => 'A20270001'])->assertSessionHasErrors('nim');
+        $this->actingAs($admin, 'web')->put(route('admin.nim.update', $second), ['nim' => 'tf-2027-77'])->assertSessionHasNoErrors();
+        $this->assertSame('TF-2027-77', $second->refresh()->nim);
+
+        // NIM terakhir dihapus: nomor urutnya dipakai lagi dan data kembali belum siap sinkron.
+        $this->actingAs($admin, 'web')->delete(route('admin.nim.destroy', $first))->assertSessionHasNoErrors();
+        $this->assertNull($first->refresh()->nim);
+        $this->assertSame('belum_siap', $first->sync_status);
+
+        $this->actingAs($admin, 'web')->post(route('admin.nim.generate-one', $first));
+        $this->assertSame('A20270001', $first->refresh()->nim);
+
+        // Setelah ditarik SIAKAD, NIM terkunci.
+        $first->update(['sync_status' => 'sudah_sinkron']);
+        $this->actingAs($admin, 'web')->delete(route('admin.nim.destroy', $first))->assertSessionHasErrors();
+        $this->actingAs($admin, 'web')->put(route('admin.nim.update', $first), ['nim' => 'BARU1'])->assertSessionHasErrors();
+        $this->assertSame('A20270001', $first->refresh()->nim);
     }
 
     public function test_study_program_without_nim_code_is_skipped(): void
@@ -79,7 +121,7 @@ class NimGenerationTest extends TestCase
         $trm = $this->reRegistered('trm@example.com', 'TRM', '2027-04-06');
 
         $this->actingAs(User::factory()->create(), 'web')
-            ->post('/admin/re-registrations/generate-nim')
+            ->post('/admin/nim/generate')
             ->assertSessionHas('success', fn ($message) => str_contains($message, '1 camaba dilewati') && str_contains($message, 'TRM'));
 
         $this->assertSame('A20270001', $trpl->refresh()->nim);
@@ -111,7 +153,7 @@ class NimGenerationTest extends TestCase
         $trpl = $this->reRegistered('trpl@example.com', 'TRPL', '2027-04-05');
         $trm = $this->reRegistered('trm@example.com', 'TRM', '2027-04-06');
 
-        $this->actingAs($admin, 'web')->post('/admin/re-registrations/generate-nim');
+        $this->actingAs($admin, 'web')->post('/admin/nim/generate');
 
         $this->assertSame('27A001', $trpl->refresh()->nim);
         $this->assertSame('27B002', $trm->refresh()->nim);
@@ -145,7 +187,12 @@ class NimGenerationTest extends TestCase
             'study_program_id' => StudyProgram::where('code', $programCode)->value('id'),
         ]);
 
-        $applicant->update(['payment_status' => 'valid', 'selection_status' => 'diterima']);
+        // Daftar ulang valid: lunas, atau angsuran ke-1 bagi camaba dengan cicilan.
+        $applicant->update([
+            'payment_status' => 'valid',
+            'selection_status' => 'diterima',
+            're_registration_status' => $status === 'valid' ? 'daftar_ulang_valid' : 'menunggu_verifikasi',
+        ]);
 
         $invoice = Invoice::create([
             'applicant_id' => $applicant->id,

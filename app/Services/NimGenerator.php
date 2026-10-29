@@ -11,8 +11,8 @@ use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 /**
- * NIM dibubuhkan oleh PMB setelah camaba resmi menjadi mahasiswa, yaitu sudah
- * memiliki minimal satu pembayaran daftar ulang yang valid (UKT, SPI, atau keduanya).
+ * NIM dibubuhkan oleh PMB setelah daftar ulang camaba valid (lunas, atau angsuran
+ * ke-1 bagi camaba dengan cicilan), lalu data camaba siap ditarik SIAKAD.
  * Format default {PRODI}{TAHUN}{URUT}, contoh A20270001. Nomor urut mengikuti
  * tanggal daftar ulang pertama sampai terakhir dan dapat diatur admin PMB.
  */
@@ -74,8 +74,8 @@ class NimGenerator
     }
 
     /**
-     * Camaba diterima yang sudah membayar daftar ulang (minimal satu pembayaran valid)
-     * tetapi belum memiliki NIM, diurutkan dari tanggal daftar ulang paling awal.
+     * Camaba diterima yang daftar ulangnya sudah valid tetapi belum memiliki NIM,
+     * diurutkan dari tanggal daftar ulang paling awal.
      *
      * @return Collection<int, array{applicant: Applicant, re_registered_at: \Illuminate\Support\Carbon|null}>
      */
@@ -85,7 +85,7 @@ class NimGenerator
             ->where('pmb_year_id', $pmbYear->id)
             ->where('selection_status', 'diterima')
             ->whereNull('nim')
-            ->whereHas('reRegistrationInvoice.payments', fn ($query) => $query->where('status', 'valid'))
+            ->where('re_registration_status', 'daftar_ulang_valid')
             ->with([
                 'studyProgram',
                 'acceptedStudyProgram',
@@ -115,7 +115,7 @@ class NimGenerator
      *
      * @return array{generated: Collection<int, Applicant>, skipped: Collection<int, Applicant>}
      */
-    public static function generate(PmbYear $pmbYear): array
+    public static function generate(PmbYear $pmbYear, ?int $onlyApplicantId = null): array
     {
         $format = self::format();
         $digits = self::digits();
@@ -125,9 +125,13 @@ class NimGenerator
         $generated = collect();
         $skipped = collect();
 
-        DB::transaction(function () use ($pmbYear, $format, $digits, $scope, $needsProdiCode, &$generated, &$skipped) {
+        DB::transaction(function () use ($pmbYear, $format, $digits, $scope, $needsProdiCode, $onlyApplicantId, &$generated, &$skipped) {
             foreach (self::eligible($pmbYear) as $row) {
                 $applicant = $row['applicant'];
+
+                if ($onlyApplicantId && $applicant->id !== $onlyApplicantId) {
+                    continue;
+                }
                 $prodiCode = strtoupper((string) $applicant->enrolled_study_program?->nim_code);
 
                 if ($needsProdiCode && $prodiCode === '') {
@@ -158,16 +162,66 @@ class NimGenerator
                     ]);
                 } while (Applicant::withoutGlobalScopes()->withTrashed()->where('nim', $nim)->exists());
 
-                $locked->update([
-                    'nim' => $nim,
-                    'nim_generated_at' => now(),
-                ]);
+                self::assign($locked, $nim);
 
                 $generated->push($locked);
             }
         });
 
         return compact('generated', 'skipped');
+    }
+
+    /**
+     * Simpan NIM (otomatis atau manual) lalu tandai data siap ditarik SIAKAD.
+     */
+    public static function assign(Applicant $applicant, string $nim): void
+    {
+        $applicant->update([
+            'nim' => $nim,
+            'nim_generated_at' => now(),
+            'sync_status' => in_array($applicant->sync_status, ['proses_sinkron', 'sudah_sinkron', 'gagal_sinkron'], true)
+                ? $applicant->sync_status
+                : 'siap_sinkron',
+        ]);
+
+        $applicant->reRegistration()->update(['ready_sync_at' => now()]);
+    }
+
+    /**
+     * Lepas NIM yang belum ditarik SIAKAD; data kembali belum siap sinkron.
+     */
+    public static function release(Applicant $applicant): void
+    {
+        $applicant->update([
+            'nim' => null,
+            'nim_generated_at' => null,
+            'sync_status' => 'belum_siap',
+        ]);
+
+        $applicant->reRegistration()->update(['ready_sync_at' => null]);
+
+        if ($applicant->pmbYear) {
+            SequenceRewinder::rewind($applicant->pmbYear);
+        }
+    }
+
+    /**
+     * Pola regex NIM untuk satu kunci nomor urut, dipakai memundurkan nomor urut.
+     * Hanya mengenali NIM yang mengikuti format saat ini.
+     */
+    public static function pattern(string $sequenceKey, int $year): string
+    {
+        $prodi = str_starts_with($sequenceKey, 'nim-') ? preg_quote(substr($sequenceKey, 4), '#') : '[A-Z0-9]*';
+
+        $regex = strtr(preg_quote(self::format(), '#'), [
+            preg_quote('{PRODI}', '#') => $prodi,
+            preg_quote('{KELAS}', '#') => '[A-Z]?',
+            preg_quote('{TAHUN}', '#') => (string) $year,
+            preg_quote('{TAHUN2}', '#') => substr((string) $year, -2),
+            preg_quote('{URUT}', '#') => '(\d+)',
+        ]);
+
+        return '#^' . $regex . '$#';
     }
 
     private static function firstValidPayment(Applicant $applicant): ?Payment

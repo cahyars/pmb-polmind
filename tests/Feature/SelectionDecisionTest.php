@@ -175,6 +175,7 @@ class SelectionDecisionTest extends TestCase
             'status' => 'valid',
             'verified_at' => now(),
         ]);
+        $applicant->update(['re_registration_status' => 'daftar_ulang_valid']);
 
         NimGenerator::generate($applicant->pmbYear);
 

@@ -68,10 +68,12 @@ class InvoiceStatus
 
             if ($isReRegistered) {
                 $reRegistrationStatus = 'daftar_ulang_valid';
-                // Proses sinkron SIAKAD yang sudah berjalan tidak diulang dari awal.
-                $syncStatus = in_array($applicant->sync_status, ['siap_sinkron', 'proses_sinkron', 'sudah_sinkron', 'gagal_sinkron'], true)
-                    ? $applicant->sync_status
-                    : 'siap_sinkron';
+                // Siap ditarik SIAKAD setelah NIM dibubuhkan; proses sinkron yang sudah berjalan tidak diulang.
+                $syncStatus = match (true) {
+                    in_array($applicant->sync_status, ['proses_sinkron', 'sudah_sinkron', 'gagal_sinkron'], true) => $applicant->sync_status,
+                    filled($applicant->nim) => 'siap_sinkron',
+                    default => 'belum_siap',
+                };
             } elseif ($hasWaitingPayment) {
                 $reRegistrationStatus = 'menunggu_verifikasi';
             }
@@ -85,7 +87,7 @@ class InvoiceStatus
                     'status' => $isReRegistered ? 'valid' : $reRegistrationStatus,
                     'validated_at' => $isReRegistered ? ($current?->validated_at ?? now()) : null,
                     'validated_by_name' => $isReRegistered ? ($current?->validated_by_name ?? $actorName) : null,
-                    'ready_sync_at' => $isReRegistered ? ($current?->ready_sync_at ?? now()) : null,
+                    'ready_sync_at' => $isReRegistered && filled($applicant->nim) ? ($current?->ready_sync_at ?? now()) : null,
                     'admin_note' => match (true) {
                         $isFullyPaid => null,
                         $isReRegistered => 'Daftar ulang valid. Sisa tagihan dibayar sesuai jadwal pembayaran.',

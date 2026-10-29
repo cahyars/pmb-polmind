@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InstallmentController;
+use App\Http\Controllers\Admin\NimController;
 use App\Http\Controllers\Admin\IntegrationController;
 use App\Http\Controllers\Admin\FollowUpController;
 use App\Http\Controllers\Admin\ReportController;
@@ -152,10 +153,16 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::patch('/selections/{applicant}/decision', [SelectionController::class, 'decide'])->name('selections.decide');
 
     Route::get('/re-registrations', [ReRegistrationController::class, 'index'])->name('re-registrations.index');
-    Route::post('/re-registrations/generate-nim', [ReRegistrationController::class, 'generateNim'])->name('re-registrations.generate-nim');
     Route::patch('/re-registrations/{reRegistration}/validate', [ReRegistrationController::class, 'validateReRegistration'])->name('re-registrations.validate');
     Route::patch('/re-registrations/{reRegistration}/reject', [ReRegistrationController::class, 'reject'])->name('re-registrations.reject');
     Route::patch('/re-registrations/{reRegistration}/ready-sync', [ReRegistrationController::class, 'markReadySync'])->name('re-registrations.ready-sync');
+
+    // Kelulusan: pembubuhan NIM otomatis atau manual setelah daftar ulang valid.
+    Route::get('/nim', [NimController::class, 'index'])->name('nim.index');
+    Route::post('/nim/generate', [NimController::class, 'generate'])->name('nim.generate');
+    Route::post('/nim/{applicant}/generate', [NimController::class, 'generateOne'])->name('nim.generate-one');
+    Route::put('/nim/{applicant}', [NimController::class, 'update'])->name('nim.update');
+    Route::delete('/nim/{applicant}', [NimController::class, 'destroy'])->name('nim.destroy');
 
     Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('follow-ups.index');
     Route::post('/follow-ups/{applicant}', [FollowUpController::class, 'store'])->name('follow-ups.store');
