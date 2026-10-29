@@ -3,11 +3,15 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SelectAdminPmbYear;
 use App\Models\AdmissionWave;
 use App\Models\ClassType;
+use App\Models\PmbYear;
 use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use App\Services\Reports\ApplicantReport;
+use App\Services\Reports\PaymentRecap;
+use App\Services\Reports\PaymentRecapExport;
 use App\Services\Reports\ReportFilter;
 use App\Services\Reports\ReRegistrationReport;
 use App\Services\Reports\SelectionReport;
@@ -22,6 +26,7 @@ class ReportController extends Controller
         'pendaftar' => ['label' => 'Laporan Pendaftar', 'description' => 'Asal sekolah, pilihan prodi, gender, tren bulanan, sumber informasi, dan latar pendidikan pendaftar.'],
         'seleksi' => ['label' => 'Laporan Seleksi', 'description' => 'Kesiapan dan hasil seleksi per prodi, jalur, dan gelombang.'],
         'daftar-ulang' => ['label' => 'Laporan Daftar Ulang', 'description' => 'Pembayaran daftar ulang, NIM, dan keterisian kuota prodi.'],
+        'pembayaran' => ['label' => 'Rekap Pembayaran', 'description' => 'Pemasukan per camaba per minggu: formulir, daftar ulang, UKT, SPI, dan outstanding.'],
     ];
 
     public function index(Request $request)
@@ -37,6 +42,7 @@ class ReportController extends Controller
             'pendaftar' => ApplicantReport::build($filter),
             'seleksi' => SelectionReport::build($filter),
             'daftar-ulang' => ReRegistrationReport::build($filter),
+            'pembayaran' => PaymentRecap::build($filter),
         };
 
         return view('admin.reports.' . $section, [
@@ -48,6 +54,16 @@ class ReportController extends Controller
             'classTypes' => ClassType::orderBy('code')->get(),
             'admissionWaves' => AdmissionWave::orderBy('start_date')->get(),
         ]);
+    }
+
+    public function exportPayments(Request $request)
+    {
+        $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
+
+        return PaymentRecapExport::download(
+            PaymentRecap::build(ReportFilter::fromRequest($request)),
+            'rekap-pembayaran-' . str($pmbYear?->name ?? 'pmb')->slug() . '-' . now()->format('Ymd-His') . '.xlsx'
+        );
     }
 
     public function exportApplicants(Request $request)

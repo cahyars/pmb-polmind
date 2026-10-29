@@ -19,7 +19,7 @@
           class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
             <div>
-                <label for="start_date" class="text-xs font-semibold text-slate-600">Tanggal daftar dari</label>
+                <label for="start_date" class="text-xs font-semibold text-slate-600">{{ $section === 'pembayaran' ? 'Tanggal bayar dari' : 'Tanggal daftar dari' }}</label>
                 <input type="date" id="start_date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" class="{{ $input }}">
             </div>
             <div>
@@ -79,13 +79,21 @@
             @endif
         </p>
         <div class="flex flex-wrap items-center gap-2">
+            @if($section === 'pembayaran')
+                <a href="{{ route('admin.reports.export-payments', $filters) }}"
+                   class="rounded-lg bg-green-600 px-4 py-2 text-sm font-semibold text-white hover:bg-green-700">
+                    Export Rekap Pembayaran (Excel)
+                </a>
+            @endif
             <a href="{{ route('admin.reports.export-applicants', $filters) }}"
                class="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-polmind-blue hover:text-polmind-blue">
                 Export Data Camaba (CSV)
             </a>
-            <span class="rounded-lg border border-dashed border-slate-300 px-4 py-2 text-xs font-semibold text-slate-400" title="Download laporan dalam format PDF dan XLSX akan ditambahkan berikutnya">
-                PDF &amp; XLSX menyusul
-            </span>
+            @unless($section === 'pembayaran')
+                <span class="rounded-lg border border-dashed border-slate-300 px-4 py-2 text-xs font-semibold text-slate-400" title="Download laporan dalam format PDF dan XLSX akan ditambahkan berikutnya">
+                    PDF &amp; XLSX menyusul
+                </span>
+            @endunless
         </div>
     </div>
 </div>

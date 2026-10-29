@@ -186,6 +186,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/export/applicants', [ReportController::class, 'exportApplicants'])
         ->name('reports.export-applicants');
+    Route::get('/reports/export/pembayaran', [ReportController::class, 'exportPayments'])
+        ->name('reports.export-payments');
     Route::get('/reports/{section}', [ReportController::class, 'show'])
         ->whereIn('section', array_keys(ReportController::SECTIONS))
         ->name('reports.show');
