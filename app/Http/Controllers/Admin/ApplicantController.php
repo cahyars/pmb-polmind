@@ -8,7 +8,6 @@ use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FollowUp;
 use App\Models\Invoice;
-use App\Models\ReRegistration;
 use App\Models\StudyProgram;
 use App\Services\LoginInfoMessage;
 use Illuminate\Http\Request;
@@ -16,28 +15,34 @@ use Illuminate\Support\Facades\DB;
 
 class ApplicantController extends Controller
 {
+    /**
+     * Angka di kartu ringkasan yang bisa diklik untuk menyaring daftar camaba.
+     */
+    public const SUMMARY_FILTERS = [
+        'belum_bayar' => 'Belum Bayar',
+        'sudah_bayar' => 'Sudah Bayar',
+        'belum_lengkap' => 'Biodata Belum Lengkap',
+        'lengkap' => 'Biodata Lengkap',
+        'lolos' => 'Lolos Seleksi',
+        'diterima' => 'Diterima',
+        'cadangan' => 'Cadangan',
+        'daftar_ulang' => 'Sudah Daftar Ulang',
+        'belum_daftar_ulang' => 'Belum Daftar Ulang',
+    ];
+
     public function index(Request $request)
     {
+        // Kartu dan daftar memakai aturan saring yang sama, jadi angka kartu = jumlah baris saat diklik.
+        $summaryCount = fn (string $key) => tap(Applicant::query(), fn ($query) => self::applySummaryFilter($query, $key))->count();
+
         $totalApplicants = Applicant::count();
-
-        $biodataComplete = Applicant::where('registration_status', 'biodata_lengkap')->count();
-
-        $incompleteApplicants = Applicant::where('registration_status', '!=', 'biodata_lengkap')->count();
-
-        $validReRegistrations = ReRegistration::where('status', 'valid')->count();
-
-        // Formulir gratis tercatat payment_status valid, jadi ikut terhitung sudah bayar.
-        $paidApplicants = Applicant::where('payment_status', 'valid')->count();
-
-        $selectionStats = Applicant::query()
-            ->whereIn('selection_status', ['diterima', 'cadangan'])
-            ->selectRaw('selection_status, count(*) as total')
-            ->groupBy('selection_status')
-            ->pluck('total', 'selection_status');
-
-        $pendingReRegistrations = Applicant::where('selection_status', 'diterima')
-            ->whereDoesntHave('reRegistration', fn ($query) => $query->where('status', 'valid'))
-            ->count();
+        $biodataComplete = $summaryCount('lengkap');
+        $incompleteApplicants = $summaryCount('belum_lengkap');
+        $validReRegistrations = $summaryCount('daftar_ulang');
+        $paidApplicants = $summaryCount('sudah_bayar');
+        $selectionStats = collect(['diterima' => $summaryCount('diterima'), 'cadangan' => $summaryCount('cadangan')]);
+        $pendingReRegistrations = $summaryCount('belum_daftar_ulang');
+        $summary = array_key_exists((string) $request->query('summary'), self::SUMMARY_FILTERS) ? $request->query('summary') : null;
 
         $registrationPathStats = Applicant::query()
             ->selectRaw('registration_path, count(*) as total')
@@ -92,6 +97,7 @@ class ApplicantController extends Controller
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('registration_status', $request->status);
             })
+            ->when($summary, fn ($query) => self::applySummaryFilter($query, $summary))
             ->latest()
             ->paginate(10)
             ->withQueryString();
@@ -104,11 +110,32 @@ class ApplicantController extends Controller
             'paidApplicants',
             'selectionStats',
             'pendingReRegistrations',
+            'summary',
             'registrationPathStats',
             'waves',
             'studyPrograms',
             'applicants'
         ));
+    }
+
+    /**
+     * Aturan saring kartu ringkasan Data Camaba. Formulir gratis tercatat payment_status valid,
+     * jadi ikut terhitung sudah bayar.
+     */
+    public static function applySummaryFilter($query, string $key): void
+    {
+        $validReRegistration = fn ($reRegistration) => $reRegistration->where('status', 'valid');
+
+        match ($key) {
+            'sudah_bayar' => $query->where('payment_status', 'valid'),
+            'belum_bayar' => $query->where(fn ($query) => $query->where('payment_status', '!=', 'valid')->orWhereNull('payment_status')),
+            'lengkap' => $query->where('registration_status', 'biodata_lengkap'),
+            'belum_lengkap' => $query->where(fn ($query) => $query->where('registration_status', '!=', 'biodata_lengkap')->orWhereNull('registration_status')),
+            'lolos' => $query->whereIn('selection_status', ['diterima', 'cadangan']),
+            'diterima', 'cadangan' => $query->where('selection_status', $key),
+            'daftar_ulang' => $query->whereHas('reRegistration', $validReRegistration),
+            'belum_daftar_ulang' => $query->where('selection_status', 'diterima')->whereDoesntHave('reRegistration', $validReRegistration),
+        };
     }
 
     public function show(Request $request, string $registration_number)

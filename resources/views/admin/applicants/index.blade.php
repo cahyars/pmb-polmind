@@ -28,40 +28,50 @@
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
             [
-                'label' => 'Total Camaba', 'value' => $totalApplicants, 'icon' => 'users',
-                'class' => 'bg-polmind-blue text-white', 'panel' => 'bg-white/10 divide-white/20',
-                'parts' => ['Belum Bayar' => $totalApplicants - $paidApplicants, 'Sudah Bayar' => $paidApplicants],
+                'label' => 'Total Camaba', 'value' => $totalApplicants, 'icon' => 'users', 'filter' => null,
+                'class' => 'bg-polmind-blue text-white', 'panel' => 'bg-white/10 divide-white/20', 'hover' => 'hover:bg-white/15', 'active' => 'bg-white/20 ring-2 ring-white/70',
+                'parts' => [['Belum Bayar', $totalApplicants - $paidApplicants, 'belum_bayar'], ['Sudah Bayar', $paidApplicants, 'sudah_bayar']],
             ],
             [
-                'label' => 'Isi Biodata', 'value' => $biodataComplete, 'icon' => 'pencil-square',
-                'class' => 'bg-sky-700 text-white', 'panel' => 'bg-white/10 divide-white/20',
-                'parts' => ['Belum Lengkap' => $incompleteApplicants, 'Lengkap' => $biodataComplete],
+                'label' => 'Isi Biodata', 'value' => $biodataComplete, 'icon' => 'pencil-square', 'filter' => 'lengkap',
+                'class' => 'bg-sky-700 text-white', 'panel' => 'bg-white/10 divide-white/20', 'hover' => 'hover:bg-white/15', 'active' => 'bg-white/20 ring-2 ring-white/70',
+                'parts' => [['Belum Lengkap', $incompleteApplicants, 'belum_lengkap'], ['Lengkap', $biodataComplete, 'lengkap']],
             ],
             [
-                'label' => 'Lolos Seleksi', 'value' => $accepted + $reserve, 'icon' => 'badge-check',
-                'class' => 'bg-polmind-yellow text-polmind-blue-dark', 'panel' => 'bg-polmind-blue-dark/10 divide-polmind-blue-dark/15',
-                'parts' => ['Diterima' => $accepted, 'Cadangan' => $reserve],
+                'label' => 'Lolos Seleksi', 'value' => $accepted + $reserve, 'icon' => 'badge-check', 'filter' => 'lolos',
+                'class' => 'bg-polmind-yellow text-polmind-blue-dark', 'panel' => 'bg-polmind-blue-dark/10 divide-polmind-blue-dark/15', 'hover' => 'hover:bg-polmind-blue-dark/10', 'active' => 'bg-polmind-blue-dark/15 ring-2 ring-polmind-blue-dark/50',
+                'parts' => [['Diterima', $accepted, 'diterima'], ['Cadangan', $reserve, 'cadangan']],
             ],
             [
-                'label' => 'Daftar Ulang', 'value' => $validReRegistrations, 'icon' => 'cap',
-                'class' => 'bg-teal-700 text-white', 'panel' => 'bg-white/10 divide-white/20',
-                'parts' => ['Sudah' => $validReRegistrations, 'Belum' => $pendingReRegistrations],
+                'label' => 'Daftar Ulang', 'value' => $validReRegistrations, 'icon' => 'cap', 'filter' => 'daftar_ulang',
+                'class' => 'bg-teal-700 text-white', 'panel' => 'bg-white/10 divide-white/20', 'hover' => 'hover:bg-white/15', 'active' => 'bg-white/20 ring-2 ring-white/70',
+                'parts' => [['Sudah', $validReRegistrations, 'daftar_ulang'], ['Belum', $pendingReRegistrations, 'belum_daftar_ulang']],
             ],
         ] as $card)
+            @php
+                // Angka yang diklik membuka daftar camaba tersaring, langsung ke tabel.
+                $filterUrl = fn (?string $filter) => route('admin.applicants.index', array_filter(['summary' => $filter])) . '#daftar-camaba';
+                $bigActive = $card['filter'] ? $summary === $card['filter'] : false;
+            @endphp
             <div class="relative overflow-hidden rounded-xl p-5 shadow-sm {{ $card['class'] }}">
                 <x-icon :name="$card['icon']" class="pointer-events-none absolute -bottom-5 -right-4 h-28 w-28 opacity-10" stroke-width="1.2" />
 
                 <p class="relative text-sm font-semibold opacity-90">{{ $card['label'] }}</p>
-                <p class="relative mt-1 text-4xl font-bold leading-tight tabular-nums">{{ $number($card['value']) }}</p>
+                <a href="{{ $filterUrl($card['filter']) }}"
+                   title="{{ $card['filter'] ? 'Tampilkan camaba ' . mb_strtolower(\App\Http\Controllers\Admin\ApplicantController::SUMMARY_FILTERS[$card['filter']]) : 'Tampilkan semua camaba' }}"
+                   class="relative -mx-1 mt-1 inline-block rounded-md px-1 text-4xl font-bold leading-tight tabular-nums underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-current">{{ $number($card['value']) }}</a>
 
-                <dl class="relative mt-4 grid grid-cols-2 divide-x rounded-lg px-1 py-2.5 {{ $card['panel'] }}">
-                    @foreach($card['parts'] as $partLabel => $partValue)
-                        <div class="px-3">
-                            <dd class="text-lg font-bold leading-tight tabular-nums">{{ $number($partValue) }}</dd>
-                            <dt class="text-xs font-medium opacity-80">{{ $partLabel }}</dt>
-                        </div>
+                <div class="relative mt-4 grid grid-cols-2 gap-1 rounded-lg p-1 {{ $card['panel'] }}">
+                    @foreach($card['parts'] as [$partLabel, $partValue, $partFilter])
+                        <a href="{{ $filterUrl($partFilter) }}"
+                           @if($summary === $partFilter) aria-current="true" @endif
+                           title="Tampilkan camaba {{ mb_strtolower(\App\Http\Controllers\Admin\ApplicantController::SUMMARY_FILTERS[$partFilter]) }}"
+                           class="block rounded-md px-3 py-1.5 transition focus-visible:outline-2 focus-visible:outline-current {{ $summary === $partFilter ? $card['active'] : $card['hover'] }}">
+                            <span class="block text-lg font-bold leading-tight tabular-nums">{{ $number($partValue) }}</span>
+                            <span class="block text-xs font-medium opacity-80">{{ $partLabel }}</span>
+                        </a>
                     @endforeach
-                </dl>
+                </div>
             </div>
         @endforeach
     </div>
@@ -130,6 +140,9 @@
         </div>
 
         <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
+            @if($summary)
+                <input type="hidden" name="summary" value="{{ $summary }}">
+            @endif
             <div class="xl:col-span-2">
                 <label class="text-sm font-semibold text-slate-700">Pencarian</label>
                 <input type="text"
@@ -211,7 +224,19 @@
     </div>
 
     {{-- Table --}}
-    <div class="rounded-xl border border-slate-200 bg-white shadow-sm">
+    <div id="daftar-camaba" class="scroll-mt-24 rounded-xl border border-slate-200 bg-white shadow-sm">
+        @if($summary)
+            <div class="flex flex-wrap items-center justify-between gap-3 rounded-t-xl border-b border-blue-100 bg-blue-50 px-6 py-3 text-sm">
+                <p class="text-slate-700">
+                    Menampilkan camaba: <span class="font-bold text-polmind-blue">{{ \App\Http\Controllers\Admin\ApplicantController::SUMMARY_FILTERS[$summary] }}</span>
+                </p>
+                <a href="{{ route('admin.applicants.index', request()->except(['summary', 'page'])) }}#daftar-camaba"
+                   class="inline-flex items-center gap-1 rounded-lg border border-blue-200 bg-white px-3 py-1.5 text-xs font-semibold text-polmind-blue hover:bg-blue-100">
+                    <x-icon name="close" class="h-3.5 w-3.5" stroke-width="2" />
+                    Hapus filter ini
+                </a>
+            </div>
+        @endif
         <div class="flex flex-col justify-between gap-4 border-b border-slate-200 p-6 md:flex-row md:items-center">
             <div>
                 <h2 class="text-base font-semibold text-slate-900">

@@ -84,7 +84,25 @@ class AdminApplicantTest extends TestCase
             ->assertViewHas('pendingReRegistrations', 1)
             ->assertSeeInOrder(['Total Camaba', 'Belum Bayar', 'Sudah Bayar', 'Isi Biodata', 'Belum Lengkap', 'Lengkap', 'Lolos Seleksi', 'Diterima', 'Cadangan', 'Daftar Ulang', 'Sudah', 'Belum'])
             // Keempat camaba lewat jalur Umum.
-            ->assertSee('100% dari total camaba');
+            ->assertSee('100% dari total camaba')
+            ->assertSee(route('admin.applicants.index', ['summary' => 'belum_bayar']) . '#daftar-camaba', false);
+
+        // Angka yang diklik menyaring daftar dengan jumlah baris sama persis dengan angka di kartu.
+        foreach ([
+            'belum_bayar' => 1, 'sudah_bayar' => 3, 'belum_lengkap' => 1, 'lengkap' => 3,
+            'lolos' => 3, 'diterima' => 2, 'cadangan' => 1, 'daftar_ulang' => 1, 'belum_daftar_ulang' => 1,
+        ] as $summary => $expected) {
+            $this->get(route('admin.applicants.index', ['summary' => $summary]))
+                ->assertOk()
+                ->assertSee('Menampilkan camaba:')
+                ->assertSee(\App\Http\Controllers\Admin\ApplicantController::SUMMARY_FILTERS[$summary])
+                ->assertViewHas('applicants', fn ($applicants) => $applicants->total() === $expected);
+        }
+
+        // Nilai tidak dikenal diabaikan, daftar kembali tampil semua.
+        $this->get(route('admin.applicants.index', ['summary' => 'ngawur']))
+            ->assertViewHas('applicants', fn ($applicants) => $applicants->total() === 4)
+            ->assertDontSee('Menampilkan camaba:');
     }
 
     public function test_admin_can_delete_only_unpaid_applicants(): void
