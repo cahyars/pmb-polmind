@@ -7,7 +7,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
 /**
- * Brosur PMB (PDF atau gambar) yang disimpan privat dan diunduh lewat rute publik.
+ * Brosur PMB (PDF atau gambar) yang disimpan privat, dilihat di halaman preview publik,
+ * dan dapat diunduh dari sana.
  */
 class Brochure extends Model
 {
@@ -15,7 +16,7 @@ class Brochure extends Model
 
     protected string $activityLabel = 'Brosur';
 
-    protected array $activityIgnore = ['download_count'];
+    protected array $activityIgnore = ['view_count', 'download_count'];
 
     public const FOLDER = 'brochures';
 
@@ -32,6 +33,7 @@ class Brochure extends Model
         'file_size',
         'sort_order',
         'is_active',
+        'view_count',
         'download_count',
     ];
 
@@ -39,12 +41,18 @@ class Brochure extends Model
         'file_size' => 'integer',
         'sort_order' => 'integer',
         'is_active' => 'boolean',
+        'view_count' => 'integer',
         'download_count' => 'integer',
     ];
 
     public function scopePublished(Builder $query): Builder
     {
         return $query->where('is_active', true)->orderBy('sort_order')->orderBy('id');
+    }
+
+    public function isPdf(): bool
+    {
+        return strtolower(pathinfo($this->file_name, PATHINFO_EXTENSION)) === 'pdf';
     }
 
     public function getExtensionAttribute(): string

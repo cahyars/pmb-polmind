@@ -2,7 +2,7 @@
 
 @section('title', 'Brosur')
 @section('page_title', 'Brosur')
-@section('page_subtitle', 'Brosur PMB yang dapat diunduh pengunjung dan calon pendaftar dari landing page.')
+@section('page_subtitle', 'Brosur PMB yang dapat dilihat dan diunduh pengunjung dan calon pendaftar dari landing page.')
 
 @section('content')
 @php
@@ -28,7 +28,7 @@
         <div class="flex flex-col justify-between gap-3 md:flex-row md:items-center">
             <div>
                 <h2 class="text-base font-semibold text-slate-900">Unggah Brosur</h2>
-                <p class="mt-1 text-sm text-slate-600">Brosur aktif tampil di bagian "Brosur PMB" pada landing page dan dapat diunduh siapa saja.</p>
+                <p class="mt-1 text-sm text-slate-600">Brosur aktif tampil di bagian "Brosur PMB" pada landing page dan dapat dilihat serta diunduh siapa saja.</p>
             </div>
             <button type="button" @click="open = ! open"
                     class="rounded-lg bg-polmind-blue px-5 py-3 text-sm font-semibold text-white transition hover:bg-polmind-blue-dark"
@@ -58,6 +58,7 @@
                         <th>Urutan</th>
                         <th>Brosur</th>
                         <th>File</th>
+                        <th class="text-right">Dilihat</th>
                         <th class="text-right">Diunduh</th>
                         <th>Status</th>
                         <th class="text-right">Aksi</th>
@@ -80,7 +81,8 @@
                                 </a>
                                 <p class="mt-0.5 max-w-56 truncate text-xs text-slate-500" title="{{ $brochure->file_name }}">{{ $brochure->file_name }}</p>
                             </td>
-                            <td class="px-5 py-3.5 text-right font-semibold text-slate-900">{{ number_format($brochure->download_count, 0, ',', '.') }}</td>
+                            <td class="px-5 py-3.5 text-right font-semibold text-slate-900">{{ number_format($brochure->view_count, 0, ',', '.') }}</td>
+                            <td class="px-5 py-3.5 text-right text-slate-700">{{ number_format($brochure->download_count, 0, ',', '.') }}</td>
                             <td class="px-5 py-3.5">
                                 <span class="rounded-full px-3 py-1 text-xs font-bold {{ $brochure->is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' }}">
                                     {{ $brochure->is_active ? 'Tampil' : 'Disembunyikan' }}
@@ -108,7 +110,7 @@
                             </td>
                         </tr>
                         <tr id="edit-brochure-{{ $brochure->id }}" class="{{ (int) old('_brochure_id') === $brochure->id ? '' : 'hidden' }} bg-slate-50">
-                            <td colspan="7" class="px-6 py-5">
+                            <td colspan="8" class="px-6 py-5">
                                 <form action="{{ route('admin.brochures.update', $brochure) }}" method="POST" enctype="multipart/form-data" class="grid gap-5 md:grid-cols-3">
                                     @csrf
                                     @method('PUT')
@@ -125,8 +127,8 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
-                                Belum ada brosur. Unggah brosur pertama agar dapat diunduh dari landing page.
+                            <td colspan="8" class="px-6 py-10 text-center text-sm font-medium text-slate-500">
+                                Belum ada brosur. Unggah brosur pertama agar dapat dilihat dari landing page.
                             </td>
                         </tr>
                     @endforelse

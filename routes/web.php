@@ -46,9 +46,11 @@ use App\Http\Middleware\SelectAdminPmbYear;
 
 Route::get('/', [HomeController::class, 'index'])->name('home');
 
-Route::get('/brosur/{brochure}', [BrochureController::class, 'download'])
-    ->middleware('throttle:60,1')
-    ->name('brochures.download');
+Route::middleware('throttle:60,1')->group(function () {
+    Route::get('/brosur/{brochure}', [BrochureController::class, 'show'])->name('brochures.show');
+    Route::get('/brosur/{brochure}/file', [BrochureController::class, 'file'])->name('brochures.file');
+    Route::get('/brosur/{brochure}/unduh', [BrochureController::class, 'download'])->name('brochures.download');
+});
 
 // Terbuka untuk tamu karena sekolah asal dipilih saat registrasi.
 Route::get('/referensi/sekolah', [SchoolController::class, 'index'])

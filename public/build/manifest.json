@@ -1,6 +1,6 @@
 {
   "resources/css/app.css": {
-    "file": "assets/app-D5mbjaXl.css",
+    "file": "assets/app-CThLPyWw.css",
     "src": "resources/css/app.css",
     "isEntry": true,
     "name": "app",
@@ -16,6 +16,12 @@
     "css": [
       "assets/app-CksuuEqD.css"
     ]
+  },
+  "resources/js/brochure-viewer.js": {
+    "file": "assets/brochure-viewer-P86bOosB.js",
+    "name": "brochure-viewer",
+    "src": "resources/js/brochure-viewer.js",
+    "isEntry": true
   },
   "resources/js/report-charts.js": {
     "file": "assets/report-charts-DvVzDGH9.js",

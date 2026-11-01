@@ -98,7 +98,7 @@
                     Konsultasi WA
                 </a>
                 @if($brochures->isNotEmpty())
-                    @include('public.partials.brochure-download', [
+                    @include('public.partials.brochure-view', [
                         'dropUp' => true,
                         'buttonClass' => 'inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-6 py-3.5 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur transition hover:bg-white/20',
                     ])
@@ -165,7 +165,7 @@
             </p>
 
             @if($brochures->isNotEmpty())
-                @include('public.partials.brochure-download', [
+                @include('public.partials.brochure-view', [
                     'wrapperClass' => 'mt-8 inline-block',
                     'buttonClass' => ($brochures->count() === 1 ? 'mt-8 ' : '') . 'inline-flex items-center gap-2 rounded-xl border border-polmind-border bg-white px-5 py-3 text-sm font-bold text-polmind-blue shadow-sm transition hover:bg-blue-50',
                 ])

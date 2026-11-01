@@ -24,11 +24,11 @@ class BrochureTest extends TestCase
         $this->seed([ReferenceSeeder::class, PmbMasterSeeder::class]);
     }
 
-    public function test_operator_uploads_brochure_and_visitor_downloads_it(): void
+    public function test_operator_uploads_brochure_and_visitor_previews_then_downloads_it(): void
     {
         $operator = User::factory()->operator()->create();
 
-        $this->get('/')->assertOk()->assertDontSee('Unduh Brosur');
+        $this->get('/')->assertOk()->assertDontSee('Lihat Brosur');
 
         $this->actingAs($operator, 'web')
             ->get('/admin/brochures')
@@ -49,18 +49,40 @@ class BrochureTest extends TestCase
 
         auth('web')->logout();
 
-        // Satu brosur: tombol di hero dan Jalur Masuk langsung mengunduh.
+        // Satu brosur: tombol di hero dan Jalur Masuk membuka halaman preview, bukan langsung mengunduh.
         $this->get('/')
             ->assertOk()
-            ->assertSeeInOrder(['Konsultasi WA', 'Unduh Brosur'])
+            ->assertSeeInOrder(['Konsultasi WA', 'Lihat Brosur'])
+            ->assertDontSee('Unduh Brosur')
             ->assertDontSee('id="brosur"', false)
-            ->assertSee('href="' . route('brochures.download', $brochure) . '"', false);
+            ->assertSee('href="' . route('brochures.show', $brochure) . '"', false);
 
+        // Preview dihitung sekali per sesi; unduhan opsional dari halaman preview.
         $this->get('/brosur/' . $brochure->id)
+            ->assertOk()
+            ->assertSee('Brosur PMB 2027')
+            ->assertSee('data-src="' . route('brochures.file', $brochure) . '"', false)
+            ->assertSee('href="' . route('brochures.download', $brochure) . '"', false);
+        $this->get('/brosur/' . $brochure->id)->assertOk();
+
+        $this->get('/brosur/' . $brochure->id . '/file')
+            ->assertOk()
+            ->assertHeader('Content-Disposition', 'inline');
+
+        $this->assertSame(1, $brochure->refresh()->view_count);
+        $this->assertSame(0, $brochure->download_count);
+
+        $this->get('/brosur/' . $brochure->id . '/unduh')
             ->assertOk()
             ->assertDownload('brosur-pmb-2027.pdf');
 
         $this->assertSame(1, $brochure->refresh()->download_count);
+        $this->assertSame(1, $brochure->view_count);
+
+        $this->actingAs($operator, 'web')
+            ->get('/admin/brochures')
+            ->assertSeeInOrder(['Dilihat', 'Diunduh']);
+        auth('web')->logout();
 
         // Lebih dari satu brosur: tombol menampilkan pilihan brosur.
         Brochure::create(['title' => 'Brosur Kelas Karyawan', 'file_path' => 'brochures/b.pdf', 'file_name' => 'b.pdf', 'file_size' => 2400000]);
@@ -78,6 +100,8 @@ class BrochureTest extends TestCase
 
         $this->get('/')->assertDontSee('Brosur PMB 2027');
         $this->get('/brosur/' . $brochure->id)->assertNotFound();
+        $this->get('/brosur/' . $brochure->id . '/file')->assertNotFound();
+        $this->get('/brosur/' . $brochure->id . '/unduh')->assertNotFound();
     }
 
     public function test_brochure_upload_validation_replace_and_delete(): void
