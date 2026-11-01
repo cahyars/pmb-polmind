@@ -116,7 +116,11 @@ class ReRegistrationInstallmentTest extends TestCase
         // Landing: nominal final per gelombang, tanpa harga coret.
         $this->get('/')
             ->assertSeeInOrder(['Sumbangan Pengembangan Institusi', 'Gelombang 1', 'Berlaku sekarang', 'Rp9.000.000', 'Gelombang 2', 'Rp10.000.000', 'Gelombang 5', 'Rp15.000.000'])
-            ->assertSeeInOrder(['Jalur Undangan', 'Rp7.500.000', 'Jalur Prestasi · Tingkat 1 · Nasional', 'Rp4.500.000'])
+            ->assertSee('Dapatkan Beasiswa SPI untuk Jalur Prestasi sampai 70%')
+            // Nominal jalur Undangan dan kategori Prestasi tidak dipublikasikan.
+            ->assertDontSee('Rp7.500.000')
+            ->assertDontSee('Rp4.500.000')
+            ->assertDontSee('Tingkat 1 · Nasional')
             ->assertSee('Rp7.000.000')
             ->assertDontSee('line-through');
 

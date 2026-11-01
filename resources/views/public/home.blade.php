@@ -507,13 +507,9 @@
             <div class="mt-8 divide-y divide-yellow-500/40">
                 @forelse($reRegistrationFees as $fee)
                     @php
-                        // Nominal final per gelombang (jalur umum), lalu jalur yang punya nominal sendiri.
+                        // Nominal final per gelombang jalur umum. Nominal jalur Undangan dan kategori Prestasi tidak dipublikasikan.
                         $waveAmounts = $waves->mapWithKeys(fn ($wave) => [$wave->id => (float) $fee->amountFor($defaultPath, $wave->id)]);
                         $perWave = $waves->isNotEmpty() && $waveAmounts->unique()->count() > 1;
-                        $specialPaths = $publicPaths->keys()
-                            ->reject(fn ($code) => $code === $defaultPath)
-                            ->filter(fn ($code) => $fee->pathAmounts->contains('registration_path_id', $publicPaths[$code]->id));
-                        $levels = $fee->code === \App\Models\FeeComponent::SPI_CODE && $publicPaths->has('prestasi') ? $achievementLevels : collect();
                         $singleAmount = $perWave ? null : ($waveAmounts->first() ?? (float) $fee->amountFor($defaultPath));
                     @endphp
                     <div class="py-4 first:pt-0 last:pb-0">
@@ -544,22 +540,11 @@
                             </dl>
                         @endif
 
-                        @if($specialPaths->isNotEmpty() || $levels->isNotEmpty())
-                            <dl class="mt-3 space-y-1 border-t border-dashed border-yellow-600/40 pt-2 text-sm">
-                                @foreach($specialPaths as $code)
-                                    @continue($code === 'prestasi' && $levels->isNotEmpty())
-                                    <div class="flex items-baseline justify-between gap-4">
-                                        <dt class="text-polmind-blue-dark/80">Jalur {{ $publicPaths[$code]->name }}</dt>
-                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel((float) $fee->amountFor($code)) }}</dd>
-                                    </div>
-                                @endforeach
-                                @foreach($levels as $level)
-                                    <div class="flex items-baseline justify-between gap-4">
-                                        <dt class="text-polmind-blue-dark/80">Jalur Prestasi · {{ $level->name }}</dt>
-                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel((float) $level->spi_amount) }}</dd>
-                                    </div>
-                                @endforeach
-                            </dl>
+                        @if($fee->code === \App\Models\FeeComponent::SPI_CODE && $publicPaths->has('prestasi'))
+                            <p class="mt-3 flex items-center gap-2 rounded-xl bg-white/70 px-3 py-2.5 text-sm font-black text-polmind-blue-dark">
+                                <x-icon name="badge-check" class="h-5 w-5 shrink-0 text-green-700" stroke-width="2" />
+                                Dapatkan Beasiswa SPI untuk Jalur Prestasi sampai 70%
+                            </p>
                         @endif
                     </div>
                 @empty
@@ -595,7 +580,7 @@
                     : 'Wajib: ' . $documentTypes->where('is_required', true)->pluck('name')->implode(', ') . '.'
                         . ($documentTypes->where('is_required', false)->isNotEmpty() ? ' Opsional: ' . $documentTypes->where('is_required', false)->pluck('name')->implode(', ') . '.' : '')],
                 ['q' => 'Kapan pembayaran SPI dan UKT dilakukan?', 'a' => 'SPI dan UKT dibayar setelah pendaftar dinyatakan diterima sebagai mahasiswa baru. Nominalnya tercantum di bagian Rincian Biaya.'],
-                ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Ada. SPI lebih ringan bagi pendaftar gelombang awal, dan pendaftar jalur Prestasi mendapat SPI khusus sesuai kategori prestasinya. Rinciannya ada di bagian Rincian Biaya.'],
+                ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Ada. SPI lebih ringan bagi pendaftar gelombang awal, dan tersedia Beasiswa SPI untuk Jalur Prestasi sampai 70%. Hubungi admin PMB untuk detailnya.'],
             ] as $index => $faq)
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <button type="button"

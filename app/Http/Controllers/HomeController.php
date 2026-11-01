@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\AdmissionWave;
-use App\Models\AchievementLevel;
 use App\Models\Brochure;
 use App\Models\ClassType;
 use App\Models\DocumentType;
@@ -53,7 +52,6 @@ class HomeController extends Controller
             'documentTypes' => DocumentType::where('is_active', true)->orderBy('sort_order')->get(),
             'classTypes' => ClassType::where('is_active', true)->orderBy('code')->get(),
             'brochures' => Brochure::published()->get(),
-            'achievementLevels' => AchievementLevel::ordered()->where('is_active', true)->get(),
         ]);
     }
 }
