@@ -59,7 +59,7 @@ class NimController extends Controller
                     ->orWhere('nim', 'like', "%{$keyword}%"));
             })
             ->orderBy('registration_number')
-            ->paginate(25)
+            ->paginate($this->perPage($request, 25))
             ->withQueryString();
 
         $eligible = $pmbYear ? NimGenerator::eligible($pmbYear) : collect();

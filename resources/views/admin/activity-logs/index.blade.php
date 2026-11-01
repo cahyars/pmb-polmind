@@ -85,8 +85,8 @@
 
         @include('admin.activity-logs.partials.table', ['logs' => $logs])
 
-        @if($logs->hasPages())
-            <div class="border-t border-slate-200 px-5 py-4">{{ $logs->links() }}</div>
+        @if($logs->total() > min(\App\Http\Controllers\Controller::PER_PAGE_OPTIONS))
+            <div class="border-t border-slate-200 px-5 py-4"><x-pagination :paginator="$logs" /></div>
         @endif
     </section>
 </div>

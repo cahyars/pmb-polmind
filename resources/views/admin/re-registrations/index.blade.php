@@ -618,7 +618,7 @@
         </div>
 
         <div class="border-t border-slate-200 p-6">
-            {{ $reRegistrations->links() }}
+            <x-pagination :paginator="$reRegistrations" />
         </div>
     </div>
 

@@ -428,7 +428,7 @@
 
         {{-- Pagination --}}
         <div class="border-t border-slate-200 p-6">
-            {{ $applicants->links() }}
+            <x-pagination :paginator="$applicants" />
         </div>
     </div>
 

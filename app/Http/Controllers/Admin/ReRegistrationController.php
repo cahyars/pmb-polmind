@@ -97,7 +97,7 @@ class ReRegistrationController extends Controller
                 });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         $pmbYear = $this->selectedPmbYear($request);

@@ -37,7 +37,7 @@
                         Akses penuh ke pendaftar, verifikasi, seleksi, daftar ulang, laporan, dan brosur. Tidak dapat mengelola Master Data, Tujuan Pembayaran, dan akun lain.
                     @endif
                 </p>
-                <p class="mt-3 text-xs font-semibold text-slate-500">{{ $users->where('role', $role)->where('is_active', true)->count() }} akun aktif</p>
+                <p class="mt-3 text-xs font-semibold text-slate-500">{{ $activeCounts->get($role, 0) }} akun aktif</p>
             </div>
         @endforeach
     </div>
@@ -84,7 +84,7 @@
                     @foreach($users as $user)
                         @php($isSelf = $user->is($currentUser))
                         <tr>
-                            <td class="px-5 py-3.5 text-slate-500">{{ $loop->iteration }}</td>
+                            <td class="px-5 py-3.5 text-slate-500">{{ $users->firstItem() + $loop->index }}</td>
                             <td class="px-5 py-3.5 font-semibold text-slate-900">
                                 {{ $user->name }}
                                 @if($isSelf)
@@ -137,6 +137,10 @@
                     @endforeach
                 </tbody>
             </table>
+        </div>
+
+        <div class="border-t border-slate-200 p-6">
+            <x-pagination :paginator="$users" />
         </div>
     </div>
 </div>

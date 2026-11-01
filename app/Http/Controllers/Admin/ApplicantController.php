@@ -99,7 +99,7 @@ class ApplicantController extends Controller
             })
             ->when($summary, fn ($query) => self::applySummaryFilter($query, $summary))
             ->latest()
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('admin.applicants.index', compact(

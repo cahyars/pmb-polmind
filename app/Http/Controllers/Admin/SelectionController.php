@@ -135,7 +135,7 @@ class SelectionController extends Controller
                 $query->where('selection_status', $request->status);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('admin.selections.index', compact(

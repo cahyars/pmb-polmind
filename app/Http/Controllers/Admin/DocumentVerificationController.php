@@ -76,7 +76,7 @@ class DocumentVerificationController extends Controller
                     ->where('applicant_documents.status', 'menunggu_verifikasi');
             })
             ->orderByDesc('last_uploaded_at')
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('admin.documents.index', compact(

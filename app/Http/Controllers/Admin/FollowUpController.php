@@ -68,7 +68,7 @@ class FollowUpController extends Controller
                 });
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         return view('admin.follow-ups.index', compact(

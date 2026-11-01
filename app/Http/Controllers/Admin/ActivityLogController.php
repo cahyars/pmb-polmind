@@ -65,7 +65,7 @@ class ActivityLogController extends Controller
                     ->orWhere('description', 'like', $like));
             })
             ->latest('id')
-            ->paginate(50)
+            ->paginate($this->perPage($request, 50))
             ->withQueryString();
 
         return view('admin.activity-logs.index', [

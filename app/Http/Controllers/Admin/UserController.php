@@ -14,11 +14,19 @@ use Illuminate\Validation\Rules\Password;
  */
 class UserController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $users = User::orderByRaw("role = 'admin' desc")->orderBy('name')->get();
+        $users = User::orderByRaw("role = 'admin' desc")
+            ->orderBy('name')
+            ->paginate($this->perPage($request))
+            ->withQueryString();
 
-        return view('admin.users.index', compact('users'));
+        $activeCounts = User::where('is_active', true)
+            ->selectRaw('role, count(*) as total')
+            ->groupBy('role')
+            ->pluck('total', 'role');
+
+        return view('admin.users.index', compact('users', 'activeCounts'));
     }
 
     public function store(Request $request)

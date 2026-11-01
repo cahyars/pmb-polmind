@@ -70,7 +70,7 @@ class IntegrationController extends Controller
                 $query->where('sync_status', $request->sync_status);
             })
             ->latest()
-            ->paginate(10)
+            ->paginate($this->perPage($request))
             ->withQueryString();
 
         $latestLogs = IntegrationLog::query()
