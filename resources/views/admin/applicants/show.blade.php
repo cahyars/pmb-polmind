@@ -467,6 +467,13 @@
                                         $latest = $payments->count() > 1 ? ' terakhir' : '';
                                     @endphp
                                     <div class="flex shrink-0 gap-1.5">
+                                        {{-- Tagihan selalu bisa dilihat, termasuk sebelum ada pembayaran. --}}
+                                        @include('admin.applicants.partials.icon-action', [
+                                            'icon' => 'document-text',
+                                            'label' => 'Lihat invoice (tagihan)',
+                                            'url' => route('admin.invoices.print', $invoice),
+                                            'newTab' => true,
+                                        ])
                                         @include('admin.applicants.partials.icon-action', [
                                             'icon' => 'eye',
                                             'label' => 'Lihat bukti bayar' . $latest,

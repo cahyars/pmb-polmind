@@ -399,6 +399,9 @@ class ReRegistrationInstallmentTest extends TestCase
             ->assertSee('href="' . route('admin.documents.show', $applicant->registration_number) . '"', false)
             ->assertSee('href="' . route('admin.payments.index', ['keyword' => $applicant->registration_number]) . '"', false)
             ->assertSee('href="' . route('admin.selections.show', $applicant->registration_number) . '"', false)
+            // Invoice bisa dilihat walau belum ada pembayaran.
+            ->assertSee('href="' . route('admin.invoices.print', $applicant->registrationInvoice) . '"', false)
+            ->assertSee('Lihat invoice (tagihan)')
             ->assertDontSee('controller update di tahap berikutnya');
     }
 }
