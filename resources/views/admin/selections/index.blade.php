@@ -62,11 +62,19 @@
 
     {{-- Filter --}}
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <div class="border-b border-slate-200 pb-5">
-            <h2 class="text-base font-semibold text-slate-900">Filter Seleksi</h2>
-            <p class="mt-2 text-sm leading-6 text-slate-600">
-                Cari dan filter camaba sebelum menentukan keputusan seleksi.
-            </p>
+        <div class="flex flex-col justify-between gap-4 border-b border-slate-200 pb-5 md:flex-row md:items-center">
+            <div>
+                <h2 class="text-base font-semibold text-slate-900">Filter Seleksi</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-600">
+                    Cari dan filter camaba sebelum menentukan keputusan seleksi.
+                </p>
+            </div>
+
+            <a href="{{ route('admin.selections.cards', array_filter(['study_program' => request('study_program')])) }}" target="_blank"
+               class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
+                <x-icon name="printer" class="h-5 w-5" stroke-width="2" />
+                Cetak Kartu Peserta
+            </a>
         </div>
 
         <form action="{{ route('admin.selections.index') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
@@ -184,6 +192,9 @@
                         <td class="px-5 py-4 text-slate-500">{{ $applicants->firstItem() + $loop->index }}</td>
                         <td class="px-5 py-4">
                             <p class="font-bold text-polmind-blue">{{ $applicant->registration_number }}</p>
+                            @if($applicant->selection_number)
+                                <p class="text-xs font-semibold text-slate-500">No. Peserta <span class="tabular-nums text-slate-800">{{ $applicant->selection_number }}</span></p>
+                            @endif
                             <p class="mt-1 font-semibold text-slate-800">{{ $applicant->full_name }}</p>
                             <p class="mt-1 text-xs text-slate-500">{{ $applicant->education?->school_name ?? '-' }}</p>
                             <span class="mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold {{ \App\Models\RegistrationPath::badgeClass($registrationPath) }}">

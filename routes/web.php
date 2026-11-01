@@ -10,6 +10,7 @@ use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ApplicantBiodataController;
 use App\Http\Controllers\Admin\LoginAsController;
+use App\Http\Controllers\Admin\SelectionNumberController;
 use App\Http\Controllers\Admin\BrochureController as AdminBrochureController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
@@ -174,6 +175,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/invoices/{invoice}/cetak', [AdminPrintController::class, 'invoice'])->name('invoices.print');
 
     Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
+    Route::get('/selections/kartu-peserta', [SelectionController::class, 'cards'])->name('selections.cards');
     Route::get('/selections/{registration_number}', [SelectionController::class, 'show'])->name('selections.show');
     Route::patch('/selections/{applicant}/scores', [SelectionController::class, 'saveScores'])->name('selections.scores');
     Route::patch('/selections/{applicant}/decision', [SelectionController::class, 'decide'])->name('selections.decide');
@@ -217,6 +219,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('master-data.selection-schedules.update');
         Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
         Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
+        Route::post('/master-data/admission-waves/{admissionWave}/selection-numbers', [SelectionNumberController::class, 'assign'])->name('master-data.selection-numbers.assign');
+        Route::post('/master-data/admission-waves/{admissionWave}/selection-numbers/renumber', [SelectionNumberController::class, 'renumber'])->name('master-data.selection-numbers.renumber');
         Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
 
         Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');

@@ -65,12 +65,14 @@ class RegistrationNumber
      */
     public static function waveCode(Applicant $applicant): string
     {
-        $wave = $applicant->admissionWave;
+        return $applicant->admissionWave ? self::waveDigit($applicant->admissionWave) : '0';
+    }
 
-        if (! $wave) {
-            return '0';
-        }
-
+    /**
+     * Angka gelombang, dipakai bersama nomor pendaftaran dan nomor peserta seleksi.
+     */
+    public static function waveDigit(AdmissionWave $wave): string
+    {
         $digits = preg_replace('/\D/', '', (string) $wave->code);
 
         if ($digits !== '') {

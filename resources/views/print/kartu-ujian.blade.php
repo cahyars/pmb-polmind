@@ -11,6 +11,7 @@
 
     $rows = [
         'Nomor Pendaftaran' => $applicant->registration_number,
+        'Nomor Peserta Seleksi' => $applicant->selection_number ?? 'Belum diberikan panitia',
         'Nama Lengkap' => strtoupper($applicant->full_name),
         'NIK' => $applicant->nik ?? '-',
         'Tempat, Tanggal Lahir' => trim(($applicant->birth_place ?? '-') . ', ' . ($applicant->birth_date?->translatedFormat('d/m/Y') ?? '-')),

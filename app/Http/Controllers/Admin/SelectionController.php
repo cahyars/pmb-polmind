@@ -3,15 +3,19 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Http\Middleware\SelectAdminPmbYear;
+use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FeeComponent;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
+use App\Models\PmbYear;
 use App\Models\ReRegistration;
 use App\Models\Selection;
 use App\Models\SelectionComponent;
 use App\Models\SelectionScore;
 use App\Models\StudyProgram;
+use App\Services\SelectionNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -29,6 +33,46 @@ class SelectionController extends Controller
 
     private const NOT_READY_MESSAGE = 'Camaba belum siap diseleksi. Pastikan berkas dan pembayaran pendaftaran sudah valid.';
 
+    /**
+     * Cetak Kartu Peserta Seleksi: 10 kartu per lembar A4, urut nomor peserta.
+     */
+    public function cards(Request $request)
+    {
+        $validated = $request->validate([
+            'wave' => ['nullable', 'integer'],
+            'study_program' => ['nullable', 'integer'],
+            'from' => ['nullable', 'integer', 'min:1'],
+            'to' => ['nullable', 'integer', 'min:1'],
+        ]);
+
+        $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
+        $waves = AdmissionWave::orderBy('start_date')->orderBy('id')->get();
+        $wave = $waves->firstWhere('id', (int) ($validated['wave'] ?? 0))
+            ?? $waves->firstWhere('id', AdmissionWave::current($pmbYear)?->id)
+            ?? $waves->last();
+
+        $applicants = $wave
+            ? Applicant::with(['studyProgram', 'admissionWave', 'pmbYear'])
+                ->where('admission_wave_id', $wave->id)
+                ->whereNotNull('selection_sequence')
+                ->when($validated['study_program'] ?? null, fn ($query, $programId) => $query->where('study_program_id', $programId))
+                ->when($validated['from'] ?? null, fn ($query, $from) => $query->where('selection_sequence', '>=', $from))
+                ->when($validated['to'] ?? null, fn ($query, $to) => $query->where('selection_sequence', '<=', $to))
+                ->orderBy('selection_sequence')
+                ->get()
+            : collect();
+
+        return view('print.kartu-peserta', [
+            'applicants' => $applicants,
+            'wave' => $wave,
+            'waves' => $waves,
+            'pmbYear' => $wave?->pmbYear ?? $pmbYear,
+            'studyPrograms' => StudyProgram::orderBy('code')->get(),
+            'filters' => $validated,
+            'unnumbered' => $wave ? SelectionNumber::eligible($wave)->whereNull('selection_sequence')->count() : 0,
+        ]);
+    }
+
     public function index(Request $request)
     {
         $readySelection = Applicant::where('document_status', 'valid')
@@ -45,6 +89,7 @@ class SelectionController extends Controller
 
         $applicants = Applicant::query()
             ->with([
+                'admissionWave',
                 'studyProgram',
                 'secondStudyProgram',
                 'acceptedStudyProgram',

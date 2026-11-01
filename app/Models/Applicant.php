@@ -55,6 +55,7 @@ class Applicant extends Authenticatable
         'document_status',
         'payment_status',
         'selection_status',
+        'selection_sequence',
         're_registration_status',
         'sync_status',
 
@@ -81,6 +82,7 @@ class Applicant extends Authenticatable
         'transportation_id' => 'integer',
         'kps_recipient' => 'boolean',
         'special_need_id' => 'integer',
+        'selection_sequence' => 'integer',
         'nim_generated_at' => 'datetime',
         'synced_at' => 'datetime',
         'password' => 'hashed',
@@ -187,6 +189,14 @@ class Applicant extends Authenticatable
      * Prodi yang dijalani camaba: prodi tempat diterima, atau pilihan pertama selama belum diterima.
      * Dipakai untuk NIM, daftar ulang, dan sinkron SIAKAD.
      */
+    /**
+     * Nomor peserta seleksi, contoh 3.001 (null bila belum diberi nomor).
+     */
+    public function getSelectionNumberAttribute(): ?string
+    {
+        return $this->admissionWave ? \App\Services\SelectionNumber::format($this->admissionWave, $this->selection_sequence) : null;
+    }
+
     public function getEnrolledStudyProgramAttribute(): ?StudyProgram
     {
         return ($this->accepted_study_program_id ? $this->acceptedStudyProgram : null) ?? $this->studyProgram;

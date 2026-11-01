@@ -186,6 +186,9 @@
                     <h1 class="text-xl font-bold text-slate-900">{{ $applicant->full_name }}</h1>
                     <p class="mt-1 text-sm text-slate-500">
                         <span class="font-mono font-semibold text-slate-700">{{ $applicant->registration_number }}</span>
+                        @if($applicant->selection_number)
+                            · No. Peserta <span class="font-semibold tabular-nums text-slate-700">{{ $applicant->selection_number }}</span>
+                        @endif
                         · {{ $applicant->email }} · {{ $applicant->phone ?? '-' }}
                     </p>
                 </div>
