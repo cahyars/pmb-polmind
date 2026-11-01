@@ -104,8 +104,9 @@ class MitraFormatReport
             'general_offline' => $offline($general),
             'general_online' => $general->count() - $offline($general),
             'total' => $applicants->count(),
-            // Uang formulir yang benar-benar masuk (pembayaran valid); formulir gratis tidak menambah.
-            'money' => (float) $applicants->sum(fn (Applicant $applicant) => $applicant->registrationInvoice?->payments->where('status', 'valid')->sum('amount') ?? 0),
+            // Hanya pendaftar umum yang dikalkulasi: pendaftar mitra gratis, cukup dicatat jumlahnya.
+            // Nilainya uang formulir yang benar-benar masuk (pembayaran valid).
+            'money' => (float) $general->sum(fn (Applicant $applicant) => $applicant->registrationInvoice?->payments->where('status', 'valid')->sum('amount') ?? 0),
             'programs' => collect($programs)->map(fn ($code, $id) => $applicants->where('study_program_id', $id)->count())->all(),
         ];
     }

@@ -66,6 +66,14 @@ class MitraFormatReportTest extends TestCase
             'study_program_id' => StudyProgram::where('code', 'BD')->value('id'),
         ]);
         $partner->update(['registered_via' => 'kampus', 'payment_status' => 'valid']);
+        // Pendaftar mitra gratis: pembayaran yang terlanjur masuk pun tidak dikalkulasi ke Total Uang.
+        Payment::create([
+            'applicant_id' => $partner->id,
+            'invoice_id' => $partner->registrationInvoice->id,
+            'payment_number' => 'PAY/TEST/2',
+            'amount' => 300000,
+            'status' => 'valid',
+        ]);
 
         $offline = $this->registerAt('2026-10-29 16:00', [
             'email' => 'offline@example.com',
