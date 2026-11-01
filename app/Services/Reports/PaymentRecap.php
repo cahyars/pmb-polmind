@@ -32,7 +32,7 @@ class PaymentRecap
 
         $applicants = $applicantFilter->applicants()
             ->with([
-                'admissionWave', 'studyProgram', 'acceptedStudyProgram', 'classType',
+                'admissionWave', 'studyProgram', 'acceptedStudyProgram', 'classType', 'achievementLevel',
                 'registrationInvoice.payments', 'registrationInvoice.items',
                 'reRegistrationInvoice.payments.allocations.feeComponent', 'reRegistrationInvoice.items.feeComponent', 'reRegistrationInvoice.installments',
             ])
@@ -76,7 +76,7 @@ class PaymentRecap
                 'paid' => (float) $rows->sum('paid'),
                 'outstanding' => (float) $rows->sum('outstanding'),
                 'applicants' => $rows->count(),
-                'waived' => $rows->filter(fn ($row) => $row['note'])->count(),
+                'waived' => $rows->filter(fn ($row) => $row['form_waived'])->count(),
             ],
         ];
     }
@@ -156,7 +156,10 @@ class PaymentRecap
             // Outstanding = semua tagihan yang sudah terbit dikurangi semua pembayaran valid (tanpa filter tanggal).
             'outstanding' => max(0, $billed - $paidAll),
             'form_waived' => $formWaived,
-            'note' => $waivedAt ? 'Formulir gratis' . (filled($applicant->registrationInvoice->waiver_reason) ? ': ' . $applicant->registrationInvoice->waiver_reason : '') : null,
+            'note' => collect([
+                $waivedAt ? 'Formulir gratis' . (filled($applicant->registrationInvoice->waiver_reason) ? ': ' . $applicant->registrationInvoice->waiver_reason : '') : null,
+                $applicant->achievementLevel ? 'Prestasi ' . $applicant->achievementLevel->name : null,
+            ])->filter()->implode('; ') ?: null,
         ];
     }
 
@@ -197,7 +200,7 @@ class PaymentRecap
                 $components = [];
 
                 foreach ($payment['payment']->allocations as $allocation) {
-                    $name = $allocation->feeComponent?->name ?? $allocation->name;
+                    $name = $allocation->feeComponent?->short_name ?? $allocation->name;
                     $components[$name] = ($components[$name] ?? 0) + (float) $allocation->amount;
                     $take = (float) $allocation->amount;
 
@@ -243,11 +246,11 @@ class PaymentRecap
     }
 
     /**
-     * Nama kolom rekap: nama komponen di Master Data, bukan nama baris invoice yang bisa memuat
+     * Nama kolom rekap: nama singkat komponen (SPI, UKT), bukan nama baris invoice yang bisa memuat
      * asal nominal (mis. "SPI (Gelombang 1)"), agar SPI semua camaba masuk satu kolom.
      */
     private static function componentName(InvoiceItem $item): string
     {
-        return $item->feeComponent?->name ?? $item->name;
+        return $item->feeComponent?->short_name ?? $item->name;
     }
 }

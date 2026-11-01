@@ -84,6 +84,18 @@ class FeeComponent extends Model
         return ['amount' => $this->amount, 'name' => $this->name];
     }
 
+    /**
+     * Nama singkat untuk kolom laporan: SPI, UKT, atau nama komponen.
+     */
+    public function getShortNameAttribute(): string
+    {
+        return match (true) {
+            $this->code === self::SPI_CODE => 'SPI',
+            str_starts_with((string) $this->code, 'UKT') => 'UKT',
+            default => $this->name,
+        };
+    }
+
     public function pathAmounts()
     {
         return $this->hasMany(FeeComponentPathAmount::class);

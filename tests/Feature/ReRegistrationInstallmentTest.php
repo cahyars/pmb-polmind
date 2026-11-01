@@ -173,10 +173,17 @@ class ReRegistrationInstallmentTest extends TestCase
         $this->assertSame('16000000.00', $prestasi->reRegistrationInvoice->total_amount);
         $this->assertCount(2, $prestasi->reRegistrationInvoice->items);
 
+        // Rekap pembayaran mencantumkan kategori prestasi di Keterangan.
+        $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 2 · Provinsi')->id])->assertSessionHasNoErrors();
+        $this->pay($prestasi, $prestasi->refresh()->reRegistrationInvoice, ['UKT_SEMESTER_1'])->assertSessionHasNoErrors();
+        $this->acceptLatestPayment($prestasi->reRegistrationInvoice);
+        $row = \App\Services\Reports\PaymentRecap::build(new \App\Services\Reports\ReportFilter)['rows']->first(fn ($row) => $row['applicant']->is($prestasi));
+        $this->assertSame('Prestasi Tingkat 2 · Provinsi', $row['note']);
+        $this->assertEquals(7000000, $row['components']['UKT']);
+
         // Sudah ada pembayaran: kategori tidak bisa diganti lagi.
-        $this->pay($prestasi, $prestasi->reRegistrationInvoice, ['UKT_SEMESTER_1', 'SPI'])->assertSessionHasNoErrors();
-        $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 2 · Provinsi')->id])->assertSessionHasErrors();
-        $this->assertNull($prestasi->refresh()->achievement_level_id);
+        $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 1 · Nasional')->id])->assertSessionHasErrors();
+        $this->assertSame($this->level('Tingkat 2 · Provinsi')->id, $prestasi->refresh()->achievement_level_id);
     }
 
     public function test_admin_sets_fees_per_wave_and_path_and_manages_achievement_levels(): void
@@ -286,8 +293,8 @@ class ReRegistrationInstallmentTest extends TestCase
 
         // Rekap: satu kolom per komponen.
         $row = \App\Services\Reports\PaymentRecap::build(new \App\Services\Reports\ReportFilter)['rows']->first(fn ($row) => $row['applicant']->is($applicant));
-        $this->assertEquals(7000000, $row['components']['Uang Kuliah Tunggal - Semester 1']);
-        $this->assertEquals(9000000, $row['components']['Sumbangan Pengembangan Institusi']);
+        $this->assertEquals(7000000, $row['components']['UKT']);
+        $this->assertEquals(9000000, $row['components']['SPI']);
     }
 
     public function test_admin_enables_spi_installments_and_re_registration_is_valid_after_first_payment(): void

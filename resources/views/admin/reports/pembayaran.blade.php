@@ -20,7 +20,7 @@
     <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @include('admin.reports.partials.stat', ['label' => 'Total Pemasukan', 'value' => $rupiah($totals['paid']), 'desc' => $number($totals['applicants']) . ' camaba' . ($totals['waived'] ? ' · ' . $number($totals['waived']) . ' formulir gratis' : '')])
         @foreach(collect($totals['components'])->take(2) as $name => $amount)
-            @include('admin.reports.partials.stat', ['label' => $name, 'value' => $rupiah($amount), 'desc' => 'Pemasukan ' . mb_strtolower($name)])
+            @include('admin.reports.partials.stat', ['label' => $name, 'value' => $rupiah($amount), 'desc' => 'Pemasukan ' . ($name === mb_strtoupper($name) ? $name : mb_strtolower($name))])
         @endforeach
         @include('admin.reports.partials.stat', ['label' => 'Outstanding', 'value' => $rupiah($totals['outstanding']), 'desc' => 'Sisa tagihan yang sudah terbit'])
     </div>
