@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
@@ -12,6 +13,10 @@ use Illuminate\Support\Str;
  */
 class RegistrationPath extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Jalur pendaftaran';
+
     /**
      * Warna badge dan angka statistik, bergiliran mengikuti urutan jalur.
      */

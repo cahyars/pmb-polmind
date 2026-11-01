@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -9,6 +10,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class InvoiceInstallment extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Angsuran daftar ulang';
+
     protected $fillable = [
         'invoice_id',
         'fee_component_id',
@@ -32,5 +37,15 @@ class InvoiceInstallment extends Model
     public function feeComponent()
     {
         return $this->belongsTo(FeeComponent::class);
+    }
+
+    protected function activityParentApplicantId(): ?int
+    {
+        return $this->invoice?->applicant_id;
+    }
+
+    protected function activitySubjectLabel(): ?string
+    {
+        return $this->name;
     }
 }

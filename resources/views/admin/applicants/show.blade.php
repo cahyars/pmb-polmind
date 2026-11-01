@@ -61,6 +61,10 @@
         'lainnya' => ['label' => 'Follow Up & SIAKAD', 'icon' => 'sync', 'count' => 0],
     ];
 
+    if ($activityLogs !== null) {
+        $tabs['riwayat'] = ['label' => 'Riwayat', 'icon' => 'clock', 'count' => 0];
+    }
+
     $subTabs = [
         'pelengkap' => 'Pelengkap',
         'domisili' => 'Domisili',
@@ -691,6 +695,22 @@
                     </div>
                 </div>
             </div>
+
+            {{-- Tab: Riwayat (Log Aktivitas camaba ini, khusus Admin PMB) --}}
+            @if($activityLogs !== null)
+                <div x-show="tab === 'riwayat'" x-cloak class="mt-5">
+                    <div class="mb-3 flex flex-col justify-between gap-2 sm:flex-row sm:items-center">
+                        <h2 class="text-base font-semibold text-slate-900">Riwayat Perubahan</h2>
+                        <p class="text-xs text-slate-500">
+                            {{ $activityLogs->count() >= 200 ? '200 aktivitas terakhir' : $activityLogs->count() . ' aktivitas' }} ·
+                            <a href="{{ route('admin.activity-logs.index', ['keyword' => $applicant->registration_number]) }}" class="font-semibold text-polmind-blue hover:underline">buka di Log Aktivitas</a>
+                        </p>
+                    </div>
+                    <div class="rounded-lg border border-slate-200">
+                        @include('admin.activity-logs.partials.table', ['logs' => $activityLogs, 'showSubject' => false])
+                    </div>
+                </div>
+            @endif
         </div>
 
         {{-- Akun camaba: di bawah menu (desktop), turun ke bawah konten (HP) --}}

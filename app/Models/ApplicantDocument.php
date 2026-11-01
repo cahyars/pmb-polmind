@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ApplicantDocument extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    protected string $activityLabel = 'Berkas camaba';
 
     protected $fillable = [
         'applicant_id',
@@ -52,5 +55,10 @@ class ApplicantDocument extends Model
     public function isWaitingVerification(): bool
     {
         return $this->status === 'menunggu_verifikasi';
+    }
+
+    protected function activitySubjectLabel(): ?string
+    {
+        return $this->documentType?->name;
     }
 }

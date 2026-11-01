@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Payment extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    protected string $activityLabel = 'Pembayaran';
 
     protected $fillable = [
         'applicant_id',
@@ -61,5 +64,10 @@ class Payment extends Model
     public function invoice()
     {
         return $this->belongsTo(Invoice::class);
+    }
+
+    protected function activitySubjectLabel(): ?string
+    {
+        return $this->payment_number;
     }
 }

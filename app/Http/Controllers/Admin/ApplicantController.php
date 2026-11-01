@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FollowUp;
@@ -150,6 +151,10 @@ class ApplicantController extends Controller
             'installmentRows' => $installmentRows,
             'loginPin' => $loginPin,
             'loginInfoText' => $loginPin ? LoginInfoMessage::text($applicant, $loginPin) : null,
+            // Riwayat (Log Aktivitas camaba ini) hanya untuk Admin PMB.
+            'activityLogs' => $request->user('web')?->isAdmin()
+                ? ActivityLog::where('applicant_id', $applicant->id)->latest('id')->limit(200)->get()
+                : null,
         ]);
     }
 

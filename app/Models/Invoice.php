@@ -2,12 +2,15 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Invoice extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    protected string $activityLabel = 'Invoice';
 
     protected $fillable = [
         'applicant_id',
@@ -208,5 +211,10 @@ class Invoice extends Model
         $this->applicant->update([
             'payment_status' => 'valid',
         ]);
+    }
+
+    protected function activitySubjectLabel(): ?string
+    {
+        return $this->invoice_number;
     }
 }

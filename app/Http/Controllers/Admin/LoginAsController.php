@@ -4,10 +4,10 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Applicant;
+use App\Services\ActivityLogger;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
@@ -77,10 +77,12 @@ class LoginAsController extends Controller
             'applicant_id' => $applicant->id,
         ]);
 
-        Log::info('Login As camaba', [
-            'admin' => $admin->email,
-            'registration_number' => $applicant->registration_number,
-            'ip' => $request->ip(),
+        ActivityLogger::record('auth.login_as', 'Login As sebagai camaba', [
+            'actor' => ActivityLogger::userActor($admin),
+            'subject_type' => 'Applicant',
+            'subject_id' => $applicant->id,
+            'subject_label' => $applicant->registration_number . ' · ' . $applicant->full_name,
+            'applicant_id' => $applicant->id,
         ]);
 
         return redirect()->route('camaba.dashboard');

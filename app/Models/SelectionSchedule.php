@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -9,6 +10,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SelectionSchedule extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Jadwal seleksi';
+
     protected $fillable = [
         'admission_wave_id',
         'selection_component_id',

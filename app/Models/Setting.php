@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 
@@ -10,6 +11,10 @@ use Illuminate\Support\Facades\Cache;
  */
 class Setting extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Pengaturan';
+
     private const CACHE_KEY = 'settings.all';
 
     private static ?array $cache = null;
@@ -45,5 +50,11 @@ class Setting extends Model
     {
         self::$cache = null;
         Cache::forget(self::CACHE_KEY);
+    }
+
+    protected function activityIsSecret(string $field): bool
+    {
+        return $field === 'value' && preg_match('/token|secret|password|key_hash/i', (string) $this->key)
+            || in_array($field, \App\Services\ActivityLogger::SECRET_FIELDS, true);
     }
 }

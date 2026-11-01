@@ -436,7 +436,8 @@ class MasterDataController extends Controller
         ]);
 
         if ($request->boolean('is_active')) {
-            PmbYear::where('id', '!=', $pmbYear->id)->update(['is_active' => false]);
+            // Per model (bukan update massal) agar penonaktifan tercatat di Log Aktivitas.
+            PmbYear::where('id', '!=', $pmbYear->id)->where('is_active', true)->get()->each->update(['is_active' => false]);
         }
 
         $pmbYear->update([

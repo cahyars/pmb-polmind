@@ -2,13 +2,16 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Validation\Rule;
 
 class ApplicantEducation extends Model
 {
-    use HasFactory;
+    use HasFactory, LogsActivity;
+
+    protected string $activityLabel = 'Pendidikan camaba';
 
     public const SCHOOL_TYPES = ['SMA', 'SMK', 'MA', 'MAK', 'Paket C', 'Lainnya'];
 

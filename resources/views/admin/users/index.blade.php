@@ -12,6 +12,8 @@
 @endphp
 
 <div class="space-y-8">
+    @include('admin.users.partials.tabs')
+
     @if(session('success'))
         <div class="rounded-lg border border-green-200 bg-green-50 px-5 py-4 text-sm font-semibold text-green-700">
             {{ session('success') }}
@@ -98,6 +100,8 @@
                             </td>
                             <td class="px-5 py-3.5">
                                 <div class="flex justify-end gap-2">
+                                    <a href="{{ route('admin.activity-logs.index', ['user' => $user->id]) }}"
+                                       class="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:border-polmind-blue hover:text-polmind-blue">Lihat Log</a>
                                     <button type="button"
                                             onclick="document.getElementById('edit-user-{{ $user->id }}').classList.toggle('hidden')"
                                             class="rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-polmind-blue">Edit</button>

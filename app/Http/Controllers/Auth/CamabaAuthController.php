@@ -13,6 +13,7 @@ use App\Models\PmbYear;
 use App\Models\RefRegion;
 use App\Models\RegistrationPath;
 use App\Models\StudyProgram;
+use App\Services\ActivityLogger;
 use App\Services\ApplicantRegistration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -150,7 +151,15 @@ class CamabaAuthController extends Controller
     {
         // Login As dari admin: keluar dari akun camaba saja, sesi admin tetap berjalan.
         if (LoginAsController::impersonator()) {
-            $registrationNumber = Auth::guard('applicant')->user()->registration_number;
+            $applicant = Auth::guard('applicant')->user();
+            $registrationNumber = $applicant->registration_number;
+
+            ActivityLogger::record('auth.login_as_end', 'Keluar dari Login As', [
+                'subject_type' => 'Applicant',
+                'subject_id' => $applicant->id,
+                'subject_label' => $registrationNumber . ' · ' . $applicant->full_name,
+                'applicant_id' => $applicant->id,
+            ]);
 
             Auth::guard('applicant')->logoutCurrentDevice();
             $request->session()->forget(LoginAsController::SESSION_KEY);

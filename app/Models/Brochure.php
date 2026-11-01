@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 
@@ -10,6 +11,12 @@ use Illuminate\Database\Eloquent\Model;
  */
 class Brochure extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Brosur';
+
+    protected array $activityIgnore = ['download_count'];
+
     public const FOLDER = 'brochures';
 
     public const ALLOWED_EXTENSIONS = ['pdf', 'jpg', 'jpeg', 'png', 'webp'];

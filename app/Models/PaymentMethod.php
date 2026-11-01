@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -9,6 +10,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class PaymentMethod extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Tujuan pembayaran';
+
     public const TYPES = [
         'bank_transfer' => 'Transfer Bank',
         'virtual_account' => 'Virtual Account',

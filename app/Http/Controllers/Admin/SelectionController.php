@@ -382,7 +382,8 @@ class SelectionController extends Controller
             ]);
         }
 
-        ReRegistration::where('applicant_id', $applicant->id)->update([
+        // Per model (bukan update massal) agar perubahan tercatat di Log Aktivitas.
+        ReRegistration::where('applicant_id', $applicant->id)->get()->each->update([
             'status' => 'belum_daftar_ulang',
             'ready_sync_at' => null,
         ]);

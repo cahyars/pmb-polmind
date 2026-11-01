@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FileController as AdminFileController;
 use App\Http\Controllers\Admin\ApplicantController;
+use App\Http\Controllers\Admin\ActivityLogController;
 use App\Http\Controllers\Admin\ApplicantBiodataController;
 use App\Http\Controllers\Admin\LoginAsController;
 use App\Http\Controllers\Admin\BrochureController as AdminBrochureController;
@@ -257,6 +258,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/integrations/api/ips', [SiakadApiController::class, 'updateIps'])->name('integrations.api.ips');
 
         Route::get('/users', [UserController::class, 'index'])->name('users.index');
+        Route::get('/users/log-aktivitas', [ActivityLogController::class, 'index'])->name('activity-logs.index');
         Route::post('/users', [UserController::class, 'store'])->name('users.store');
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');

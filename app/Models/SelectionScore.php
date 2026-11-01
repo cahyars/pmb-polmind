@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\LogsActivity;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -9,6 +10,10 @@ use Illuminate\Database\Eloquent\Model;
  */
 class SelectionScore extends Model
 {
+    use LogsActivity;
+
+    protected string $activityLabel = 'Nilai seleksi';
+
     protected $fillable = [
         'selection_id',
         'selection_component_id',
@@ -27,5 +32,15 @@ class SelectionScore extends Model
     public function component()
     {
         return $this->belongsTo(SelectionComponent::class, 'selection_component_id');
+    }
+
+    protected function activityParentApplicantId(): ?int
+    {
+        return $this->selection?->applicant_id;
+    }
+
+    protected function activitySubjectLabel(): ?string
+    {
+        return $this->component?->name;
     }
 }

@@ -9,6 +9,7 @@ use App\Models\ClassType;
 use App\Models\PmbYear;
 use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
+use App\Services\ActivityLogger;
 use App\Services\Reports\ApplicantReport;
 use App\Services\Reports\MitraFormatReport;
 use App\Services\Reports\PaymentRecap;
@@ -93,6 +94,8 @@ class ReportController extends Controller
 
     public function exportPayments(Request $request)
     {
+        ActivityLogger::record('report.export', 'Mengunduh Rekap Pembayaran (Excel)', ['changes' => $this->exportFilters($request)]);
+
         $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
 
         return PaymentRecapExport::download(
@@ -103,6 +106,8 @@ class ReportController extends Controller
 
     public function exportApplicants(Request $request)
     {
+        ActivityLogger::record('report.export', 'Mengunduh data camaba (CSV)', ['changes' => $this->exportFilters($request)]);
+
         $filename = 'laporan-camaba-pmb-polmind-' . now()->format('Ymd-His') . '.csv';
 
         $applicants = ReportFilter::fromRequest($request)->applicants()
@@ -201,5 +206,23 @@ class ReportController extends Controller
         }, $filename, [
             'Content-Type' => 'text/csv; charset=UTF-8',
         ]);
+    }
+
+    /**
+     * Filter unduhan dicatat di rincian log, agar terlihat data mana yang diunduh.
+     */
+    private function exportFilters(Request $request): array
+    {
+        return collect($request->only(ReportFilter::KEYS))->filter(fn ($value) => filled($value))
+            ->map(fn ($value, $key) => ['label' => [
+                'start_date' => 'Dari tanggal', 'end_date' => 'Sampai tanggal', 'admission_wave' => 'Gelombang',
+                'study_program' => 'Prodi', 'class_type' => 'Kelas', 'registration_path' => 'Jalur',
+            ][$key] ?? $key, 'old' => null, 'new' => (string) match ($key) {
+                'admission_wave' => AdmissionWave::find($value)?->name ?? $value,
+                'study_program' => StudyProgram::find($value)?->code ?? $value,
+                'class_type' => ClassType::find($value)?->name ?? $value,
+                default => $value,
+            }])
+            ->all();
     }
 }
