@@ -179,7 +179,13 @@ class ReRegistrationInstallmentTest extends TestCase
         $this->acceptLatestPayment($prestasi->reRegistrationInvoice);
         $row = \App\Services\Reports\PaymentRecap::build(new \App\Services\Reports\ReportFilter)['rows']->first(fn ($row) => $row['applicant']->is($prestasi));
         $this->assertSame('Prestasi Tingkat 2 · Provinsi', $row['note']);
+        $this->assertFalse($row['form_waived']);
         $this->assertEquals(7000000, $row['components']['UKT']);
+
+        // Keterangan prestasi tidak membuat formulir tampil "Gratis".
+        $this->actingAs($this->admin, 'web')->get('/admin/reports/pembayaran')
+            ->assertSee('Prestasi Tingkat 2 · Provinsi')
+            ->assertDontSee('>Gratis</span>', false);
 
         // Sudah ada pembayaran: kategori tidak bisa diganti lagi.
         $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 1 · Nasional')->id])->assertSessionHasErrors();

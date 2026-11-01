@@ -99,7 +99,7 @@ class PaymentRecapExport
             foreach ($report['components'] as $offset => $name) {
                 $amount = $item['components'][$name] ?? 0;
                 // Formulir gratis ditulis 0 (bukan kosong) agar terlihat sudah tercatat.
-                if ($amount > 0 || ($name === PaymentRecap::FORM_COMPONENT && $item['note'])) {
+                if ($amount > 0 || ($name === PaymentRecap::FORM_COMPONENT && $item['form_waived'])) {
                     $sheet->setCellValue($col($componentStart + $offset) . $row, $amount);
                 }
             }

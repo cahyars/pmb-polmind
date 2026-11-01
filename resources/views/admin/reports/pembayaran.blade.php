@@ -94,7 +94,7 @@
                                 @endforeach
                                 @foreach($report['components'] as $name)
                                     <td class="{{ $td }} text-right text-slate-600">
-                                        @if($name === \App\Services\Reports\PaymentRecap::FORM_COMPONENT && $row['note'])
+                                        @if($name === \App\Services\Reports\PaymentRecap::FORM_COMPONENT && $row['form_waived'])
                                             0 <span class="ml-1 rounded bg-green-100 px-1.5 py-0.5 text-[10px] font-bold text-green-700" title="{{ $row['note'] }}">Gratis</span>
                                         @else
                                             {{ $money($row['components'][$name] ?? 0) }}
