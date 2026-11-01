@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Auth;
 
+use App\Http\Controllers\Admin\LoginAsController;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
@@ -134,6 +135,7 @@ class CamabaAuthController extends Controller
 
         if (Auth::guard('applicant')->attempt($credentials, $remember)) {
             $request->session()->regenerate();
+            $request->session()->forget(LoginAsController::SESSION_KEY);
 
             return redirect('/camaba/dashboard')
                 ->with('success', 'Berhasil login.');
@@ -146,6 +148,16 @@ class CamabaAuthController extends Controller
 
     public function logout(Request $request)
     {
+        // Login As dari admin: keluar dari akun camaba saja, sesi admin tetap berjalan.
+        if (LoginAsController::impersonator()) {
+            $registrationNumber = Auth::guard('applicant')->user()->registration_number;
+
+            Auth::guard('applicant')->logoutCurrentDevice();
+            $request->session()->forget(LoginAsController::SESSION_KEY);
+
+            return redirect()->route('admin.login-as.index', ['applicant' => $registrationNumber]);
+        }
+
         Auth::guard('applicant')->logout();
 
         $request->session()->invalidate();

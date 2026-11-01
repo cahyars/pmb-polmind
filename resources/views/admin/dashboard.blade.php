@@ -60,47 +60,51 @@
                 'value' => $totalApplicants,
                 'desc' => 'Semua pendaftar',
                 'url' => '/admin/applicants',
-                'class' => 'bg-blue-100 text-polmind-blue',
-                'accent' => 'border-t-polmind-blue',
+                'icon' => 'users',
+                'class' => 'bg-polmind-blue text-white',
+                'chip' => 'bg-white/15 group-hover:bg-white/25',
             ],
             [
                 'label' => 'Berkas Menunggu',
                 'value' => $pendingDocuments,
                 'desc' => 'Perlu diverifikasi',
                 'url' => '/admin/documents?status=menunggu_verifikasi',
-                'class' => 'bg-yellow-100 text-yellow-700',
-                'accent' => 'border-t-amber-400',
+                'icon' => 'document-text',
+                'class' => 'bg-sky-700 text-white',
+                'chip' => 'bg-white/15 group-hover:bg-white/25',
             ],
             [
                 'label' => 'Pembayaran Menunggu',
                 'value' => $pendingPayments,
                 'desc' => 'Perlu validasi pembayaran',
                 'url' => '/admin/payments?status=waiting_verification',
-                'class' => 'bg-purple-100 text-purple-700',
-                'accent' => 'border-t-purple-500',
+                'icon' => 'card',
+                'class' => 'bg-polmind-yellow text-polmind-blue-dark',
+                'chip' => 'bg-polmind-blue-dark/10 group-hover:bg-polmind-blue-dark/20',
             ],
             [
                 'label' => 'Daftar Ulang Valid',
                 'value' => $validReRegistrations,
                 'desc' => 'Siap proses akademik',
                 'url' => '/admin/re-registrations?status=valid',
-                'class' => 'bg-green-100 text-green-700',
-                'accent' => 'border-t-green-500',
+                'icon' => 'cap',
+                'class' => 'bg-teal-700 text-white',
+                'chip' => 'bg-white/15 group-hover:bg-white/25',
             ],
         ] as $card)
             <a href="{{ url($card['url']) }}"
-            class="rounded-lg border border-t-[3px] border-slate-200 {{ $card['accent'] }} bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="text-sm font-medium text-slate-500">{{ $card['label'] }}</p>
-                        <p class="mt-3 text-[28px] font-bold leading-tight text-slate-900">{{ $card['value'] }}</p>
-                        <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
-                    </div>
+               class="group relative overflow-hidden rounded-xl p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg {{ $card['class'] }}">
+                <x-icon :name="$card['icon']" class="pointer-events-none absolute -bottom-5 -right-4 h-28 w-28 opacity-10" stroke-width="1.2" />
 
-                    <span class="rounded-full px-3 py-1 text-xs font-bold {{ $card['class'] }}">
+                <div class="relative flex items-start justify-between gap-4">
+                    <p class="text-sm font-semibold opacity-90">{{ $card['label'] }}</p>
+                    <span class="inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold transition {{ $card['chip'] }}">
                         Detail
+                        <x-icon name="arrow-up-right" class="h-3 w-3" stroke-width="2.5" />
                     </span>
                 </div>
+                <p class="relative mt-1 text-4xl font-bold leading-tight tabular-nums">{{ number_format((int) $card['value'], 0, ',', '.') }}</p>
+                <p class="relative mt-3 text-xs font-medium opacity-80">{{ $card['desc'] }}</p>
             </a>
         @endforeach
     </div>
@@ -114,13 +118,29 @@
                 'value' => $registrationPathStats[$path->code] ?? 0,
                 'desc' => 'Pendaftar jalur ' . mb_strtolower($path->name),
                 'class' => \App\Models\RegistrationPath::textClass($path->code),
+                'badge' => \App\Models\RegistrationPath::badgeClass($path->code),
                 'url' => '/admin/applicants?registration_path=' . $path->code,
             ]) as $card)
+            @php
+                $share = $totalApplicants > 0 ? round($card['value'] / $totalApplicants * 100) : 0;
+            @endphp
             <a href="{{ url($card['url']) }}"
-            class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
-                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
+               class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $card['badge'] }}">
+                    <x-icon name="bookmark" class="h-6 w-6" stroke-width="1.8" />
+                </span>
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-baseline justify-between gap-3">
+                        <p class="truncate text-sm font-semibold text-slate-600">{{ $card['label'] }}</p>
+                        <p class="text-2xl font-bold tabular-nums {{ $card['class'] }}">{{ number_format((int) $card['value'], 0, ',', '.') }}</p>
+                    </div>
+
+                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 {{ $card['class'] }}" aria-hidden="true">
+                        <div class="h-full rounded-full bg-current" style="width: {{ $share }}%"></div>
+                    </div>
+                    <p class="mt-1.5 text-xs text-slate-500">{{ $card['desc'] }} · {{ $share }}% dari total</p>
+                </div>
             </a>
         @endforeach
     </div>

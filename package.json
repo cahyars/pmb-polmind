@@ -19,6 +19,7 @@
         "chart.js": "^4.5.1",
         "filepond": "^4.32.12",
         "flatpickr": "^4.6.13",
+        "html-to-image": "^1.11.13",
         "lucide-static": "^1.21.0",
         "sweetalert2": "^11.26.25",
         "tom-select": "^2.6.1"

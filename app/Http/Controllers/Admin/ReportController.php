@@ -10,12 +10,14 @@ use App\Models\PmbYear;
 use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
 use App\Services\Reports\ApplicantReport;
+use App\Services\Reports\MitraFormatReport;
 use App\Services\Reports\PaymentRecap;
 use App\Services\Reports\PaymentRecapExport;
 use App\Services\Reports\ReportFilter;
 use App\Services\Reports\ReRegistrationReport;
 use App\Services\Reports\SelectionReport;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 
 class ReportController extends Controller
 {
@@ -27,6 +29,7 @@ class ReportController extends Controller
         'seleksi' => ['label' => 'Laporan Seleksi', 'description' => 'Kesiapan dan hasil seleksi per prodi, jalur, dan gelombang.'],
         'daftar-ulang' => ['label' => 'Laporan Daftar Ulang', 'description' => 'Pembayaran daftar ulang, NIM, dan keterisian kuota prodi.'],
         'pembayaran' => ['label' => 'Rekap Pembayaran', 'description' => 'Pemasukan per camaba per minggu: formulir, daftar ulang, UKT, SPI, dan outstanding.'],
+        'format-mitra' => ['label' => 'Report Format Mitra', 'description' => 'Rekap registrasi, pengisian formulir, dan grafiknya per hari seperti spreadsheet laporan sore, siap diunduh PNG.'],
     ];
 
     public function index(Request $request)
@@ -36,6 +39,10 @@ class ReportController extends Controller
 
     public function show(Request $request, string $section)
     {
+        if ($section === 'format-mitra') {
+            return $this->mitraFormat($request);
+        }
+
         $filter = ReportFilter::fromRequest($request);
 
         $report = match ($section) {
@@ -53,6 +60,34 @@ class ReportController extends Controller
             'studyPrograms' => StudyProgram::orderBy('code')->get(),
             'classTypes' => ClassType::orderBy('code')->get(),
             'admissionWaves' => AdmissionWave::orderBy('start_date')->get(),
+        ]);
+    }
+
+    /**
+     * Report Format Mitra: per gelombang sampai hari H (default hari ini), minggu berjalan atau seluruh gelombang.
+     */
+    private function mitraFormat(Request $request)
+    {
+        $validated = $request->validate([
+            'wave' => ['nullable', 'integer'],
+            'date' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
+            'range' => ['nullable', 'in:week,all'],
+        ]);
+
+        $pmbYear = PmbYear::find($request->session()->get(SelectAdminPmbYear::SESSION_KEY));
+        $waves = AdmissionWave::orderBy('start_date')->orderBy('id')->get();
+        $wave = $waves->firstWhere('id', (int) ($validated['wave'] ?? 0))
+            ?? $waves->firstWhere('id', AdmissionWave::current($pmbYear)?->id)
+            ?? $waves->last();
+
+        return view('admin.reports.format-mitra', [
+            'report' => $wave
+                ? MitraFormatReport::build($pmbYear, $wave, Carbon::parse($validated['date'] ?? today()), ($validated['range'] ?? 'week') === 'all')
+                : null,
+            'section' => 'format-mitra',
+            'sections' => self::SECTIONS,
+            'filters' => [],
+            'waves' => $waves,
         ]);
     }
 

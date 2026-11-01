@@ -225,6 +225,13 @@ class WalkInApplicantTest extends TestCase
         $this->assertSame('PAY/PMB/2027/00001', $payment->payment_number);
         Storage::disk('local')->assertExists($payment->proof_file_path);
 
+        // Detail camaba: ikon bukti bayar dan cetak kwitansi di kartu invoice pendaftaran.
+        $this->get(route('admin.applicants.show', $applicant->registration_number))
+            ->assertOk()
+            ->assertSee(route('admin.payments.proof', $payment))
+            ->assertSee(route('admin.payments.receipt', $payment))
+            ->assertSee('Cetak kwitansi');
+
         // Camaba langsung bisa membuka biodata karena formulir sudah dibayar.
         $this->actingAs($applicant, 'applicant')->get('/camaba/biodata')->assertOk()->assertSee('XXXL');
     }

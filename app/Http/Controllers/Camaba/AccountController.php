@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Camaba;
 
+use App\Http\Controllers\Admin\LoginAsController;
 use App\Http\Controllers\Controller;
 use App\Services\LoginInfoMessage;
 use Illuminate\Http\Request;
@@ -26,6 +27,10 @@ class AccountController extends Controller
     public function updatePassword(Request $request)
     {
         $applicant = Auth::guard('applicant')->user();
+
+        if (LoginAsController::impersonator()) {
+            return back()->withErrors('Password camaba tidak dapat diganti saat Login As. Gunakan Reset PIN di Detail Camaba bila camaba lupa password.');
+        }
 
         $validated = $request->validate([
             'current_password' => ['required', 'string', 'current_password:applicant'],

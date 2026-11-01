@@ -23,6 +23,12 @@ class DailyRecap
      */
     public const PARTNER_SCHOOL = 'SMK Mitra Industri';
 
+    /**
+     * Penanda sekolah mitra pada nama sekolah. Direktori sekolah menulis swasta sebagai "SMKS",
+     * contoh "SMKS MITRA INDUSTRI MM2100", jadi yang dicocokkan cukup "MITRA INDUSTRI".
+     */
+    public const PARTNER_KEYWORD = 'MITRA INDUSTRI';
+
     public const CUTOFF_HOUR = 18;
 
     private const SCHOOL_TYPE_ORDER = ['SMA', 'SMK', 'MA', 'MAK', 'Paket C', 'Lainnya'];
@@ -44,10 +50,7 @@ class DailyRecap
         $today = $official->filter(fn (Applicant $applicant) => $applicant->created_at->gte($this->windowStart()));
         $todayOffline = $today->where('registered_via', 'kampus')->count();
         $shortDate = $this->date->format('j/n/Y');
-        $partner = $official->filter(fn (Applicant $applicant) => str_contains(
-            mb_strtoupper((string) $applicant->education?->school_name),
-            mb_strtoupper(self::PARTNER_SCHOOL)
-        ));
+        $partner = $official->filter(fn (Applicant $applicant) => self::isPartnerSchool($applicant->education?->school_name));
 
         $lines = [
             'Selamat ' . self::greeting() . ' Bapak/Ibu, berikut merupakan hasil rekap Pendaftaran '
@@ -81,6 +84,11 @@ class DailyRecap
         ];
 
         return rtrim(implode("\n", $lines));
+    }
+
+    public static function isPartnerSchool(?string $schoolName): bool
+    {
+        return str_contains(mb_strtoupper((string) $schoolName), self::PARTNER_KEYWORD);
     }
 
     public static function greeting(?Carbon $now = null): string

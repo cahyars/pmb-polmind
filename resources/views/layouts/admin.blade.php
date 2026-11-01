@@ -59,6 +59,7 @@
                         ],
                     ],
                     ['label' => 'Follow Up', 'url' => '/admin/follow-ups', 'icon' => 'chat', 'active' => request()->is('admin/follow-ups*')],
+                    ['label' => 'Login As', 'url' => '/admin/login-as', 'icon' => 'user', 'admin_only' => true, 'active' => request()->is('admin/login-as*')],
                     [
                         'label' => 'Laporan',
                         'icon' => 'chart',

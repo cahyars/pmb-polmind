@@ -7,6 +7,8 @@ use App\Http\Controllers\Admin\AuthController as AdminAuthController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FileController as AdminFileController;
 use App\Http\Controllers\Admin\ApplicantController;
+use App\Http\Controllers\Admin\ApplicantBiodataController;
+use App\Http\Controllers\Admin\LoginAsController;
 use App\Http\Controllers\Admin\BrochureController as AdminBrochureController;
 use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
@@ -131,6 +133,8 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
 
     Route::get('/applicants/{registration_number}', [ApplicantController::class, 'show'])->name('applicants.show');
     Route::delete('/applicants/{registration_number}', [ApplicantController::class, 'destroy'])->name('applicants.destroy');
+    Route::get('/applicants/{registration_number}/edit', [ApplicantBiodataController::class, 'edit'])->name('applicants.edit');
+    Route::put('/applicants/{registration_number}', [ApplicantBiodataController::class, 'update'])->middleware('throttle:30,1')->name('applicants.update');
     Route::patch('/applicants/{registration_number}/reset-password', [ApplicantController::class, 'resetPassword'])->middleware('throttle:20,1')->name('applicants.reset-password');
     Route::post('/applicants/{registration_number}/login-info', [ApplicantController::class, 'sendLoginInfo'])->name('applicants.login-info');
     Route::patch('/applicants/{registration_number}/waive-registration-fee', [ApplicantController::class, 'waiveRegistrationFee'])->name('applicants.waive-registration-fee');
@@ -148,6 +152,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         // Skema cicilan daftar ulang bersifat rahasia, khusus Admin PMB.
         Route::put('/applicants/{registration_number}/installments', [InstallmentController::class, 'update'])->name('applicants.installments.update');
         Route::delete('/applicants/{registration_number}/installments', [InstallmentController::class, 'destroy'])->name('applicants.installments.destroy');
+
+        // Login As: membuka portal camaba seperti yang dilihat camaba.
+        Route::get('/login-as', [LoginAsController::class, 'index'])->name('login-as.index');
+        Route::get('/login-as/suggestions', [LoginAsController::class, 'suggestions'])->middleware('throttle:120,1')->name('login-as.suggestions');
+        Route::post('/login-as/{registration_number}', [LoginAsController::class, 'store'])->middleware('throttle:30,1')->name('login-as.store');
 
         Route::get('/payment-methods', [PaymentMethodController::class, 'index'])->name('payment-methods.index');
         Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');

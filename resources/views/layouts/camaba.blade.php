@@ -252,6 +252,16 @@
                 </div>
             </header>
 
+            @if($loginAs = \App\Http\Controllers\Admin\LoginAsController::impersonator())
+                <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-100 px-4 py-2 text-xs font-semibold text-amber-900 sm:px-6 lg:px-8">
+                    <span>Login As oleh {{ $loginAs['admin_name'] }}: tampilan ini sama dengan yang dilihat camaba.</span>
+                    <form action="{{ route('logout') }}" method="POST">
+                        @csrf
+                        <button type="submit" class="underline hover:no-underline">Keluar dari akun camaba</button>
+                    </form>
+                </div>
+            @endif
+
             {{-- Page Content --}}
             <main class="px-4 py-6 sm:px-6 lg:px-8">
                 @yield('content')

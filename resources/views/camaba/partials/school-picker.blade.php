@@ -1,4 +1,4 @@
-{{-- Lokasi + pencarian sekolah asal (atau isian manual). Dipakai di dalam x-data schoolPicker. --}}
+{{-- Lokasi + pencarian sekolah asal (atau isian manual). Dipakai di dalam x-data schoolPicker. $schoolRegionRequired = false bila sekolah boleh dikosongkan (edit biodata oleh admin). --}}
 @php
     $field = 'mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100 disabled:bg-slate-100 disabled:text-slate-500';
     $label = 'text-sm font-bold text-slate-700';
@@ -11,7 +11,7 @@
     <p class="text-sm font-black text-slate-900">1. Lokasi sekolah</p>
     <p class="{{ $hint }}">Pilih wilayah sekolah asal Anda, lalu cari nama sekolahnya.</p>
     <div class="mt-2 grid gap-5 md:grid-cols-3">
-        @include('camaba.partials.region-select', ['fieldName' => 'school_region_id'])
+        @include('camaba.partials.region-select', ['fieldName' => 'school_region_id', 'regionRequired' => $schoolRegionRequired ?? true])
     </div>
 </div>
 

@@ -25,6 +25,19 @@ class ApplicantController extends Controller
 
         $validReRegistrations = ReRegistration::where('status', 'valid')->count();
 
+        // Formulir gratis tercatat payment_status valid, jadi ikut terhitung sudah bayar.
+        $paidApplicants = Applicant::where('payment_status', 'valid')->count();
+
+        $selectionStats = Applicant::query()
+            ->whereIn('selection_status', ['diterima', 'cadangan'])
+            ->selectRaw('selection_status, count(*) as total')
+            ->groupBy('selection_status')
+            ->pluck('total', 'selection_status');
+
+        $pendingReRegistrations = Applicant::where('selection_status', 'diterima')
+            ->whereDoesntHave('reRegistration', fn ($query) => $query->where('status', 'valid'))
+            ->count();
+
         $registrationPathStats = Applicant::query()
             ->selectRaw('registration_path, count(*) as total')
             ->groupBy('registration_path')
@@ -87,6 +100,9 @@ class ApplicantController extends Controller
             'biodataComplete',
             'incompleteApplicants',
             'validReRegistrations',
+            'paidApplicants',
+            'selectionStats',
+            'pendingReRegistrations',
             'registrationPathStats',
             'waves',
             'studyPrograms',

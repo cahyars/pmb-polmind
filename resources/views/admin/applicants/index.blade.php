@@ -19,18 +19,49 @@
         </div>
     @endif
 
-    {{-- Summary Cards --}}
+    {{-- Summary Cards: angka utama + rincian dua sisi --}}
+    @php
+        $number = fn ($value) => number_format((int) $value, 0, ',', '.');
+        $accepted = (int) ($selectionStats['diterima'] ?? 0);
+        $reserve = (int) ($selectionStats['cadangan'] ?? 0);
+    @endphp
     <div class="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         @foreach([
-            ['label' => 'Total Camaba', 'value' => $totalApplicants, 'desc' => 'Semua pendaftar'],
-            ['label' => 'Biodata Lengkap', 'value' => $biodataComplete, 'desc' => 'Siap proses lanjutan'],
-            ['label' => 'Belum Lengkap', 'value' => $incompleteApplicants, 'desc' => 'Perlu follow up'],
-            ['label' => 'Daftar Ulang Valid', 'value' => $validReRegistrations, 'desc' => 'Siap sinkron akademik'],
+            [
+                'label' => 'Total Camaba', 'value' => $totalApplicants, 'icon' => 'users',
+                'class' => 'bg-polmind-blue text-white', 'panel' => 'bg-white/10 divide-white/20',
+                'parts' => ['Belum Bayar' => $totalApplicants - $paidApplicants, 'Sudah Bayar' => $paidApplicants],
+            ],
+            [
+                'label' => 'Isi Biodata', 'value' => $biodataComplete, 'icon' => 'pencil-square',
+                'class' => 'bg-sky-700 text-white', 'panel' => 'bg-white/10 divide-white/20',
+                'parts' => ['Belum Lengkap' => $incompleteApplicants, 'Lengkap' => $biodataComplete],
+            ],
+            [
+                'label' => 'Lolos Seleksi', 'value' => $accepted + $reserve, 'icon' => 'badge-check',
+                'class' => 'bg-polmind-yellow text-polmind-blue-dark', 'panel' => 'bg-polmind-blue-dark/10 divide-polmind-blue-dark/15',
+                'parts' => ['Diterima' => $accepted, 'Cadangan' => $reserve],
+            ],
+            [
+                'label' => 'Daftar Ulang', 'value' => $validReRegistrations, 'icon' => 'cap',
+                'class' => 'bg-teal-700 text-white', 'panel' => 'bg-white/10 divide-white/20',
+                'parts' => ['Sudah' => $validReRegistrations, 'Belum' => $pendingReRegistrations],
+            ],
         ] as $card)
-            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-[28px] font-bold leading-tight text-polmind-blue">{{ $card['value'] }}</p>
-                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
+            <div class="relative overflow-hidden rounded-xl p-5 shadow-sm {{ $card['class'] }}">
+                <x-icon :name="$card['icon']" class="pointer-events-none absolute -bottom-5 -right-4 h-28 w-28 opacity-10" stroke-width="1.2" />
+
+                <p class="relative text-sm font-semibold opacity-90">{{ $card['label'] }}</p>
+                <p class="relative mt-1 text-4xl font-bold leading-tight tabular-nums">{{ $number($card['value']) }}</p>
+
+                <dl class="relative mt-4 grid grid-cols-2 divide-x rounded-lg px-1 py-2.5 {{ $card['panel'] }}">
+                    @foreach($card['parts'] as $partLabel => $partValue)
+                        <div class="px-3">
+                            <dd class="text-lg font-bold leading-tight tabular-nums">{{ $number($partValue) }}</dd>
+                            <dt class="text-xs font-medium opacity-80">{{ $partLabel }}</dt>
+                        </div>
+                    @endforeach
+                </dl>
             </div>
         @endforeach
     </div>
@@ -42,13 +73,28 @@
             ->map(fn ($path) => [
                 'label' => 'Jalur ' . $path->name,
                 'value' => $registrationPathStats[$path->code] ?? 0,
-                'desc' => 'Pendaftar jalur ' . mb_strtolower($path->name),
                 'class' => \App\Models\RegistrationPath::textClass($path->code),
+                'badge' => \App\Models\RegistrationPath::badgeClass($path->code),
             ]) as $card)
-            <div class="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-                <p class="text-sm font-semibold text-slate-500">{{ $card['label'] }}</p>
-                <p class="mt-3 text-[28px] font-bold leading-tight {{ $card['class'] }}">{{ $card['value'] }}</p>
-                <p class="mt-2 text-xs font-medium text-slate-500">{{ $card['desc'] }}</p>
+            @php
+                $share = $totalApplicants > 0 ? round($card['value'] / $totalApplicants * 100) : 0;
+            @endphp
+            <div class="flex items-center gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <span class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl {{ $card['badge'] }}">
+                    <x-icon name="bookmark" class="h-6 w-6" stroke-width="1.8" />
+                </span>
+
+                <div class="min-w-0 flex-1">
+                    <div class="flex items-baseline justify-between gap-3">
+                        <p class="truncate text-sm font-semibold text-slate-600">{{ $card['label'] }}</p>
+                        <p class="text-2xl font-bold tabular-nums {{ $card['class'] }}">{{ $number($card['value']) }}</p>
+                    </div>
+
+                    <div class="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-100 {{ $card['class'] }}" aria-hidden="true">
+                        <div class="h-full rounded-full bg-current" style="width: {{ $share }}%"></div>
+                    </div>
+                    <p class="mt-1.5 text-xs text-slate-500">{{ $share }}% dari total camaba</p>
+                </div>
             </div>
         @endforeach
     </div>

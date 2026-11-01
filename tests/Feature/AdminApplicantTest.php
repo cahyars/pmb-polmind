@@ -61,6 +61,32 @@ class AdminApplicantTest extends TestCase
             ->assertDontSee('action="' . route('admin.applicants.destroy', $lulus->registration_number) . '"', false);
     }
 
+    public function test_summary_cards_split_payment_biodata_selection_and_re_registration(): void
+    {
+        $this->registerApplicant(['email' => 'peminat@example.com']);
+        $this->registerApplicant(['email' => 'cadangan@example.com'])
+            ->update(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap', 'selection_status' => 'cadangan']);
+        $this->registerApplicant(['email' => 'diterima@example.com'])
+            ->update(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap', 'selection_status' => 'diterima']);
+        $validated = $this->registerApplicant(['email' => 'valid@example.com']);
+        $validated->update(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap', 'selection_status' => 'diterima']);
+        $validated->reRegistration()->create(['status' => 'valid']);
+
+        $this->actingAs(User::factory()->create(), 'web')
+            ->get('/admin/applicants')
+            ->assertOk()
+            ->assertViewHas('totalApplicants', 4)
+            ->assertViewHas('paidApplicants', 3)
+            ->assertViewHas('biodataComplete', 3)
+            ->assertViewHas('incompleteApplicants', 1)
+            ->assertViewHas('selectionStats', fn ($stats) => $stats['diterima'] === 2 && $stats['cadangan'] === 1)
+            ->assertViewHas('validReRegistrations', 1)
+            ->assertViewHas('pendingReRegistrations', 1)
+            ->assertSeeInOrder(['Total Camaba', 'Belum Bayar', 'Sudah Bayar', 'Isi Biodata', 'Belum Lengkap', 'Lengkap', 'Lolos Seleksi', 'Diterima', 'Cadangan', 'Daftar Ulang', 'Sudah', 'Belum'])
+            // Keempat camaba lewat jalur Umum.
+            ->assertSee('100% dari total camaba');
+    }
+
     public function test_admin_can_delete_only_unpaid_applicants(): void
     {
         $admin = User::factory()->create();
