@@ -94,7 +94,8 @@ class DailyRecapTest extends TestCase
         $this->registerAt('2027-04-09 19:00', ['source_information' => 'Website'],
             ['school_name' => 'SMK MITRA INDUSTRI MM2100', 'school_type' => 'SMK', 'school_status' => 'Swasta', 'graduation_year' => 2026],
             ['registered_via' => 'kampus']);
-        $this->registerAt('2027-04-10 13:00', [], ['school_type' => 'MA', 'school_status' => 'Swasta']);
+        // Camaba lama yang mendaftar sebelum tahun lulus wajib di form registrasi.
+        $this->registerAt('2027-04-10 13:00', [], ['school_type' => 'MA', 'school_status' => 'Swasta', 'graduation_year' => null]);
 
         // Setelah 18.00 masuk rekap besok.
         $this->registerAt('2027-04-10 18:30', [], ['school_type' => 'SMA']);

@@ -73,6 +73,8 @@ class CamabaPasswordTest extends TestCase
     public function test_reset_needs_birth_date(): void
     {
         $applicant = $this->registerApplicant();
+        // Camaba lama yang mendaftar sebelum tanggal lahir wajib di form registrasi.
+        $applicant->update(['birth_date' => null]);
         $admin = User::factory()->create();
 
         $this->actingAs($admin, 'web')

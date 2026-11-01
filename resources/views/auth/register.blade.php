@@ -130,6 +130,33 @@
 
                 <div class="grid gap-5 md:grid-cols-2">
                     <div>
+                        <label for="birth_place" class="{{ $label }}">Tempat Lahir {!! $required !!}</label>
+                        <input id="birth_place"
+                               type="text"
+                               name="birth_place"
+                               value="{{ old('birth_place') }}"
+                               required
+                               maxlength="100"
+                               placeholder="Kota/kabupaten lahir"
+                               class="{{ $field }}">
+                    </div>
+
+                    <div>
+                        <label for="birth_date" class="{{ $label }}">Tanggal Lahir {!! $required !!}</label>
+                        <input id="birth_date"
+                               type="date"
+                               name="birth_date"
+                               value="{{ old('birth_date') }}"
+                               required
+                               max="{{ now()->subDay()->format('Y-m-d') }}"
+                               autocomplete="bday"
+                               class="{{ $field }}">
+                        <p class="{{ $hint }}">Sesuai akta kelahiran/KTP.</p>
+                    </div>
+                </div>
+
+                <div class="grid gap-5 md:grid-cols-2">
+                    <div>
                         <label for="email" class="{{ $label }}">Email {!! $required !!}</label>
                         <input id="email"
                                type="email"
@@ -262,6 +289,17 @@
                          'status' => old('school_status'),
                      ]))">
                     @include('camaba.partials.school-picker')
+
+                    <div class="border-t border-slate-200 pt-6 md:[&>*]:max-w-xs">
+                        <label for="graduation_year" class="{{ $label }} block">Tahun Lulus {!! $required !!}</label>
+                        <select id="graduation_year" name="graduation_year" required class="{{ $field }}">
+                            <option value="">Pilih tahun</option>
+                            @for($year = now()->year + 1; $year >= now()->year - 10; $year--)
+                                <option value="{{ $year }}" @selected((string) old('graduation_year') === (string) $year)>{{ $year }}</option>
+                            @endfor
+                        </select>
+                        <p class="{{ $hint }}">Pilih {{ now()->year + 1 }} jika masih kelas XII.</p>
+                    </div>
                 </div>
             </section>
 

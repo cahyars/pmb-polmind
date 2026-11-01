@@ -68,6 +68,9 @@ class CamabaAuthController extends Controller
             'full_name' => ['required', 'string', 'max:255'],
             'nik' => Applicant::nikRules($activeWave->id),
             'gender' => ['required', Rule::in(['L', 'P'])],
+            'birth_place' => ['required', 'string', 'max:100'],
+            'birth_date' => ['required', 'date', 'before:today'],
+            'graduation_year' => ['required', 'integer', 'min:2000', 'max:' . (now()->year + 1)],
             'email' => ['required', 'email', 'max:255', 'unique:applicants,email'],
             'phone' => ['required', 'string', 'regex:/^\+?[0-9]{9,15}$/'],
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
@@ -82,6 +85,10 @@ class CamabaAuthController extends Controller
             'class_type_id.required' => 'Pilih jenis kelas.',
             'registration_path.required' => 'Pilih jalur pendaftaran.',
             'gender.required' => 'Pilih jenis kelamin.',
+            'birth_place.required' => 'Isi tempat lahir.',
+            'birth_date.required' => 'Isi tanggal lahir.',
+            'birth_date.before' => 'Tanggal lahir harus sebelum hari ini.',
+            'graduation_year.required' => 'Pilih tahun lulus.',
         ] + Applicant::nikMessages($activeWave) + ApplicantEducation::schoolMessages());
 
         $applicant = DB::transaction(function () use ($validated, $activePmbYear, $activeWave) {
@@ -90,6 +97,8 @@ class CamabaAuthController extends Controller
                 'full_name' => $validated['full_name'],
                 'nik' => $validated['nik'],
                 'gender' => $validated['gender'],
+                'birth_place' => $validated['birth_place'],
+                'birth_date' => $validated['birth_date'],
                 'email' => $validated['email'],
                 'password' => $validated['password'],
                 'phone' => $validated['phone'],
@@ -97,7 +106,9 @@ class CamabaAuthController extends Controller
                 'registration_path' => $validated['registration_path'],
             ], $activePmbYear, $activeWave, ClassType::findOrFail($validated['class_type_id']));
 
-            $applicant->education()->create(ApplicantEducation::schoolAttributes($validated));
+            $applicant->education()->create(ApplicantEducation::schoolAttributes($validated) + [
+                'graduation_year' => $validated['graduation_year'],
+            ]);
 
             return $applicant;
         });
