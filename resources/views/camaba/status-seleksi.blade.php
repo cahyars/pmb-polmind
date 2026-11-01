@@ -140,7 +140,7 @@
                                 <div class="min-w-0">
                                     <p class="font-black text-slate-900">{{ $schedule->component?->name ?? 'Tes Seleksi' }}</p>
                                     <p class="mt-0.5 text-sm text-slate-600">
-                                        {{ $schedule->test_date->translatedFormat('l, j F Y') }} · {{ $schedule->time_range ?? 'Jam menyusul' }}
+                                        {{ $schedule->test_date->translatedFormat('l, d/m/Y') }} · {{ $schedule->time_range ?? 'Jam menyusul' }}
                                     </p>
                                     <p class="mt-1 flex items-center gap-1 text-xs text-slate-500"><x-icon name="map-pin" class="h-3.5 w-3.5 shrink-0" /> {{ $schedule->location ?? 'Lokasi menyusul' }}</p>
                                     @if($schedule->notes)
@@ -157,14 +157,14 @@
                         @if($wave->announcement_date)
                             <div class="rounded-2xl bg-slate-50 p-4">
                                 <dt class="text-xs font-bold text-slate-500">Pengumuman Hasil</dt>
-                                <dd class="mt-1 font-black text-slate-900">{{ $wave->announcement_date->translatedFormat('j F Y') }}</dd>
+                                <dd class="mt-1 font-black text-slate-900">{{ $wave->announcement_date->translatedFormat('d/m/Y') }}</dd>
                             </div>
                         @endif
                         @if($wave->re_registration_start_date)
                             <div class="rounded-2xl bg-slate-50 p-4">
                                 <dt class="text-xs font-bold text-slate-500">Daftar Ulang</dt>
                                 <dd class="mt-1 font-black text-slate-900">
-                                    {{ $wave->re_registration_start_date->translatedFormat('j M') }}{{ $wave->re_registration_end_date ? ' – ' . $wave->re_registration_end_date->translatedFormat('j M Y') : '' }}
+                                    {{ \App\Models\AdmissionWave::formatDateRange($wave->re_registration_start_date, $wave->re_registration_end_date) }}
                                 </dd>
                             </div>
                         @endif

@@ -156,7 +156,7 @@ class DailyRecapTest extends TestCase
             ->assertOk()
             ->assertSee('hasil rekap Pendaftaran PMB 2027 *Gelombang 1*', false)
             ->assertSee('sebanyak *1 pendaftar*', false)
-            ->assertSee('9 Apr 18.00 s.d. 10 Apr 18.00 WIB')
+            ->assertSee('09/04/2027 18.00 s.d. 10/04/2027 18.00 WIB')
             ->assertSee('https://wa.me/?text=', false)
             ->assertSee('Salin Teks');
 

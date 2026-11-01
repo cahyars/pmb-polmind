@@ -153,7 +153,7 @@
                             <p class="mt-1 truncate text-sm text-slate-600">{{ $document->file_name ?? basename($document->file_path) }}</p>
                             <p class="mt-1 text-xs text-slate-500">
                                 {{ strtoupper($document->file_extension ?? '-') }} · {{ $formatSize((int) $document->file_size_kb) }}
-                                · Diunggah {{ $document->uploaded_at?->format('d M Y H:i') ?? '-' }}
+                                · Diunggah {{ $document->uploaded_at?->format('d/m/Y H:i') ?? '-' }}
                             </p>
                         @else
                             <p class="mt-1 text-sm text-slate-400">Camaba belum mengunggah berkas ini.</p>
@@ -161,7 +161,7 @@
 
                         @if($document?->verified_at && ! $isWaiting)
                             <p class="mt-1 text-xs text-slate-500">
-                                Diverifikasi {{ $document->verified_at->format('d M Y H:i') }}
+                                Diverifikasi {{ $document->verified_at->format('d/m/Y H:i') }}
                                 @if($document->verified_by_name) oleh {{ $document->verified_by_name }} @endif
                             </p>
                         @endif

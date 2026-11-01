@@ -228,7 +228,7 @@
                             @endif
 
                             @if($selection?->decided_at)
-                                <p class="mt-1 text-xs text-slate-400">{{ $selection->decided_at->format('d M Y H:i') }}</p>
+                                <p class="mt-1 text-xs text-slate-400">{{ $selection->decided_at->format('d/m/Y H:i') }}</p>
                             @endif
                         </td>
 

@@ -41,8 +41,8 @@
     <table>
         <tbody>
             <tr><td class="w-32 py-0.5 text-slate-600">Nomor Invoice</td><td class="py-0.5 font-semibold">{{ $invoice->invoice_number }}</td></tr>
-            <tr><td class="py-0.5 text-slate-600">Tanggal Terbit</td><td class="py-0.5">{{ $invoice->issue_date?->translatedFormat('j F Y') ?? '-' }}</td></tr>
-            <tr><td class="py-0.5 text-slate-600">Jatuh Tempo</td><td class="py-0.5">{{ $invoice->due_date?->translatedFormat('j F Y') ?? '-' }}</td></tr>
+            <tr><td class="py-0.5 text-slate-600">Tanggal Terbit</td><td class="py-0.5">{{ $invoice->issue_date?->translatedFormat('d/m/Y') ?? '-' }}</td></tr>
+            <tr><td class="py-0.5 text-slate-600">Jatuh Tempo</td><td class="py-0.5">{{ $invoice->due_date?->translatedFormat('d/m/Y') ?? '-' }}</td></tr>
         </tbody>
     </table>
 </section>
@@ -105,7 +105,7 @@
                     <tr>
                         <td class="w-12 border border-slate-300 px-3 py-2">{{ $loop->iteration }}</td>
                         <td class="border border-slate-300 px-3 py-2">{{ $row['installment']->name }} (ke-{{ $row['installment']->sequence }})</td>
-                        <td class="border border-slate-300 px-3 py-2">{{ $row['installment']->due_date->translatedFormat('j F Y') }}</td>
+                        <td class="border border-slate-300 px-3 py-2">{{ $row['installment']->due_date->translatedFormat('d/m/Y') }}</td>
                         <td class="border border-slate-300 px-3 py-2 text-right">{{ $rupiah($row['installment']->amount) }}</td>
                         <td class="border border-slate-300 px-3 py-2">{{ ['lunas' => 'Lunas', 'sebagian' => 'Sebagian', 'belum' => 'Belum dibayar'][$row['status']] }}</td>
                     </tr>
@@ -137,5 +137,5 @@
     </section>
 @endif
 
-<p class="mt-10 text-xs text-slate-500">Dokumen ini dicetak dari sistem PMB Polmind pada {{ now()->translatedFormat('j F Y H:i') }} dan sah tanpa tanda tangan.</p>
+<p class="mt-10 text-xs text-slate-500">Dokumen ini dicetak dari sistem PMB Polmind pada {{ now()->translatedFormat('d/m/Y H:i') }} dan sah tanpa tanda tangan.</p>
 @endsection

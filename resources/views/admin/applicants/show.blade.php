@@ -252,13 +252,13 @@
                     @include('admin.applicants.partials.kv', ['rows' => [
                         'Nama Lengkap' => $applicant->full_name,
                         'Tempat Lahir' => $applicant->birth_place,
-                        'Tanggal Lahir' => $applicant->birth_date?->translatedFormat('d F Y'),
+                        'Tanggal Lahir' => $applicant->birth_date?->translatedFormat('d/m/Y'),
                         'Jenis Kelamin' => $applicant->gender_label,
                         'Agama' => $applicant->religion_name,
                         'Kewarganegaraan' => $ref::nameOf($ref::KEWARGANEGARAAN, $applicant->citizenship),
                     ]])
                     @include('admin.applicants.partials.kv', ['rows' => [
-                        'Tanggal Daftar' => $applicant->created_at?->translatedFormat('d F Y, H:i'),
+                        'Tanggal Daftar' => $applicant->created_at?->translatedFormat('d/m/Y H:i'),
                         'NIM' => $applicant->nim,
                         'Sumber Informasi' => $applicant->source_information,
                         'Kebutuhan Khusus' => $ref::nameOf($ref::KEBUTUHAN_KHUSUS, $applicant->special_need_id),
@@ -349,7 +349,7 @@
                                         </td>
                                         <td class="px-4 py-2.5 text-slate-800">{{ $parent?->{$prefix . '_name'} ?: '-' }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ $parent?->{$prefix . '_nik'} ?: '-' }}</td>
-                                        <td class="px-4 py-2.5 text-slate-600">{{ $parent?->{$prefix . '_birth_date'}?->format('d M Y') ?? '-' }}</td>
+                                        <td class="px-4 py-2.5 text-slate-600">{{ $parent?->{$prefix . '_birth_date'}?->format('d/m/Y') ?? '-' }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ $ref::nameOf($ref::PENDIDIKAN, $parent?->{$prefix . '_education_id'}) ?? '-' }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ $ref::nameOf($ref::PEKERJAAN, $parent?->{$prefix . '_job_id'}) ?? '-' }}</td>
                                         <td class="px-4 py-2.5 text-slate-600">{{ $ref::nameOf($ref::PENGHASILAN, $parent?->{$prefix . '_income_id'}) ?? '-' }}</td>
@@ -505,7 +505,7 @@
                                     @if($invoice->isWaived())
                                         <p class="mt-4 border-t border-slate-200 pt-4 text-xs leading-5 text-slate-600">
                                             Dibebaskan oleh <span class="font-semibold">{{ $invoice->waived_by_name }}</span>
-                                            pada {{ $invoice->waived_at->translatedFormat('d M Y H:i') }}.
+                                            pada {{ $invoice->waived_at->translatedFormat('d/m/Y H:i') }}.
                                             Dasar: {{ $invoice->waiver_reason }}
                                         </p>
                                     @endif
@@ -641,7 +641,7 @@
 
                             <p class="mt-1 text-xs font-semibold text-slate-500">
                                 Follow up berikutnya:
-                                {{ $applicant->latestFollowUp->next_follow_up_date?->format('d M Y') ?? '-' }}
+                                {{ $applicant->latestFollowUp->next_follow_up_date?->format('d/m/Y') ?? '-' }}
                             </p>
                         </div>
                     @else

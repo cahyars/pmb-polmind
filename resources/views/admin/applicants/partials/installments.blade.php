@@ -54,7 +54,7 @@
                             <td class="px-3 py-2.5 font-medium text-slate-800">{{ $row['installment']->name }}</td>
                             <td class="px-3 py-2.5 text-slate-600">Ke-{{ $row['installment']->sequence }}</td>
                             <td class="px-3 py-2.5 {{ $row['overdue'] ? 'font-semibold text-red-600' : 'text-slate-600' }}">
-                                {{ $row['installment']->due_date->translatedFormat('d M Y') }}
+                                {{ $row['installment']->due_date->translatedFormat('d/m/Y') }}
                             </td>
                             <td class="px-3 py-2.5 text-right font-semibold text-slate-900">{{ $rupiah($row['installment']->amount) }}</td>
                             <td class="px-3 py-2.5">
@@ -67,7 +67,7 @@
         </div>
 
         <p class="mt-3 text-xs leading-5 text-slate-500">
-            Diaktifkan {{ $invoice->installment_enabled_at->translatedFormat('d M Y H:i') }}, terakhir diubah oleh {{ $invoice->installment_enabled_by_name ?? '-' }}.
+            Diaktifkan {{ $invoice->installment_enabled_at->translatedFormat('d/m/Y H:i') }}, terakhir diubah oleh {{ $invoice->installment_enabled_by_name ?? '-' }}.
             Angsuran ke-1: <span class="font-semibold text-slate-700">{{ $rupiah($invoice->firstInstallmentAmount()) }}</span>.
             @if($invoice->installment_note)
                 <br>Catatan internal: {{ $invoice->installment_note }}
@@ -142,6 +142,7 @@
                                        :name="`installments[{{ $item->id }}][${index}][amount]`"
                                        placeholder="Nominal" class="{{ $input }}">
                                 <input type="date" required x-model="row.due_date"
+                                       x-effect="$el._flatpickr?.setDate(row.due_date || null, false)"
                                        :name="`installments[{{ $item->id }}][${index}][due_date]`"
                                        title="Tanggal jatuh tempo" class="{{ $input }}">
                                 <button type="button" @click="rows.splice(index, 1)" x-show="rows.length > 1"

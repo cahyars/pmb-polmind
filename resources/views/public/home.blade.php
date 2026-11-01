@@ -11,7 +11,7 @@
 
     $openingText = match (true) {
         (bool) $currentWave => "{$admissionName} {$currentWave->name} telah dibuka. Daftarkan diri Anda sekarang!",
-        (bool) $nextWave?->start_date => "{$admissionName} {$nextWave->name} dibuka mulai " . $nextWave->start_date->translatedFormat('j F Y') . '. Siapkan diri Anda dan daftar sejak hari pertama!',
+        (bool) $nextWave?->start_date => "{$admissionName} {$nextWave->name} dibuka mulai " . $nextWave->start_date->translatedFormat('d/m/Y') . '. Siapkan diri Anda dan daftar sejak hari pertama!',
         default => "{$admissionName} Politeknik Mitra Industri. Pantau jadwal gelombang pendaftaran di bawah.",
     };
 
@@ -141,7 +141,7 @@
             <p class="mt-2 text-xl font-black">{{ $heroWave->name }}</p>
             @if($heroWave->start_date && $heroWave->end_date)
                 <p class="mt-1 text-sm text-blue-50">
-                    {{ $heroWave->start_date->translatedFormat('j M Y') }} – {{ $heroWave->end_date->translatedFormat('j M Y') }}
+                    {{ $heroWave->start_date->translatedFormat('d/m/Y') }} – {{ $heroWave->end_date->translatedFormat('d/m/Y') }}
                 </p>
             @endif
             @if($registrationFee)

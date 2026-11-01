@@ -12,7 +12,7 @@
             'NISN' => $applicant->nisn,
             'Jenis Kelamin' => $applicant->gender ? $applicant->gender_label : null,
             'Tempat, Tanggal Lahir' => $applicant->birth_place
-                ? $applicant->birth_place . ', ' . $applicant->birth_date?->translatedFormat('d F Y')
+                ? $applicant->birth_place . ', ' . $applicant->birth_date?->translatedFormat('d/m/Y')
                 : null,
             'Agama' => $applicant->religion_name,
             'Email' => $applicant->email,

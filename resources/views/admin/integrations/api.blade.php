@@ -69,7 +69,7 @@
                         @if($enabled)
                             <p class="mt-2 text-sm leading-6 text-slate-600">
                                 Token berakhiran <span class="font-mono font-bold text-slate-800">…{{ $token['hint'] }}</span>,
-                                dibuat {{ \Illuminate\Support\Carbon::parse($token['created_at'])->translatedFormat('d M Y H:i') }}
+                                dibuat {{ \Illuminate\Support\Carbon::parse($token['created_at'])->translatedFormat('d/m/Y H:i') }}
                                 oleh {{ $token['created_by'] ?? '-' }}.
                             </p>
                         @else

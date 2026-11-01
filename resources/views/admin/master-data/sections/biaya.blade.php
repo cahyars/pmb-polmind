@@ -306,6 +306,7 @@
                                                            placeholder="Nominal"
                                                            class="{{ $input }}">
                                                     <input type="date" required x-model="row.due_date"
+                                       x-effect="$el._flatpickr?.setDate(row.due_date || null, false)"
                                                            :name="`installments[{{ $fee->id }}][${index}][due_date]`"
                                                            title="Tanggal jatuh tempo"
                                                            class="{{ $input }}">

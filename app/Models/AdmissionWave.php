@@ -97,7 +97,7 @@ class AdmissionWave extends Model
     }
 
     /**
-     * Contoh: "30 Jan 2027", "2 – 12 Feb 2027", "1 Feb – 2 Apr 2027", "2 Nov 2026 – 29 Jan 2027".
+     * Contoh: "30/01/2027", "02/02/2027 – 12/02/2027".
      */
     public static function formatDateRange($start, $end): string
     {
@@ -105,11 +105,9 @@ class AdmissionWave extends Model
 
         return match (true) {
             ! $start && ! $end => 'Menyusul',
-            ! $end => $start->translatedFormat('j M Y'),
-            ! $start => $end->translatedFormat('j M Y'),
-            $start->isSameMonth($end) => $start->format('j') . ' – ' . $end->translatedFormat('j M Y'),
-            $start->isSameYear($end) => $start->translatedFormat('j M') . ' – ' . $end->translatedFormat('j M Y'),
-            default => $start->translatedFormat('j M Y') . ' – ' . $end->translatedFormat('j M Y'),
+            ! $end => $start->format('d/m/Y'),
+            ! $start => $end->format('d/m/Y'),
+            default => $start->format('d/m/Y') . ' – ' . $end->format('d/m/Y'),
         };
     }
 

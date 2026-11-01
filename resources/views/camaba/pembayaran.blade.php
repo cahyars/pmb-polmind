@@ -198,7 +198,7 @@
                                     <div><dt class="inline text-slate-500">Dibayar</dt> <dd class="inline font-bold text-green-700">{{ $rupiah($card['validPaid']) }}</dd></div>
                                     <div><dt class="inline text-slate-500">Sisa</dt> <dd class="inline font-bold text-red-600">{{ $rupiah($card['remaining']) }}</dd></div>
                                     @if($invoice->due_date)
-                                        <div><dt class="inline text-slate-500">Jatuh tempo</dt> <dd class="inline font-bold text-slate-800">{{ $invoice->due_date->translatedFormat('d M Y') }}</dd></div>
+                                        <div><dt class="inline text-slate-500">Jatuh tempo</dt> <dd class="inline font-bold text-slate-800">{{ $invoice->due_date->translatedFormat('d/m/Y') }}</dd></div>
                                     @endif
                                 </dl>
                             @endunless
@@ -359,7 +359,7 @@
                                         @if($isRegistration)
                                             Sesuai biaya formulir.
                                         @elseif($nextDue)
-                                            Tagihan berikutnya {{ $rupiah($nextDue['amount']) }}, jatuh tempo {{ $nextDue['due_date']->translatedFormat('d M Y') }}.
+                                            Tagihan berikutnya {{ $rupiah($nextDue['amount']) }}, jatuh tempo {{ $nextDue['due_date']->translatedFormat('d/m/Y') }}.
                                         @else
                                             Sesuai sisa tagihan daftar ulang.
                                         @endif
@@ -419,7 +419,7 @@
                                             <div class="min-w-0">
                                                 <p class="font-black {{ $historyStatus === 'rejected' ? 'text-red-600' : 'text-slate-900' }}">{{ $rupiah($payment->amount) }}</p>
                                                 <p class="mt-0.5 text-xs text-slate-500">
-                                                    {{ $payment->transfer_date?->translatedFormat('d M Y') ?? '-' }}
+                                                    {{ $payment->transfer_date?->translatedFormat('d/m/Y') ?? '-' }}
                                                     · {{ $payment->sender_name ?? '-' }} ({{ $payment->sender_bank ?? '-' }})
                                                     @if($payment->paymentMethod) · ke {{ $payment->paymentMethod->label }} @endif
                                                 </p>

@@ -290,7 +290,7 @@
 
                                     @if($applicant->reRegistration?->ready_sync_at)
                                         <p class="mt-2 text-xs text-slate-500">
-                                            Siap: {{ $applicant->reRegistration->ready_sync_at->format('d M Y H:i') }}
+                                            Siap: {{ $applicant->reRegistration->ready_sync_at->format('d/m/Y H:i') }}
                                         </p>
                                     @endif
                                 </td>
@@ -312,7 +312,7 @@
 
                                     @if($applicant->synced_at)
                                         <p class="mt-1 text-xs text-slate-500">
-                                            {{ $applicant->synced_at->format('d M Y H:i') }}
+                                            {{ $applicant->synced_at->format('d/m/Y H:i') }}
                                         </p>
                                     @endif
                                 </td>
@@ -499,7 +499,7 @@
                             @endif
 
                             <p class="mt-3 text-xs text-slate-400">
-                                {{ $log->created_at?->format('d M Y H:i') }}
+                                {{ $log->created_at?->format('d/m/Y H:i') }}
                             </p>
                         </div>
                     @empty

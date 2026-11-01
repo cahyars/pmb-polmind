@@ -98,9 +98,9 @@
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">{{ $wave->code }}</td>
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $wave->name }}</td>
                         <td class="px-5 py-3.5 text-slate-600">
-                            {{ $wave->start_date?->format('d M Y') ?? '-' }}
+                            {{ $wave->start_date?->format('d/m/Y') ?? '-' }}
                             -
-                            {{ $wave->end_date?->format('d M Y') ?? '-' }}
+                            {{ $wave->end_date?->format('d/m/Y') ?? '-' }}
                         </td>
                         <td class="px-5 py-3.5 font-bold text-polmind-blue">
                             Rp{{ number_format($wave->registration_fee, 0, ',', '.') }}

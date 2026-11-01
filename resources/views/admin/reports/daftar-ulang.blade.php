@@ -149,7 +149,7 @@
                             </td>
                             <td class="{{ $td }}">{{ $row['applicant']->enrolled_study_program?->code ?? '-' }}</td>
                             <td class="{{ $td }} font-mono font-semibold text-slate-900">{{ $row['applicant']->nim ?? '-' }}</td>
-                            <td class="{{ $td }} text-slate-600">{{ $row['re_registered_at']?->translatedFormat('d M Y') ?? '-' }}</td>
+                            <td class="{{ $td }} text-slate-600">{{ $row['re_registered_at']?->translatedFormat('d/m/Y') ?? '-' }}</td>
                             <td class="{{ $td }} text-right">{{ $rupiah($row['total']) }}</td>
                             <td class="{{ $td }} text-right font-semibold text-slate-900">{{ $rupiah($row['paid']) }}</td>
                             <td class="{{ $td }} text-right">{{ $rupiah($row['remaining']) }}</td>

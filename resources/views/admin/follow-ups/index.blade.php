@@ -288,7 +288,7 @@
 
                                 @if($latest?->contacted_at)
                                     <p class="mt-1 text-xs text-slate-500">
-                                        {{ $latest->contacted_at->format('d M Y H:i') }}
+                                        {{ $latest->contacted_at->format('d/m/Y H:i') }}
                                     </p>
                                 @endif
                             </td>
@@ -311,7 +311,7 @@
                             <td class="px-5 py-3.5">
                                 @if($latest?->next_follow_up_date)
                                     <span class="rounded-full bg-yellow-100 px-3 py-1 text-xs font-bold text-yellow-700">
-                                        {{ $latest->next_follow_up_date->format('d M Y') }}
+                                        {{ $latest->next_follow_up_date->format('d/m/Y') }}
                                     </span>
                                 @else
                                     <span class="text-xs font-semibold text-slate-500">

@@ -126,7 +126,7 @@
                     {{ $reRegistrationLabels[$reRegistrationStatus] ?? str_replace('_', ' ', ucfirst($reRegistrationStatus)) }}
                 </p>
                 <p class="mt-2 text-xs text-blue-100">
-                    {{ $deadline ? 'Batas: ' . $deadline->format('d M Y') : 'Batas waktu belum tersedia' }}
+                    {{ $deadline ? 'Batas: ' . $deadline->format('d/m/Y') : 'Batas waktu belum tersedia' }}
                 </p>
             </div>
         </div>
@@ -175,7 +175,7 @@
                     {{ $reRegistrationLabels[$reRegistrationStatus] ?? str_replace('_', ' ', ucfirst($reRegistrationStatus)) }}
                 </span>
                 <p class="mt-3 text-xs leading-5 text-slate-500">
-                    {{ $reRegistration?->validated_at ? 'Divalidasi: ' . $reRegistration->validated_at->format('d M Y H:i') : 'Belum divalidasi admin' }}
+                    {{ $reRegistration?->validated_at ? 'Divalidasi: ' . $reRegistration->validated_at->format('d/m/Y H:i') : 'Belum divalidasi admin' }}
                 </p>
             </div>
 
@@ -246,7 +246,7 @@
                                 <div class="min-w-0">
                                     <p class="text-xs font-bold text-slate-500">Jatuh Tempo</p>
                                     <p class="mt-1 font-bold text-slate-800">
-                                        {{ $invoice->due_date?->format('d M Y') ?? '-' }}
+                                        {{ $invoice->due_date?->format('d/m/Y') ?? '-' }}
                                     </p>
                                 </div>
                             </div>
@@ -360,7 +360,7 @@
                                             <p class="mt-1 text-sm text-slate-600">
                                                 Tanggal Transfer:
                                                 <span class="font-bold">
-                                                    {{ $payment->transfer_date?->format('d M Y') ?? '-' }}
+                                                    {{ $payment->transfer_date?->format('d/m/Y') ?? '-' }}
                                                 </span>
                                             </p>
 
@@ -452,7 +452,7 @@
                         <div class="mt-5 rounded-2xl bg-white p-5">
                             <p class="text-xs font-bold text-slate-500">Batas Daftar Ulang</p>
                             <p class="mt-1 text-xl font-black text-polmind-blue">
-                                {{ $deadline->format('d M Y') }}
+                                {{ $deadline->format('d/m/Y') }}
                             </p>
                         </div>
                     @endif
@@ -513,14 +513,14 @@
                         <div>
                             <p class="text-xs font-bold text-slate-500">Waktu Validasi</p>
                             <p class="mt-1 font-bold text-slate-800">
-                                {{ $reRegistration?->validated_at?->format('d M Y H:i') ?? '-' }}
+                                {{ $reRegistration?->validated_at?->format('d/m/Y H:i') ?? '-' }}
                             </p>
                         </div>
 
                         <div>
                             <p class="text-xs font-bold text-slate-500">Siap Sinkron</p>
                             <p class="mt-1 font-bold text-slate-800">
-                                {{ $reRegistration?->ready_sync_at?->format('d M Y H:i') ?? '-' }}
+                                {{ $reRegistration?->ready_sync_at?->format('d/m/Y H:i') ?? '-' }}
                             </p>
                         </div>
                     </div>

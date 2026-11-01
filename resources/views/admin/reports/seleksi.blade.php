@@ -131,7 +131,7 @@
                                     {{ \App\Services\Reports\SelectionReport::STATUSES[$applicant->selection_status] ?? $applicant->selection_status }}
                                 </span>
                             </td>
-                            <td class="{{ $td }} text-slate-600">{{ $applicant->selection?->decided_at?->translatedFormat('d M Y') ?? '-' }}</td>
+                            <td class="{{ $td }} text-slate-600">{{ $applicant->selection?->decided_at?->translatedFormat('d/m/Y') ?? '-' }}</td>
                         </tr>
                     @empty
                         <tr><td colspan="{{ 7 + $report['components']->count() }}" class="px-4 py-8 text-center text-slate-500">Belum ada keputusan seleksi.</td></tr>

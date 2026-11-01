@@ -467,7 +467,7 @@
                 <h2 class="text-base font-semibold text-slate-900">Laporan Singkat</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-600">
                     Rekap harian semua pendaftar yang sudah registrasi. Pertambahan dihitung dari
-                    {{ $recapWindow[0]->translatedFormat('j M H.i') }} s.d. {{ $recapWindow[1]->translatedFormat('j M H.i') }} WIB.
+                    {{ $recapWindow[0]->translatedFormat('d/m/Y H.i') }} s.d. {{ $recapWindow[1]->translatedFormat('d/m/Y H.i') }} WIB.
                 </p>
 
                 <form action="{{ route('admin.dashboard') }}" method="GET" class="mt-4 grid grid-cols-2 gap-2">

@@ -13,7 +13,7 @@
         'Nomor Pendaftaran' => $applicant->registration_number,
         'Nama Lengkap' => strtoupper($applicant->full_name),
         'NIK' => $applicant->nik ?? '-',
-        'Tempat, Tanggal Lahir' => trim(($applicant->birth_place ?? '-') . ', ' . ($applicant->birth_date?->translatedFormat('j F Y') ?? '-')),
+        'Tempat, Tanggal Lahir' => trim(($applicant->birth_place ?? '-') . ', ' . ($applicant->birth_date?->translatedFormat('d/m/Y') ?? '-')),
         'Jenis Kelamin' => $applicant->gender_label,
         'Asal Sekolah' => $applicant->education?->school_name ?? '-',
         'Jalur / Gelombang' => $applicant->registration_path_label . ' / ' . ($wave?->name ?? '-'),
@@ -72,7 +72,7 @@
                     <tr class="align-top">
                         <td class="border border-slate-300 px-3 py-2">{{ $loop->iteration }}</td>
                         <td class="border border-slate-300 px-3 py-2 font-semibold">{{ $schedule->component?->name ?? 'Tes Seleksi' }}</td>
-                        <td class="border border-slate-300 px-3 py-2">{{ $schedule->test_date?->translatedFormat('l, j F Y') ?? '-' }}</td>
+                        <td class="border border-slate-300 px-3 py-2">{{ $schedule->test_date?->translatedFormat('l, d/m/Y') ?? '-' }}</td>
                         <td class="border border-slate-300 px-3 py-2">{{ $schedule->time_range ?? 'Menyusul' }}</td>
                         <td class="border border-slate-300 px-3 py-2">{{ $schedule->location ?? 'Menyusul' }}</td>
                         <td class="w-28 border border-slate-300 px-3 py-2"></td>
@@ -95,7 +95,7 @@
     </div>
 
     <div class="w-56 text-center">
-        <p class="text-slate-700">Dicetak {{ now()->translatedFormat('j F Y') }}</p>
+        <p class="text-slate-700">Dicetak {{ now()->translatedFormat('d/m/Y') }}</p>
         <p class="mt-1 text-slate-700">Panitia PMB Polmind</p>
         <div class="h-20"></div>
         <p class="border-t border-slate-400 pt-1 text-xs text-slate-500">Tanda tangan &amp; cap panitia</p>

@@ -105,8 +105,8 @@ class SelectionScheduleTest extends TestCase
         $this->get('/')
             ->assertOk()
             ->assertSee('Gelombang 5')
-            ->assertSeeInOrder(['Gelombang 1', 'Pendaftaran', '2 Nov 2026 – 29 Jan 2027', 'Seleksi', '30 Jan 2027', 'Pengumuman Seleksi', '2 Feb 2027', 'Daftar Ulang', '2 – 12 Feb 2027'])
-            ->assertSeeInOrder(['Gelombang 5', 'Pendaftaran', '2 Agt – 3 Sep 2027', 'Seleksi', 'Menyusul'])
+            ->assertSeeInOrder(['Gelombang 1', 'Pendaftaran', '02/11/2026 – 29/01/2027', 'Seleksi', '30/01/2027', 'Pengumuman Seleksi', '02/02/2027', 'Daftar Ulang', '02/02/2027 – 12/02/2027'])
+            ->assertSeeInOrder(['Gelombang 5', 'Pendaftaran', '02/08/2027 – 03/09/2027', 'Seleksi', 'Menyusul'])
             ->assertDontSee('Tes Tertulis 30 Jan')
             ->assertSee('Rp15.000.000')
             ->assertSee('Wajib: Pas Foto')
@@ -118,7 +118,7 @@ class SelectionScheduleTest extends TestCase
 
         $this->get('/register')
             ->assertOk()
-            ->assertSeeInOrder(['Pendaftaran', '2 Nov 2026 – 29 Jan 2027', 'Seleksi', '30 Jan 2027', 'Pengumuman Seleksi', '2 Feb 2027', 'Daftar Ulang', '2 – 12 Feb 2027']);
+            ->assertSeeInOrder(['Pendaftaran', '02/11/2026 – 29/01/2027', 'Seleksi', '30/01/2027', 'Pengumuman Seleksi', '02/02/2027', 'Daftar Ulang', '02/02/2027 – 12/02/2027']);
 
         $applicant = $this->registerApplicant();
         $applicant->update(['payment_status' => 'valid']);

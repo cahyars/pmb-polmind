@@ -62,7 +62,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="font-semibold text-slate-900">{{ $schedule->component?->name ?? '-' }}</p>
                                 <p class="mt-0.5 text-sm text-slate-600">
-                                    {{ $schedule->test_date->translatedFormat('l, j F Y') }}
+                                    {{ $schedule->test_date->translatedFormat('l, d/m/Y') }}
                                     · {{ $schedule->time_range ?? 'Jam menyusul' }}
                                 </p>
                                 <dl class="mt-2 grid gap-x-6 gap-y-1 text-xs text-slate-500 sm:grid-cols-2">

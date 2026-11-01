@@ -20,7 +20,7 @@
         'Telah terima dari' => strtoupper($applicant->full_name) . ' (' . $applicant->registration_number . ')',
         'Uang sejumlah' => \App\Services\Terbilang::rupiah($payment->amount),
         'Untuk pembayaran' => $purpose,
-        'Tanggal bayar' => $payment->transfer_date?->translatedFormat('j F Y') ?? '-',
+        'Tanggal bayar' => $payment->transfer_date?->translatedFormat('d/m/Y') ?? '-',
         'Metode / tujuan' => $payment->paymentMethod?->label ?? ($payment->sender_bank ?? '-'),
         'Keterangan' => $remainingAmount > 0
             ? 'Cicilan. Sisa tagihan ' . $rupiah($remainingAmount)
@@ -59,7 +59,7 @@
     </div>
 
     <div class="w-56 text-center text-sm">
-        <p class="text-slate-700">Divalidasi {{ ($payment->verified_at ?? now())->translatedFormat('j F Y') }}</p>
+        <p class="text-slate-700">Divalidasi {{ ($payment->verified_at ?? now())->translatedFormat('d/m/Y') }}</p>
         <p class="mt-1 text-slate-700">{{ $signer['title'] }}</p>
         <div class="relative h-20">
             @if($signer['stamp'])
@@ -75,6 +75,6 @@
 
 <p class="mt-10 text-xs text-slate-500">
     Kwitansi ini diterbitkan otomatis oleh sistem PMB Polmind untuk pembayaran {{ $payment->payment_number }}
-    yang telah divalidasi. Dicetak {{ now()->translatedFormat('j F Y H:i') }}.
+    yang telah divalidasi. Dicetak {{ now()->translatedFormat('d/m/Y H:i') }}.
 </p>
 @endsection

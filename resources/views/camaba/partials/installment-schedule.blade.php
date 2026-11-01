@@ -28,7 +28,7 @@
                         <span class="block text-xs font-normal text-slate-500">Pembayaran ke-{{ $row['installment']->sequence }}</span>
                     </td>
                     <td class="px-4 py-2.5 {{ $row['overdue'] ? 'font-bold text-red-600' : 'text-slate-700' }}">
-                        {{ $row['installment']->due_date->translatedFormat('d M Y') }}
+                        {{ $row['installment']->due_date->translatedFormat('d/m/Y') }}
                     </td>
                     <td class="px-4 py-2.5 text-right font-bold text-slate-900">{{ $scheduleRupiah($row['installment']->amount) }}</td>
                     <td class="px-4 py-2.5">

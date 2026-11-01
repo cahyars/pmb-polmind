@@ -238,7 +238,7 @@
                         </td>
 
                         <td class="hidden px-5 py-4 text-slate-600 xl:table-cell">
-                            {{ $lastUploadedAt?->format('d M Y H:i') ?? '-' }}
+                            {{ $lastUploadedAt?->format('d/m/Y H:i') ?? '-' }}
                         </td>
 
                         <td class="px-5 py-4 text-right">

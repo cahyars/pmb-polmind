@@ -340,7 +340,7 @@
 
                                 <p class="mt-2 text-xs text-slate-500">
                                     Tgl Transfer:
-                                    {{ $payment->transfer_date?->format('d M Y') ?? '-' }}
+                                    {{ $payment->transfer_date?->format('d/m/Y') ?? '-' }}
                                 </p>
 
                                 <p class="mt-3 text-base font-semibold text-slate-900">
@@ -377,7 +377,7 @@
 
                                 @if($payment->verified_at)
                                     <p class="mt-2 text-xs text-slate-500">
-                                        {{ $payment->verified_at->format('d M Y H:i') }}
+                                        {{ $payment->verified_at->format('d/m/Y H:i') }}
                                     </p>
                                 @endif
 

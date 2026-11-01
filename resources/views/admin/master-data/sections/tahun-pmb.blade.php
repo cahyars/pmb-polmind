@@ -88,9 +88,9 @@
                         <td class="px-5 py-3.5 font-medium text-slate-800">{{ $year->name }}</td>
                         <td class="px-5 py-3.5 text-slate-700">{{ $year->year }}</td>
                         <td class="px-5 py-3.5 text-slate-600">
-                            {{ $year->start_date?->format('d M Y') ?? '-' }}
+                            {{ $year->start_date?->format('d/m/Y') ?? '-' }}
                             -
-                            {{ $year->end_date?->format('d M Y') ?? '-' }}
+                            {{ $year->end_date?->format('d/m/Y') ?? '-' }}
                         </td>
                         <td class="px-5 py-3.5">
                             <span class="rounded-full px-3 py-1 text-xs font-bold {{ $statusClass($year->status) }}">

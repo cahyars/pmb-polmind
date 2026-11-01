@@ -457,7 +457,7 @@
 
                                                 <div class="mt-2 flex items-center justify-between gap-2">
                                                     <p class="text-[11px] text-slate-500">
-                                                        {{ $payment->transfer_date?->format('d M Y') ?? '-' }}
+                                                        {{ $payment->transfer_date?->format('d/m/Y') ?? '-' }}
                                                     </p>
 
                                                     @if($proofUrl)
@@ -485,13 +485,13 @@
 
                                 @if($reRegistration->validated_at)
                                     <p class="mt-2 text-xs text-slate-500">
-                                        Validasi: {{ $reRegistration->validated_at->format('d M Y H:i') }}
+                                        Validasi: {{ $reRegistration->validated_at->format('d/m/Y H:i') }}
                                     </p>
                                 @endif
 
                                 @if($reRegistration->deadline_date)
                                     <p class="mt-1 text-xs text-slate-500">
-                                        Deadline: {{ $reRegistration->deadline_date->format('d M Y') }}
+                                        Deadline: {{ $reRegistration->deadline_date->format('d/m/Y') }}
                                     </p>
                                 @endif
 
@@ -510,7 +510,7 @@
 
                                 @if($reRegistration->ready_sync_at)
                                     <p class="mt-2 text-xs text-slate-500">
-                                        {{ $reRegistration->ready_sync_at->format('d M Y H:i') }}
+                                        {{ $reRegistration->ready_sync_at->format('d/m/Y H:i') }}
                                     </p>
                                 @endif
 

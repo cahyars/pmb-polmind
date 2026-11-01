@@ -41,7 +41,7 @@
                         <div class="min-w-0">
                             <p class="font-semibold text-slate-900">{{ $schedule->component?->name ?? '-' }}</p>
                             <p class="mt-0.5 text-xs text-slate-500">
-                                {{ $schedule->test_date->translatedFormat('l, j F Y') }} · {{ $schedule->time_range ?? 'Jam menyusul' }}
+                                {{ $schedule->test_date->translatedFormat('l, d/m/Y') }} · {{ $schedule->time_range ?? 'Jam menyusul' }}
                                 @if($schedule->location) · {{ $schedule->location }} @endif
                             </p>
                         </div>

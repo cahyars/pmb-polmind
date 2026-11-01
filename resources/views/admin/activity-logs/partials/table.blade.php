@@ -25,7 +25,7 @@
                 @php($changes = $log->changes ?? [])
                 <tr class="align-top" x-data="{ open: false }">
                     <td class="px-4 py-3 text-xs text-slate-500">
-                        <span class="block font-semibold tabular-nums text-slate-700">{{ $log->created_at->translatedFormat('d M Y') }}</span>
+                        <span class="block font-semibold tabular-nums text-slate-700">{{ $log->created_at->translatedFormat('d/m/Y') }}</span>
                         <span class="tabular-nums">{{ $log->created_at->format('H:i:s') }} WIB</span>
                     </td>
                     <td class="px-4 py-3">

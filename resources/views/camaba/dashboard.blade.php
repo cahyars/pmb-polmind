@@ -99,7 +99,7 @@
                                 Tagihan <span class="font-bold">{{ $registrationInvoice->invoice_number }}</span> sebesar
                                 <span class="font-black">{{ $rupiah($registrationInvoice->total_amount) }}</span>
                                 @if($registrationInvoice->due_date)
-                                    jatuh tempo <span class="font-bold">{{ $registrationInvoice->due_date->translatedFormat('d F Y') }}</span>.
+                                    jatuh tempo <span class="font-bold">{{ $registrationInvoice->due_date->translatedFormat('d/m/Y') }}</span>.
                                 @endif
                                 Biodata, berkas, dan tahapan lainnya masih terkunci sampai pembayaran diverifikasi.
                             </p>
@@ -279,7 +279,7 @@
                         </div>
                         <div>
                             <p class="text-xs font-bold text-slate-500">Jatuh Tempo</p>
-                            <p class="mt-1 font-bold text-slate-800">{{ $reRegistrationInvoice->due_date?->translatedFormat('d F Y') ?? '-' }}</p>
+                            <p class="mt-1 font-bold text-slate-800">{{ $reRegistrationInvoice->due_date?->translatedFormat('d/m/Y') ?? '-' }}</p>
                         </div>
                     </div>
 

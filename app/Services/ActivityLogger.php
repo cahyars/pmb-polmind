@@ -152,8 +152,10 @@ class ActivityLogger
         return match (true) {
             $value === null || $value === '' => null,
             is_bool($value) => $value ? 'Ya' : 'Tidak',
-            $value instanceof Carbon => $value->format($value->format('H:i:s') === '00:00:00' ? 'Y-m-d' : 'Y-m-d H:i'),
+            $value instanceof Carbon => $value->format($value->format('H:i:s') === '00:00:00' ? 'd/m/Y' : 'd/m/Y H:i'),
             is_array($value) => Str::limit(json_encode($value, JSON_UNESCAPED_UNICODE), 200),
+            // Kolom tanggal tanpa cast tersimpan sebagai teks "2026-11-01".
+            is_string($value) && preg_match('/^\d{4}-\d{2}-\d{2}( \d{2}:\d{2}(:\d{2})?)?$/', $value) => self::format(Carbon::parse($value)),
             default => Str::limit((string) $value, 200),
         };
     }
