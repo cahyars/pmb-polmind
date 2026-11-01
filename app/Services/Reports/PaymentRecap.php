@@ -34,7 +34,7 @@ class PaymentRecap
             ->with([
                 'admissionWave', 'studyProgram', 'acceptedStudyProgram', 'classType',
                 'registrationInvoice.payments', 'registrationInvoice.items',
-                'reRegistrationInvoice.payments', 'reRegistrationInvoice.items.feeComponent', 'reRegistrationInvoice.installments',
+                'reRegistrationInvoice.payments.allocations.feeComponent', 'reRegistrationInvoice.items.feeComponent', 'reRegistrationInvoice.installments',
             ])
             ->get();
 
@@ -192,6 +192,29 @@ class PaymentRecap
         )->values()->all();
 
         return $payments->map(function ($payment) use (&$slots) {
+            // Transfer berincian komponen (UKT/SPI dipilih camaba): bagi sesuai rinciannya.
+            if ($payment['payment']->allocations->isNotEmpty()) {
+                $components = [];
+
+                foreach ($payment['payment']->allocations as $allocation) {
+                    $name = $allocation->feeComponent?->name ?? $allocation->name;
+                    $components[$name] = ($components[$name] ?? 0) + (float) $allocation->amount;
+                    $take = (float) $allocation->amount;
+
+                    // Kurangi slot komponen yang sama agar transfer tanpa rincian tidak mengisinya lagi.
+                    foreach ($slots as &$slot) {
+                        if ($take > 0 && $slot['name'] === $name && $slot['remaining'] > 0) {
+                            $used = min($slot['remaining'], $take);
+                            $slot['remaining'] -= $used;
+                            $take -= $used;
+                        }
+                    }
+                    unset($slot);
+                }
+
+                return $payment + ['components' => $components];
+            }
+
             $left = $payment['amount'];
             $components = [];
 

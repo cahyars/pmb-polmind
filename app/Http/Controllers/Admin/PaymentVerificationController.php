@@ -38,6 +38,7 @@ class PaymentVerificationController extends Controller
                 'invoice.items',
                 'invoice.payments',
                 'paymentMethod',
+                'allocations.feeComponent',
             ])
             ->when($request->filled('keyword'), function ($query) use ($request) {
                 $keyword = $request->keyword;

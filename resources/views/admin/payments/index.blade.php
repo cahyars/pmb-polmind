@@ -347,6 +347,14 @@
                                     Rp{{ number_format($payment->amount, 0, ',', '.') }}
                                 </p>
 
+                                @if($payment->allocations->isNotEmpty())
+                                    <ul class="mt-1 space-y-0.5 text-xs text-slate-600">
+                                        @foreach($payment->allocations as $allocation)
+                                            <li>{{ $allocation->feeComponent?->name ?? $allocation->name }}: <span class="font-semibold">Rp{{ number_format($allocation->amount, 0, ',', '.') }}</span></li>
+                                        @endforeach
+                                    </ul>
+                                @endif
+
                                 @if($payment->proof_file_name)
                                     <p class="mt-2 max-w-48 truncate text-xs text-slate-500">
                                         {{ $payment->proof_file_name }}

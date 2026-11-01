@@ -82,7 +82,10 @@ class ReRegistrationInstallmentTest extends TestCase
         return $applicant->refresh();
     }
 
-    private function pay(Applicant $applicant, Invoice $invoice, int $amount)
+    /**
+     * Unggah bukti transfer daftar ulang untuk komponen (kode) yang dipilih; nominal dihitung sistem.
+     */
+    private function pay(Applicant $applicant, Invoice $invoice, array $codes)
     {
         return $this->actingAs($applicant, 'applicant')
             ->post(route('camaba.payments.upload-proof', $invoice), [
@@ -90,9 +93,18 @@ class ReRegistrationInstallmentTest extends TestCase
                 'sender_name' => 'Ammar',
                 'sender_bank' => 'BRI',
                 'transfer_date' => now()->format('Y-m-d'),
-                'amount' => $amount,
+                'components' => array_map(fn ($code) => $this->fee($code)->id, $codes),
                 'proof_file' => UploadedFile::fake()->image('bukti.jpg'),
             ]);
+    }
+
+    private function acceptLatestPayment(Invoice $invoice): Payment
+    {
+        $payment = Payment::where('invoice_id', $invoice->id)->where('status', 'waiting_verification')->latest('id')->firstOrFail();
+
+        $this->actingAs($this->admin, 'web')->patch(route('admin.payments.accept', $payment))->assertSessionHasNoErrors();
+
+        return $payment->refresh();
     }
 
     private function spiItem(Applicant $applicant)
@@ -162,7 +174,7 @@ class ReRegistrationInstallmentTest extends TestCase
         $this->assertCount(2, $prestasi->reRegistrationInvoice->items);
 
         // Sudah ada pembayaran: kategori tidak bisa diganti lagi.
-        $this->pay($prestasi, $prestasi->reRegistrationInvoice, 16000000)->assertSessionHasNoErrors();
+        $this->pay($prestasi, $prestasi->reRegistrationInvoice, ['UKT_SEMESTER_1', 'SPI'])->assertSessionHasNoErrors();
         $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 2 · Provinsi')->id])->assertSessionHasErrors();
         $this->assertNull($prestasi->refresh()->achievement_level_id);
     }
@@ -215,16 +227,67 @@ class ReRegistrationInstallmentTest extends TestCase
             ->assertForbidden();
     }
 
-    public function test_without_installments_re_registration_is_paid_at_once_and_nothing_mentions_installments(): void
+    public function test_camaba_pays_ukt_and_spi_separately_and_re_registration_is_valid_when_both_are_paid(): void
     {
         $applicant = $this->acceptedApplicant();
         $invoice = $applicant->reRegistrationInvoice;
 
-        $page = $this->actingAs($applicant, 'applicant')->get('/camaba/pembayaran')->assertOk()->getContent();
-        $this->assertDoesNotMatchRegularExpression('/cicil|jadwal pembayaran|tagihan berikutnya/i', $page);
+        // Kartu per komponen; tanpa cicilan tidak ada yang menyebut cicilan/angsuran.
+        $page = $this->actingAs($applicant, 'applicant')->get('/camaba/pembayaran')->assertOk()
+            ->assertSeeInOrder(['Formulir Pendaftaran', 'Daftar Ulang', 'Sumbangan Pengembangan Institusi', 'Uang Kuliah Tunggal - Semester 1'])
+            ->assertSee('boleh dibayar satu per satu atau sekaligus')
+            ->getContent();
+        $this->assertDoesNotMatchRegularExpression('/cicil|jadwal pembayaran|angsuran/i', $page);
 
-        $this->pay($applicant, $invoice, 9000000)->assertSessionHasErrors();
-        $this->pay($applicant, $invoice, 16000000)->assertSessionHasNoErrors();
+        // UKT dulu.
+        $this->pay($applicant, $invoice, ['UKT_SEMESTER_1'])->assertSessionHasNoErrors();
+        $ukt = Payment::where('invoice_id', $invoice->id)->latest('id')->firstOrFail();
+        $this->assertSame('7000000.00', $ukt->amount);
+        $this->assertSame([$this->fee('UKT_SEMESTER_1')->id], $ukt->allocations->pluck('fee_component_id')->all());
+
+        // UKT masih diverifikasi: tidak bisa dibayar lagi, tetapi SPI bisa.
+        $this->pay($applicant, $invoice, ['UKT_SEMESTER_1'])->assertSessionHasErrors();
+        $this->pay($applicant, $invoice, ['SPI'])->assertSessionHasNoErrors();
+        $this->assertSame('9000000.00', Payment::where('invoice_id', $invoice->id)->latest('id')->value('amount'));
+        $this->pay($applicant, $invoice, [])->assertSessionHasErrors('components');
+
+        $this->acceptLatestPayment($invoice);   // SPI
+        $this->assertSame('partial', $invoice->refresh()->status);
+        $this->assertNotSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
+
+        $this->actingAs($applicant, 'applicant')->get('/camaba/pembayaran')
+            ->assertSee('Sumbangan Pengembangan Institusi Lunas');
+
+        $this->actingAs($this->admin, 'web')->patch(route('admin.payments.accept', $ukt))->assertSessionHasNoErrors();
+        $this->assertSame('paid', $invoice->refresh()->status);
+        $this->assertSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
+
+        // Kwitansi menyebut komponen yang dibayar transfer itu.
+        $this->actingAs($applicant, 'applicant')->get(route('camaba.print.receipt', $ukt))
+            ->assertOk()
+            ->assertSee('Uang Kuliah Tunggal - Semester 1 Rp7.000.000');
+        $this->pay($applicant, $invoice, ['SPI'])->assertSessionHasErrors();
+    }
+
+    public function test_camaba_pays_ukt_and_spi_in_one_transfer(): void
+    {
+        $applicant = $this->acceptedApplicant();
+        $invoice = $applicant->reRegistrationInvoice;
+
+        $this->pay($applicant, $invoice, ['UKT_SEMESTER_1', 'SPI'])->assertSessionHasNoErrors();
+        $payment = $this->acceptLatestPayment($invoice);
+
+        $this->assertSame('16000000.00', $payment->amount);
+        $this->assertCount(2, $payment->allocations);
+        $this->assertSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
+
+        $this->actingAs($this->admin, 'web')->get('/admin/payments')
+            ->assertSee('Uang Kuliah Tunggal - Semester 1: <span class="font-semibold">Rp7.000.000</span>', false);
+
+        // Rekap: satu kolom per komponen.
+        $row = \App\Services\Reports\PaymentRecap::build(new \App\Services\Reports\ReportFilter)['rows']->first(fn ($row) => $row['applicant']->is($applicant));
+        $this->assertEquals(7000000, $row['components']['Uang Kuliah Tunggal - Semester 1']);
+        $this->assertEquals(9000000, $row['components']['Sumbangan Pengembangan Institusi']);
     }
 
     public function test_admin_enables_spi_installments_and_re_registration_is_valid_after_first_payment(): void
@@ -279,15 +342,18 @@ class ReRegistrationInstallmentTest extends TestCase
 
         $this->actingAs($applicant, 'applicant')
             ->get('/camaba/pembayaran')
-            ->assertSee('Jadwal pembayaran')
+            ->assertSee('Lihat jadwal pembayaran')
             ->assertSeeInOrder(['Pembayaran ke-1', 'Rp11.500.000', 'Pembayaran ke-2', 'Rp2.250.000', 'Pembayaran ke-3'])
-            ->assertSee('Tagihan berikutnya Rp11.500.000')
+            ->assertSeeInOrder(['Sumbangan Pengembangan Institusi', 'Angsuran berikutnya', 'Rp4.500.000'])
             ->assertDontSee('Disetujui Wadir II');
 
-        $this->pay($applicant, $invoice, 11500000)->assertSessionHasNoErrors();
-        $payment = Payment::where('invoice_id', $invoice->id)->firstOrFail();
+        // Angsuran SPI ke-1 saja belum cukup: UKT juga wajib lunas.
+        $this->pay($applicant, $invoice, ['SPI'])->assertSessionHasNoErrors();
+        $this->assertSame('4500000.00', $this->acceptLatestPayment($invoice)->amount);
+        $this->assertNotSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
 
-        $this->actingAs($this->admin, 'web')->patch(route('admin.payments.accept', $payment))->assertSessionHasNoErrors();
+        $this->pay($applicant, $invoice, ['UKT_SEMESTER_1'])->assertSessionHasNoErrors();
+        $this->acceptLatestPayment($invoice);
 
         $applicant->refresh();
         $this->assertSame('daftar_ulang_valid', $applicant->re_registration_status);
@@ -305,11 +371,10 @@ class ReRegistrationInstallmentTest extends TestCase
 
         // Angsuran berikutnya tidak membuat status daftar ulang turun lagi.
         $applicant->update(['sync_status' => 'sudah_sinkron']);
-        $this->pay($applicant, $invoice, 2250000)->assertSessionHasNoErrors();
+        $this->pay($applicant, $invoice, ['SPI'])->assertSessionHasNoErrors();
         $this->assertSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
 
-        $second = Payment::where('invoice_id', $invoice->id)->where('status', 'waiting_verification')->firstOrFail();
-        $this->actingAs($this->admin, 'web')->patch(route('admin.payments.accept', $second))->assertSessionHasNoErrors();
+        $this->assertSame('2250000.00', $this->acceptLatestPayment($invoice)->amount);
         $this->assertSame('sudah_sinkron', $applicant->refresh()->sync_status);
 
         // Cicilan tidak bisa dimatikan setelah daftar ulang valid lewat cicilan.

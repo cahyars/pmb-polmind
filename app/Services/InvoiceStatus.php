@@ -59,9 +59,10 @@ class InvoiceStatus
         }
 
         if ($invoice->type === 're_registration') {
-            // Camaba dengan cicilan sudah dianggap daftar ulang setelah angsuran ke-1 terbayar.
+            // Camaba dengan cicilan sudah dianggap daftar ulang setelah angsuran ke-1 tiap komponen terbayar.
             $isReRegistered = $isFullyPaid
-                || ($invoice->hasInstallments() && $hasPartialPaid && $totalValidPaid >= $invoice->firstInstallmentAmount());
+                || ($invoice->hasInstallments() && $hasPartialPaid && $invoice->unsetRelation('payments')->componentBalances()
+                    ->every(fn (array $balance) => $balance['paid'] >= $balance['required_first']));
 
             $reRegistrationStatus = 'belum_daftar_ulang';
             $syncStatus = 'belum_siap';

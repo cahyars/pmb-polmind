@@ -261,17 +261,23 @@
                         </div>
 
                         <div class="mt-5 space-y-3">
-                            @forelse($invoice->items as $item)
-                                <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white px-5 py-4">
+                            @forelse($invoice->componentBalances() as $balance)
+                                @php
+                                    [$componentLabel, $componentClass] = match ($balance['status']) {
+                                        'paid' => ['Lunas', 'bg-green-100 text-green-700'],
+                                        'waiting' => ['Menunggu Verifikasi', 'bg-yellow-100 text-yellow-700'],
+                                        'partial' => ['Belum Lunas', 'bg-blue-100 text-polmind-blue'],
+                                        default => ['Belum Bayar', 'bg-slate-100 text-slate-600'],
+                                    };
+                                @endphp
+                                <div class="flex items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-5 py-4">
                                     <div>
-                                        <p class="font-bold text-slate-900">{{ $item->name }}</p>
-                                        <p class="mt-1 text-xs text-slate-500">
-                                            Qty {{ $item->quantity }} × Rp{{ number_format($item->amount, 0, ',', '.') }}
-                                        </p>
+                                        <p class="font-bold text-slate-900">{{ $balance['item']->name }}</p>
+                                        <span class="mt-1 inline-block rounded-full px-2.5 py-0.5 text-xs font-black {{ $componentClass }}">{{ $componentLabel }}</span>
                                     </div>
 
-                                    <p class="font-black text-polmind-blue">
-                                        Rp{{ number_format($item->subtotal, 0, ',', '.') }}
+                                    <p class="shrink-0 font-black text-polmind-blue">
+                                        Rp{{ number_format($balance['total'], 0, ',', '.') }}
                                     </p>
                                 </div>
                             @empty

@@ -36,31 +36,81 @@
 
     $rupiah = fn ($amount) => 'Rp' . number_format((float) $amount, 0, ',', '.');
 
-    // Ringkasan per tagihan, dipakai untuk header halaman dan isi accordion.
-    $cards = $invoices->map(function ($invoice) use ($invoiceTypeLabels) {
-        $validPaid = (float) $invoice->payments->where('status', 'valid')->sum('amount');
-        $waitingPaid = (float) $invoice->payments->where('status', 'waiting_verification')->sum('amount');
+    // Kartu per tagihan: Formulir satu kartu, Daftar Ulang satu kartu per komponen (UKT, SPI, ...)
+    // agar camaba bisa membayar komponen satu per satu atau sekaligus.
+    $cards = collect();
+    $reRegistration = null;
+
+    foreach ($invoices as $invoice) {
         $status = $invoice->status ?? 'unpaid';
         $isClosed = in_array($status, ['paid', 'cancelled'], true);
+
+        if ($invoice->type === 're_registration' && $status !== 'cancelled') {
+            $balances = $invoice->componentBalances();
+            $payable = $balances->filter(fn ($balance) => $balance['due'] > 0 && $balance['waiting'] <= 0)->values();
+            $reRegistration = ['invoice' => $invoice, 'balances' => $balances];
+
+            foreach ($balances as $index => $balance) {
+                $componentId = $balance['fee_component_id'];
+                // Riwayat: transfer yang mencakup komponen ini (transfer lama tanpa rincian tampil di kartu pertama).
+                $payments = $invoice->payments->filter(fn ($payment) => $payment->allocations->contains('fee_component_id', $componentId)
+                    || ($index === 0 && $payment->allocations->isEmpty()));
+                $latestPayment = $payments->sortByDesc('created_at')->first();
+
+                $cards->push([
+                    'key' => 'du-' . $componentId,
+                    'invoice' => $invoice,
+                    'balance' => $balance,
+                    'payable' => $payable,
+                    'label' => $balance['item']->feeComponent?->name ?? $balance['item']->name,
+                    'status' => match ($balance['status']) {
+                        'paid' => 'paid',
+                        'waiting' => 'waiting_verification',
+                        'partial' => 'partial',
+                        default => 'unpaid',
+                    },
+                    'total' => $balance['total'],
+                    'validPaid' => $balance['paid'],
+                    'waitingPaid' => $balance['waiting'],
+                    'remaining' => $balance['remaining'],
+                    'due' => $balance['due'],
+                    'isWaiting' => $balance['status'] === 'waiting',
+                    'needsAction' => $balance['due'] > 0 && $balance['waiting'] <= 0,
+                    'noAmount' => $balance['total'] <= 0,
+                    'lastRejected' => $latestPayment?->status === 'rejected' ? $latestPayment : null,
+                    'installment' => $balance['schedule']->count() > 1,
+                    'payments' => $payments->sortByDesc('created_at')->values(),
+                ]);
+            }
+
+            continue;
+        }
+
+        $validPaid = (float) $invoice->payments->where('status', 'valid')->sum('amount');
+        $waitingPaid = (float) $invoice->payments->where('status', 'waiting_verification')->sum('amount');
         $remaining = max(0, (float) $invoice->total_amount - $validPaid);
         $latestPayment = $invoice->payments->sortByDesc('created_at')->first();
 
-        return [
+        $cards->push([
+            'key' => 'invoice-' . $invoice->id,
             'invoice' => $invoice,
+            'balance' => null,
             'label' => $invoiceTypeLabels[$invoice->type] ?? ucfirst(str_replace('_', ' ', $invoice->type)),
             'status' => $status,
+            'total' => (float) $invoice->total_amount,
             'validPaid' => $validPaid,
             'waitingPaid' => $waitingPaid,
             'remaining' => $remaining,
+            'due' => $remaining,
             'isWaiting' => ! $isClosed && $waitingPaid > 0,
             'needsAction' => ! $isClosed && $waitingPaid <= 0 && $remaining > 0,
             // Tagihan aktif tanpa nominal (komponen biaya belum diatur admin).
             'noAmount' => ! $isClosed && $waitingPaid <= 0 && $remaining <= 0,
             'lastRejected' => $latestPayment?->status === 'rejected' ? $latestPayment : null,
-            // Jadwal dari admin untuk camaba tertentu; selain itu daftar ulang dibayar sekaligus.
-            'nextDue' => $invoice->type === 're_registration' && $invoice->hasInstallments() ? $invoice->nextInstallmentDue() : null,
-        ];
-    })->values();
+            'installment' => false,
+            'payments' => $invoice->payments->sortByDesc('created_at')->values(),
+        ]);
+    }
 
     $totalRemaining = $cards->filter(fn ($card) => $card['status'] !== 'cancelled')->sum('remaining');
     $nextCard = $cards->firstWhere('needsAction', true);
@@ -75,7 +125,9 @@
             document.addEventListener('DOMContentLoaded', () => window.Swal.fire({
                 icon: 'success',
                 title: 'Bukti Pembayaran Terkirim',
-                html: 'Pembayaran Anda <b>sedang diverifikasi</b> oleh admin PMB (maks. 1x24 jam kerja).<br>Kami akan membuka pengisian biodata dan berkas setelah pembayaran diverifikasi.',
+                html: @js(session('payment_submitted') === 're_registration'
+                    ? 'Pembayaran Anda <b>sedang diverifikasi</b> oleh admin PMB (maks. 1x24 jam kerja).'
+                    : 'Pembayaran Anda <b>sedang diverifikasi</b> oleh admin PMB (maks. 1x24 jam kerja).<br>Kami akan membuka pengisian biodata dan berkas setelah pembayaran diverifikasi.'),
                 confirmButtonText: 'Mengerti',
                 confirmButtonColor: '#003B82',
             }));
@@ -127,18 +179,43 @@
         </div>
     </div>
 
-    {{-- Tagihan (accordion) --}}
+    {{-- Tagihan (accordion): Formulir, lalu komponen Daftar Ulang --}}
     @forelse($cards as $card)
         @php
             $invoice = $card['invoice'];
             $status = $card['status'];
+            $balance = $card['balance'];
             $isRegistration = $invoice->type === 'registration';
-            $hasFailedUpload = (string) old('invoice_id') === (string) $invoice->id;
+            $hasFailedUpload = old('_card') === $card['key'];
             $startOpen = $card['needsAction'] || $card['noAmount'] || $hasFailedUpload || $cards->count() === 1;
             $statusLabel = $invoice->isWaived() ? 'Gratis' : ($invoiceStatusLabels[$status] ?? str_replace('_', ' ', ucfirst($status)));
-            $paymentHistories = $invoice->payments->sortByDesc('created_at')->values();
-            $progress = (float) $invoice->total_amount > 0 ? min(100, round($card['validPaid'] / (float) $invoice->total_amount * 100)) : 0;
+            $paymentHistories = $card['payments'];
+            $progress = $card['total'] > 0 ? min(100, round($card['validPaid'] / $card['total'] * 100)) : 0;
         @endphp
+
+        @if($balance && $loop->index === $cards->search(fn ($item) => $item['balance'] !== null))
+            {{-- Pengantar Daftar Ulang --}}
+            <div class="rounded-3xl border border-blue-100 bg-blue-50 px-5 py-4 text-sm leading-6 text-slate-700 sm:px-6">
+                <p class="font-black text-polmind-blue">Daftar Ulang · {{ $invoice->invoice_number }}</p>
+                <p class="mt-1">
+                    Komponen daftar ulang boleh dibayar satu per satu atau sekaligus dalam satu transfer.
+                    @if($invoice->due_date)
+                        Lunasi semuanya paling lambat <b>{{ $invoice->due_date->translatedFormat('d/m/Y') }}</b>.
+                    @endif
+                </p>
+                @if($invoice->hasInstallments())
+                    <details class="mt-2">
+                        <summary class="cursor-pointer text-xs font-bold text-polmind-blue hover:underline">Lihat jadwal pembayaran</summary>
+                        <div class="mt-3">@include('camaba.partials.installment-schedule', ['invoice' => $invoice])</div>
+                    </details>
+                @endif
+                <a href="{{ route('camaba.print.invoice', $invoice) }}" target="_blank" rel="noopener"
+                   class="mt-2 inline-flex items-center gap-2 text-xs font-bold text-polmind-blue hover:underline">
+                    <x-icon name="document-text" class="h-4 w-4" />
+                    Cetak Invoice Daftar Ulang
+                </a>
+            </div>
+        @endif
 
         <details class="group overflow-hidden rounded-3xl border bg-white shadow-sm {{ $card['needsAction'] ? 'border-polmind-blue/40 ring-1 ring-blue-100' : 'border-slate-200' }}"
                  @if($startOpen) open @endif>
@@ -159,12 +236,14 @@
                             {{ $card['isWaiting'] ? 'Menunggu Verifikasi' : $statusLabel }}
                         </span>
                     </span>
-                    <span class="mt-0.5 block truncate text-xs text-slate-500">{{ $invoice->invoice_number }}</span>
+                    <span class="mt-0.5 block truncate text-xs text-slate-500">
+                        {{ $balance ? ($balance['item']->name !== $card['label'] ? $balance['item']->name : 'Daftar Ulang') : $invoice->invoice_number }}
+                    </span>
                 </span>
 
                 <span class="hidden text-right sm:block">
-                    <span class="block text-xs text-slate-500">{{ $card['needsAction'] ? ($card['nextDue'] ? 'Tagihan berikutnya' : 'Perlu dibayar') : 'Total' }}</span>
-                    <span class="block text-lg font-black text-slate-900">{{ $rupiah($card['needsAction'] ? ($card['nextDue']['amount'] ?? $card['remaining']) : $invoice->total_amount) }}</span>
+                    <span class="block text-xs text-slate-500">{{ $card['needsAction'] ? ($card['installment'] ? 'Angsuran berikutnya' : 'Perlu dibayar') : 'Total' }}</span>
+                    <span class="block text-lg font-black text-slate-900">{{ $rupiah($card['needsAction'] ? $card['due'] : $card['total']) }}</span>
                 </span>
 
                 <svg class="h-5 w-5 shrink-0 text-slate-400 transition group-open:rotate-180" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -189,17 +268,14 @@
                     <div class="rounded-2xl bg-slate-50 p-4">
                         <div class="flex flex-wrap items-end justify-between gap-3">
                             <div>
-                                <p class="text-xs font-bold text-slate-500">{{ $isRegistration ? 'Biaya formulir' : 'Total tagihan' }}</p>
-                                <p class="mt-1 text-2xl font-black text-slate-900">{{ $rupiah($invoice->total_amount) }}</p>
+                                <p class="text-xs font-bold text-slate-500">{{ $isRegistration ? 'Biaya formulir' : 'Nominal' }}</p>
+                                <p class="mt-1 text-2xl font-black text-slate-900">{{ $rupiah($card['total']) }}</p>
                             </div>
 
                             @unless($isRegistration)
                                 <dl class="flex flex-wrap gap-x-6 gap-y-1 text-sm">
                                     <div><dt class="inline text-slate-500">Dibayar</dt> <dd class="inline font-bold text-green-700">{{ $rupiah($card['validPaid']) }}</dd></div>
                                     <div><dt class="inline text-slate-500">Sisa</dt> <dd class="inline font-bold text-red-600">{{ $rupiah($card['remaining']) }}</dd></div>
-                                    @if($invoice->due_date)
-                                        <div><dt class="inline text-slate-500">Jatuh tempo</dt> <dd class="inline font-bold text-slate-800">{{ $invoice->due_date->translatedFormat('d/m/Y') }}</dd></div>
-                                    @endif
                                 </dl>
                             @endunless
                         </div>
@@ -209,27 +285,21 @@
                                 <div class="h-full rounded-full bg-green-600" style="width: {{ $progress }}%"></div>
                             </div>
 
-                            @if($invoice->items->isNotEmpty())
-                                <details class="mt-3">
-                                    <summary class="cursor-pointer text-xs font-bold text-polmind-blue hover:underline">
-                                        Lihat rincian tagihan ({{ $invoice->items->count() }} item)
-                                    </summary>
-                                    <ul class="mt-2 divide-y divide-slate-200 text-sm">
-                                        @foreach($invoice->items as $item)
-                                            <li class="flex justify-between gap-3 py-2">
-                                                <span class="text-slate-700">{{ $item->name }}@if($item->quantity > 1) <span class="text-slate-400">× {{ $item->quantity }}</span>@endif</span>
-                                                <span class="font-bold text-slate-900">{{ $rupiah($item->subtotal) }}</span>
-                                            </li>
-                                        @endforeach
-                                    </ul>
-                                </details>
-                            @endif
-
-                            @if($invoice->hasInstallments())
-                                <div class="mt-4">
-                                    <p class="mb-2 text-xs font-bold text-slate-500">Jadwal pembayaran</p>
-                                    @include('camaba.partials.installment-schedule', ['invoice' => $invoice])
-                                </div>
+                            @if($card['installment'])
+                                <ul class="mt-3 divide-y divide-slate-200 text-sm">
+                                    @foreach($balance['schedule'] as $row)
+                                        <li class="flex flex-wrap items-center justify-between gap-2 py-2">
+                                            <span class="text-slate-700">
+                                                Angsuran ke-{{ $row['installment']->sequence }}
+                                                <span class="text-xs {{ $row['overdue'] ? 'font-bold text-red-600' : 'text-slate-500' }}">· jatuh tempo {{ $row['installment']->due_date->translatedFormat('d/m/Y') }}</span>
+                                            </span>
+                                            <span class="flex items-center gap-2">
+                                                <span class="font-bold text-slate-900">{{ $rupiah($row['installment']->amount) }}</span>
+                                                <span class="rounded-full px-2 py-0.5 text-[11px] font-black {{ $row['status'] === 'lunas' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' }}">{{ $row['status'] === 'lunas' ? 'Lunas' : ($row['status'] === 'sebagian' ? 'Sebagian' : 'Belum') }}</span>
+                                            </span>
+                                        </li>
+                                    @endforeach
+                                </ul>
                             @endif
                         @endunless
                     </div>
@@ -238,7 +308,7 @@
                 {{-- Status / form pembayaran --}}
                 @if($status === 'paid' && ! $invoice->isWaived())
                     <p class="flex items-center gap-2 text-sm font-bold text-green-700">
-                        <x-icon name="check" class="h-5 w-5" /> Tagihan Lunas · pembayaran sudah tervalidasi admin PMB.
+                        <x-icon name="check" class="h-5 w-5" /> {{ $isRegistration ? 'Tagihan' : $card['label'] }} Lunas · pembayaran sudah tervalidasi admin PMB.
                     </p>
                 @elseif($status === 'cancelled')
                     <p class="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-bold text-red-700">Tagihan ini dibatalkan.</p>
@@ -262,138 +332,20 @@
                         </div>
                     @endif
 
-                    <form action="{{ route('camaba.payments.upload-proof', $invoice->id) }}" method="POST" enctype="multipart/form-data" class="space-y-6">
-                        @csrf
-                        <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
-
-                        {{-- Langkah 1 --}}
-                        <fieldset>
-                            <legend class="flex items-center gap-2 text-base font-black text-slate-900">
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">1</span>
-                                Transfer {{ $rupiah($card['remaining']) }} ke salah satu rekening
-                            </legend>
-
-                            @if($paymentMethods->isEmpty())
-                                <p class="mt-3 rounded-2xl bg-slate-50 p-4 text-sm font-semibold text-slate-600">
-                                    Informasi rekening pembayaran belum tersedia. Silakan hubungi admin PMB melalui WhatsApp {{ \App\Services\AdminWhatsApp::display() }}.
-                                </p>
-                            @else
-                                <p class="mt-1 pl-9 text-xs text-slate-500">Pilih rekening yang Anda gunakan untuk transfer.</p>
-
-                                <div class="mt-3 grid gap-3 md:grid-cols-2">
-                                    @foreach($paymentMethods as $method)
-                                        <label x-data="{ copied: false }"
-                                               class="flex cursor-pointer items-start gap-3 rounded-2xl border border-slate-300 bg-white p-4 transition has-checked:border-polmind-blue has-checked:bg-blue-50 has-checked:ring-2 has-checked:ring-blue-100">
-                                            <input type="radio" name="payment_method_id" value="{{ $method->id }}" required class="mt-1 accent-polmind-blue"
-                                                   @checked((string) old('payment_method_id', $paymentMethods->count() === 1 ? $method->id : '') === (string) $method->id)>
-                                            <span class="min-w-0 flex-1">
-                                                <span class="block text-[11px] font-black uppercase tracking-wide text-slate-500">{{ $method->type_label }}</span>
-                                                <span class="block font-black text-slate-900">{{ $method->provider }}</span>
-                                                @if($method->account_number)
-                                                    <span class="mt-1 flex items-center justify-between gap-2">
-                                                        <span class="font-mono text-base font-black tracking-wider text-polmind-blue">{{ $method->account_number }}</span>
-                                                        <button type="button"
-                                                                @click.prevent="navigator.clipboard.writeText(@js($method->account_number)); copied = true; setTimeout(() => copied = false, 2000)"
-                                                                class="shrink-0 rounded-lg border border-slate-300 bg-white px-2.5 py-1 text-xs font-bold text-slate-700 hover:bg-slate-100"
-                                                                x-text="copied ? '✓ Tersalin' : 'Salin'">Salin</button>
-                                                    </span>
-                                                @endif
-                                                @if($method->account_name)
-                                                    <span class="mt-1 block text-xs text-slate-600">a.n. <b>{{ $method->account_name }}</b></span>
-                                                @endif
-                                                @if($method->instructions)
-                                                    <span class="mt-2 block whitespace-pre-line text-xs leading-5 text-slate-500">{{ $method->instructions }}</span>
-                                                @endif
-                                            </span>
-                                        </label>
-                                    @endforeach
-                                </div>
-                            @endif
-                        </fieldset>
-
-                        {{-- Langkah 2 --}}
-                        <fieldset>
-                            <legend class="flex items-center gap-2 text-base font-black text-slate-900">
-                                <span class="flex h-7 w-7 items-center justify-center rounded-full bg-polmind-blue text-xs font-black text-white">2</span>
-                                Isi data transfer & unggah bukti
-                            </legend>
-
-                            <div class="mt-3 grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label for="sender_name_{{ $invoice->id }}" class="text-sm font-bold text-slate-700">Nama Pengirim</label>
-                                    <input id="sender_name_{{ $invoice->id }}" type="text" name="sender_name" required
-                                           value="{{ $hasFailedUpload ? old('sender_name') : '' }}"
-                                           placeholder="Sesuai nama di rekening/e-wallet"
-                                           class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                </div>
-
-                                <div>
-                                    <label for="sender_bank_{{ $invoice->id }}" class="text-sm font-bold text-slate-700">Bank / E-Wallet Pengirim</label>
-                                    <input id="sender_bank_{{ $invoice->id }}" type="text" name="sender_bank" required
-                                           value="{{ $hasFailedUpload ? old('sender_bank') : '' }}"
-                                           placeholder="Contoh: BRI, DANA"
-                                           class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                </div>
-
-                                <div>
-                                    <label for="transfer_date_{{ $invoice->id }}" class="text-sm font-bold text-slate-700">Tanggal Transfer</label>
-                                    <input id="transfer_date_{{ $invoice->id }}" type="date" name="transfer_date" required
-                                           max="{{ now()->format('Y-m-d') }}"
-                                           value="{{ $hasFailedUpload ? old('transfer_date', now()->format('Y-m-d')) : now()->format('Y-m-d') }}"
-                                           class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                </div>
-
-                                <div>
-                                    <label for="amount_{{ $invoice->id }}" class="text-sm font-bold text-slate-700">Nominal Bayar</label>
-                                    @php
-                                        $nextDue = $card['nextDue'];
-                                        $suggestedAmount = $nextDue ? min($nextDue['amount'], $card['remaining']) : $card['remaining'];
-                                    @endphp
-                                    <input id="amount_{{ $invoice->id }}" type="number" name="amount" required
-                                           min="1"
-                                           max="{{ $card['remaining'] }}"
-                                           value="{{ ! $nextDue || ! $hasFailedUpload ? $suggestedAmount : old('amount', $suggestedAmount) }}"
-                                           @readonly(! $nextDue)
-                                           class="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none read-only:bg-slate-50 focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
-                                    <p class="mt-1.5 text-xs text-slate-500">
-                                        @if($isRegistration)
-                                            Sesuai biaya formulir.
-                                        @elseif($nextDue)
-                                            Tagihan berikutnya {{ $rupiah($nextDue['amount']) }}, jatuh tempo {{ $nextDue['due_date']->translatedFormat('d/m/Y') }}.
-                                        @else
-                                            Sesuai sisa tagihan daftar ulang.
-                                        @endif
-                                    </p>
-                                </div>
-
-                                <div class="md:col-span-2" x-data="{ fileName: '' }">
-                                    <span class="text-sm font-bold text-slate-700">Bukti Pembayaran</span>
-                                    <label class="mt-2 flex cursor-pointer items-center gap-3 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-4 transition hover:border-polmind-blue hover:bg-blue-50 has-focus-visible:border-polmind-blue">
-                                        <x-icon name="upload" class="h-6 w-6 shrink-0 text-polmind-blue" />
-                                        <span class="min-w-0 text-sm">
-                                            <span class="block truncate font-bold text-slate-800" x-text="fileName || 'Pilih foto atau PDF bukti transfer'">Pilih foto atau PDF bukti transfer</span>
-                                            <span class="block text-xs text-slate-500">JPG, PNG, atau PDF · maks. 4 MB</span>
-                                        </span>
-                                        <input type="file" name="proof_file" accept=".jpg,.jpeg,.png,.pdf" required class="sr-only"
-                                               @change="fileName = $event.target.files[0]?.name ?? ''">
-                                    </label>
-                                </div>
-                            </div>
-                        </fieldset>
-
-                        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <p class="text-xs leading-5 text-slate-500">Setelah dikirim, admin PMB memverifikasi maksimal 1x24 jam kerja.</p>
-                            <button type="submit"
-                                    class="inline-flex justify-center rounded-xl bg-polmind-blue px-6 py-3 text-sm font-bold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
-                                Kirim Bukti Pembayaran
-                            </button>
-                        </div>
-                    </form>
+                    @if($balance)
+                        @include('camaba.partials.payment-form', [
+                            'cardKey' => $card['key'],
+                            'components' => $card['payable'],
+                            'primaryComponentId' => $balance['fee_component_id'],
+                        ])
+                    @else
+                        @include('camaba.partials.payment-form', ['cardKey' => $card['key'], 'amount' => $card['remaining']])
+                    @endif
                 @endif
 
                 {{-- Aksi sekunder: cetak invoice & riwayat --}}
                 <div class="flex flex-col gap-3 border-t border-slate-100 pt-4">
-                    @if($status !== 'cancelled')
+                    @if($isRegistration && $status !== 'cancelled')
                         <a href="{{ route('camaba.print.invoice', $invoice) }}" target="_blank" rel="noopener"
                            class="inline-flex w-fit items-center gap-2 text-sm font-bold text-polmind-blue hover:underline">
                             <x-icon name="document-text" class="h-4 w-4" />
@@ -407,7 +359,7 @@
                         </summary>
 
                         @if($paymentHistories->isEmpty())
-                            <p class="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Belum ada pembayaran untuk invoice ini.</p>
+                            <p class="mt-3 rounded-xl bg-slate-50 p-4 text-sm text-slate-500">Belum ada pembayaran untuk {{ $isRegistration ? 'invoice' : 'komponen' }} ini.</p>
                         @else
                             <ul class="mt-3 space-y-2">
                                 @foreach($paymentHistories as $payment)
@@ -418,6 +370,9 @@
                                         <div class="flex flex-wrap items-start justify-between gap-3">
                                             <div class="min-w-0">
                                                 <p class="font-black {{ $historyStatus === 'rejected' ? 'text-red-600' : 'text-slate-900' }}">{{ $rupiah($payment->amount) }}</p>
+                                                @if($payment->allocations->count() > 1)
+                                                    <p class="mt-0.5 text-xs text-slate-600">{{ $payment->allocations->map(fn ($allocation) => ($allocation->feeComponent?->name ?? $allocation->name) . ' ' . $rupiah($allocation->amount))->implode(' + ') }}</p>
+                                                @endif
                                                 <p class="mt-0.5 text-xs text-slate-500">
                                                     {{ $payment->transfer_date?->translatedFormat('d/m/Y') ?? '-' }}
                                                     · {{ $payment->sender_name ?? '-' }} ({{ $payment->sender_bank ?? '-' }})

@@ -12,8 +12,13 @@
     $paidAmount = (float) $invoice->payments->where('status', 'valid')->sum('amount');
     $remainingAmount = max(0, (float) $invoice->total_amount - $paidAmount);
 
+    // Daftar ulang: komponen yang dibayar transfer ini (UKT, SPI, atau keduanya).
+    $purposeItems = $payment->allocations->isNotEmpty()
+        ? $payment->allocations->map(fn ($allocation) => $allocation->name . ' ' . $rupiah($allocation->amount))
+        : $invoice->items->pluck('name');
+
     $purpose = ($invoice->type === 're_registration' ? 'Pembayaran daftar ulang' : 'Pembayaran formulir pendaftaran')
-        . ' (' . $invoice->items->pluck('name')->implode(', ') . ')'
+        . ' (' . $purposeItems->implode(', ') . ')'
         . ' · Invoice ' . $invoice->invoice_number;
 
     $rows = [

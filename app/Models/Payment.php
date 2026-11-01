@@ -56,6 +56,11 @@ class Payment extends Model
         return $this->belongsTo(Applicant::class);
     }
 
+    public function allocations()
+    {
+        return $this->hasMany(PaymentAllocation::class);
+    }
+
     public function paymentMethod()
     {
         return $this->belongsTo(PaymentMethod::class);

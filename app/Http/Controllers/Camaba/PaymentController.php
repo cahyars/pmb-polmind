@@ -26,12 +26,14 @@ class PaymentController extends Controller
             'registrationInvoice.items',
             'registrationInvoice.payments',
             'registrationInvoice.latestPayment',
-            'reRegistrationInvoice.items',
+            'reRegistrationInvoice.items.feeComponent',
             'reRegistrationInvoice.payments',
             'reRegistrationInvoice.latestPayment',
             'registrationInvoice.payments.paymentMethod',
             'reRegistrationInvoice.payments.paymentMethod',
             'reRegistrationInvoice.installments',
+            'registrationInvoice.payments.allocations',
+            'reRegistrationInvoice.payments.allocations.feeComponent',
         ]);
 
         $paymentMethods = PaymentMethod::active()->get();
@@ -58,6 +60,7 @@ class PaymentController extends Controller
         $invoice->refresh();
 
         $hasPaymentMethods = PaymentMethod::where('is_active', true)->exists();
+        $isReRegistration = $invoice->type === 're_registration';
 
         $validated = $request->validate([
             'payment_method_id' => [
@@ -68,10 +71,14 @@ class PaymentController extends Controller
             'sender_name' => ['required', 'string', 'max:255'],
             'sender_bank' => ['required', 'string', 'max:100'],
             'transfer_date' => ['required', 'date'],
-            'amount' => ['required', 'numeric', 'min:1'],
+            'amount' => [Rule::requiredIf(! $isReRegistration), 'nullable', 'numeric', 'min:1'],
+            // Daftar ulang: komponen yang dibayar (UKT, SPI, atau keduanya); nominal dihitung sistem.
+            'components' => [Rule::requiredIf($isReRegistration), 'array', 'min:1'],
+            'components.*' => ['integer'],
             'proof_file' => ['required', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ], [
             'payment_method_id.required' => 'Pilih rekening/tujuan pembayaran yang Anda transfer.',
+            'components.required' => 'Pilih komponen yang Anda bayar.',
         ], [
             'payment_method_id' => 'tujuan pembayaran',
             'sender_name' => 'nama pengirim',
@@ -81,56 +88,59 @@ class PaymentController extends Controller
             'proof_file' => 'bukti pembayaran',
         ]);
 
-        $totalValidPaid = Payment::where('invoice_id', $invoice->id)
-            ->where('status', 'valid')
-            ->sum('amount');
+        $allocations = [];
 
-        $remainingAmount = (float) $invoice->total_amount - (float) $totalValidPaid;
-        $paidAmount = (float) $validated['amount'];
+        if ($isReRegistration) {
+            $balances = $invoice->componentBalances()->keyBy('fee_component_id');
 
-        if ($remainingAmount <= 0) {
-            return back()->withErrors('Tagihan ini sudah lunas.')->withInput();
-        }
+            foreach (array_unique($validated['components']) as $componentId) {
+                $balance = $balances->get((int) $componentId);
 
-        if ($invoice->type === 'registration' && $paidAmount !== $remainingAmount) {
-            return back()
-                ->withErrors('Nominal pembayaran formulir harus sesuai tagihan: Rp' . number_format($remainingAmount, 0, ',', '.') . '.')
-                ->withInput();
-        }
+                if (! $balance) {
+                    return back()->withErrors('Komponen pembayaran tidak valid.')->withInput();
+                }
 
-        // Tanpa skema cicilan dari admin, daftar ulang dibayar sekaligus.
-        if ($invoice->type === 're_registration' && ! $invoice->hasInstallments() && $paidAmount !== $remainingAmount) {
-            return back()
-                ->withErrors('Nominal pembayaran daftar ulang harus sesuai sisa tagihan: Rp' . number_format($remainingAmount, 0, ',', '.') . '.')
-                ->withInput();
-        }
+                if ($balance['due'] <= 0) {
+                    return back()->withErrors($balance['item']->name . ' sudah lunas.')->withInput();
+                }
 
-        if ($paidAmount > $remainingAmount) {
-            return back()
-                ->withErrors(
-                    'Nominal pembayaran melebihi sisa tagihan. Sisa tagihan saat ini: Rp' .
-                    number_format($remainingAmount, 0, ',', '.')
-                )
-                ->withInput();
-        }
+                if ($balance['waiting'] > 0) {
+                    return back()->withErrors('Pembayaran ' . $balance['item']->name . ' masih menunggu verifikasi admin.')->withInput();
+                }
 
-        $existingPayment = Payment::where('applicant_id', $applicant->id)
-            ->where('invoice_id', $invoice->id)
-            ->where('status', 'waiting_verification')
-            ->latest()
-            ->first();
+                $allocations[] = [
+                    'fee_component_id' => $balance['fee_component_id'],
+                    'name' => $balance['item']->name,
+                    'amount' => $balance['due'],
+                ];
+            }
 
-        if ($existingPayment) {
-            return back()
-                ->withErrors('Masih ada pembayaran yang menunggu verifikasi admin. Silakan tunggu validasi terlebih dahulu.')
-                ->withInput();
+            $validated['amount'] = array_sum(array_column($allocations, 'amount'));
+        } else {
+            $totalValidPaid = Payment::where('invoice_id', $invoice->id)
+                ->where('status', 'valid')
+                ->sum('amount');
+
+            $remainingAmount = (float) $invoice->total_amount - (float) $totalValidPaid;
+
+            if ($remainingAmount <= 0) {
+                return back()->withErrors('Tagihan ini sudah lunas.')->withInput();
+            }
+
+            if ((float) $validated['amount'] !== $remainingAmount) {
+                return back()
+                    ->withErrors('Nominal pembayaran formulir harus sesuai tagihan: Rp' . number_format($remainingAmount, 0, ',', '.') . '.')
+                    ->withInput();
+            }
+
+            if (Payment::where('invoice_id', $invoice->id)->where('status', 'waiting_verification')->exists()) {
+                return back()
+                    ->withErrors('Masih ada pembayaran yang menunggu verifikasi admin. Silakan tunggu validasi terlebih dahulu.')
+                    ->withInput();
+            }
         }
 
         $file = $request->file('proof_file');
-
-        if ($existingPayment?->proof_file_path && Storage::disk('local')->exists($existingPayment->proof_file_path)) {
-            Storage::disk('local')->delete($existingPayment->proof_file_path);
-        }
 
         $folder = 'payment-proofs/' . $applicant->registration_number;
 
@@ -140,12 +150,12 @@ class PaymentController extends Controller
 
         $filePath = $file->storeAs($folder, $filename, 'local');
 
-        DB::transaction(function () use ($applicant, $invoice, $validated, $existingPayment, $filePath, $file) {
+        DB::transaction(function () use ($applicant, $invoice, $validated, $allocations, $filePath, $file) {
             $paymentData = [
                 'applicant_id' => $applicant->id,
                 'invoice_id' => $invoice->id,
                 'payment_method_id' => $validated['payment_method_id'] ?? null,
-                'payment_number' => $existingPayment?->payment_number ?? Payment::nextNumber($invoice),
+                'payment_number' => Payment::nextNumber($invoice),
                 'transfer_date' => $validated['transfer_date'],
                 'sender_name' => $validated['sender_name'],
                 'sender_bank' => $validated['sender_bank'],
@@ -158,10 +168,11 @@ class PaymentController extends Controller
                 'verified_by_name' => null,
             ];
 
-            Payment::create($paymentData);
+            Payment::create($paymentData)->allocations()->createMany($allocations);
 
             $invoice->update([
-                'status' => 'waiting_verification',
+                // Tagihan yang sudah terbayar sebagian tetap "Belum Lunas".
+                'status' => $invoice->status === 'partial' ? 'partial' : 'waiting_verification',
                 'note' => 'Bukti pembayaran sudah diupload dan menunggu verifikasi admin.',
             ]);
 
@@ -190,6 +201,6 @@ class PaymentController extends Controller
             }
         });
 
-        return back()->with('payment_submitted', true);
+        return back()->with('payment_submitted', $invoice->type);
     }
 }
