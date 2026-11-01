@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\AchievementLevel;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FeeComponent;
@@ -42,9 +43,8 @@ class ReRegistrationInstallmentTest extends TestCase
 
         AdmissionWave::where('code', 'GEL1')->update(['is_active' => true, 'status' => 'open']);
 
-        // Seeder: DAFTAR_ULANG 2,5 jt, SPI_AWAL 5 jt, SPP_SEMESTER_1 4 jt. SPI dan SPP bisa dicicil.
-        FeeComponent::whereIn('code', ['SPI_AWAL', 'SPP_SEMESTER_1'])->update(['is_installable' => true]);
-
+        // Seeder (biaya resmi 2027): SPI 15 jt (Gel. 1 9 jt, Undangan 7,5 jt, Prestasi per kategori),
+        // UKT Semester 1 7 jt. Hanya SPI yang bisa dicicil.
         $this->admin = User::factory()->create();
         $this->method = PaymentMethod::create(['type' => 'bank_transfer', 'provider' => 'Bank BCA', 'account_number' => '1234567890', 'is_active' => true]);
     }
@@ -54,19 +54,28 @@ class ReRegistrationInstallmentTest extends TestCase
         return FeeComponent::where('code', $code)->firstOrFail();
     }
 
-    private function acceptedApplicant(string $path = 'umum'): Applicant
+    private function level(string $name): AchievementLevel
+    {
+        return AchievementLevel::where('name', $name)->firstOrFail();
+    }
+
+    private function decide(Applicant $applicant, array $extra = [])
+    {
+        $components = SelectionComponent::where('is_active', true)->pluck('id');
+
+        return $this->actingAs($this->admin, 'web')
+            ->patch(route('admin.selections.decide', $applicant), [
+                'scores' => $components->mapWithKeys(fn ($id) => [$id => 80])->all(),
+                'decision' => 'diterima_1',
+            ] + $extra);
+    }
+
+    private function acceptedApplicant(string $path = 'umum', array $extra = []): Applicant
     {
         $applicant = $this->registerApplicant(['email' => $path . '@example.com', 'registration_path' => $path]);
         $applicant->update(['document_status' => 'valid', 'payment_status' => 'valid']);
 
-        $components = SelectionComponent::where('is_active', true)->pluck('id');
-
-        $this->actingAs($this->admin, 'web')
-            ->patch(route('admin.selections.decide', $applicant), [
-                'scores' => $components->mapWithKeys(fn ($id) => [$id => 80])->all(),
-                'decision' => 'diterima_1',
-            ])
-            ->assertSessionHasNoErrors();
+        $this->decide($applicant, $extra)->assertSessionHasNoErrors();
 
         auth('web')->logout();
 
@@ -86,61 +95,120 @@ class ReRegistrationInstallmentTest extends TestCase
             ]);
     }
 
-    public function test_re_registration_amount_follows_registration_path(): void
+    private function spiItem(Applicant $applicant)
     {
-        $prestasi = RegistrationPath::where('code', 'prestasi')->firstOrFail();
+        return $applicant->reRegistrationInvoice->items->firstWhere('fee_component_id', $this->fee('SPI')->id);
+    }
 
+    public function test_spi_follows_registration_wave_path_and_achievement_level(): void
+    {
         $this->actingAs($this->admin, 'web')
             ->get('/admin/master-data/biaya')
             ->assertOk()
+            ->assertSee('Biaya Daftar Ulang per Gelombang')
             ->assertSee('Biaya Daftar Ulang per Jalur')
-            ->assertSee('Template cicilan');
-
-        $this->actingAs($this->admin, 'web')
-            ->put(route('admin.master-data.registration-paths.fees', $prestasi), [
-                'amounts' => [$this->fee('SPI_AWAL')->id => 1000000],
-            ])
-            ->assertSessionHasNoErrors();
+            ->assertSee('Kategori Prestasi (SPI Jalur Prestasi)')
+            ->assertSee('Tingkat 1 · Nasional')
+            ->assertDontSee('Template cicilan');
 
         auth('web')->logout();
 
-        $this->get('/')->assertSee('Jalur Prestasi')->assertSee('Rp1.000.000');
+        // Landing: nominal final per gelombang, tanpa harga coret.
+        $this->get('/')
+            ->assertSeeInOrder(['Sumbangan Pengembangan Institusi', 'Gelombang 1', 'Berlaku sekarang', 'Rp9.000.000', 'Gelombang 2', 'Rp10.000.000', 'Gelombang 5', 'Rp15.000.000'])
+            ->assertSeeInOrder(['Jalur Undangan', 'Rp7.500.000', 'Jalur Prestasi · Tingkat 1 · Nasional', 'Rp4.500.000'])
+            ->assertSee('Rp7.000.000')
+            ->assertDontSee('line-through');
 
         $umum = $this->acceptedApplicant('umum');
-        $berprestasi = $this->acceptedApplicant('prestasi');
+        $this->assertSame('16000000.00', $umum->reRegistrationInvoice->total_amount);
+        $this->assertSame('Sumbangan Pengembangan Institusi (Gelombang 1)', $this->spiItem($umum)->name);
+        $this->assertSame('9000000.00', $this->spiItem($umum)->subtotal);
+        // Batas bayar: akhir periode daftar ulang gelombang camaba.
+        $this->assertSame($umum->admissionWave->re_registration_end_date->toDateString(), $umum->reRegistrationInvoice->due_date->toDateString());
 
-        $this->assertSame('11500000.00', $umum->reRegistrationInvoice->total_amount);
-        $this->assertSame('7500000.00', $berprestasi->reRegistrationInvoice->total_amount);
-        $this->assertSame('1000000.00', $berprestasi->reRegistrationInvoice->items->firstWhere('fee_component_id', $this->fee('SPI_AWAL')->id)->subtotal);
+        $undangan = $this->acceptedApplicant('undangan');
+        $this->assertSame('14500000.00', $undangan->reRegistrationInvoice->total_amount);
+        $this->assertSame('Sumbangan Pengembangan Institusi (Jalur Undangan)', $this->spiItem($undangan)->name);
+
+        // Jalur Prestasi: kategori wajib dipilih saat diterima.
+        $prestasi = $this->registerApplicant(['email' => 'prestasi@example.com', 'registration_path' => 'prestasi']);
+        $prestasi->update(['document_status' => 'valid', 'payment_status' => 'valid']);
+
+        $this->actingAs($this->admin, 'web')
+            ->get(route('admin.selections.show', $prestasi->registration_number))
+            ->assertSee('Kategori Prestasi')
+            ->assertSee('Tingkat 1 · Nasional · SPI Rp4.500.000')
+            ->assertSee('Tanpa kategori · SPI Gelombang 1 Rp9.000.000');
+
+        $this->decide($prestasi)->assertSessionHasErrors('achievement_level');
+        $this->assertNull($prestasi->refresh()->reRegistrationInvoice);
+
+        $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 1 · Nasional')->id])->assertSessionHasNoErrors();
+        $prestasi->refresh();
+        $this->assertSame($this->level('Tingkat 1 · Nasional')->id, $prestasi->achievement_level_id);
+        $this->assertSame('11500000.00', $prestasi->reRegistrationInvoice->total_amount);
+        $this->assertSame('Sumbangan Pengembangan Institusi (Tingkat 1 · Nasional)', $this->spiItem($prestasi)->name);
+
+        // Belum dibayar: kategori bisa diganti dan invoice dihitung ulang.
+        $this->decide($prestasi, ['achievement_level' => 'none'])->assertSessionHasNoErrors();
+        $prestasi->refresh();
+        $this->assertNull($prestasi->achievement_level_id);
+        $this->assertSame('16000000.00', $prestasi->reRegistrationInvoice->total_amount);
+        $this->assertCount(2, $prestasi->reRegistrationInvoice->items);
+
+        // Sudah ada pembayaran: kategori tidak bisa diganti lagi.
+        $this->pay($prestasi, $prestasi->reRegistrationInvoice, 16000000)->assertSessionHasNoErrors();
+        $this->decide($prestasi, ['achievement_level' => $this->level('Tingkat 2 · Provinsi')->id])->assertSessionHasErrors();
+        $this->assertNull($prestasi->refresh()->achievement_level_id);
     }
 
-    public function test_installment_template_must_match_amount(): void
+    public function test_admin_sets_fees_per_wave_and_path_and_manages_achievement_levels(): void
     {
-        $umum = RegistrationPath::where('code', 'umum')->firstOrFail();
-        $spi = $this->fee('SPI_AWAL');
+        $spi = $this->fee('SPI');
+        $gel1 = AdmissionWave::where('code', 'GEL1')->firstOrFail();
+        $gel2 = AdmissionWave::where('code', 'GEL2')->firstOrFail();
+        $undangan = RegistrationPath::where('code', 'undangan')->firstOrFail();
 
         $this->actingAs($this->admin, 'web')
-            ->put(route('admin.master-data.registration-paths.fees', $umum), [
-                'installments' => [$spi->id => [
-                    ['amount' => 2000000, 'due_date' => '2027-08-01'],
-                    ['amount' => 2000000, 'due_date' => '2027-09-01'],
-                ]],
-            ])
-            ->assertSessionHasErrors();
-
-        $this->actingAs($this->admin, 'web')
-            ->put(route('admin.master-data.registration-paths.fees', $umum), [
-                'installments' => [$spi->id => [
-                    ['amount' => 3000000, 'due_date' => '2027-09-01'],
-                    ['amount' => 2000000, 'due_date' => '2027-08-01'],
-                ]],
+            ->put(route('admin.master-data.wave-fees.update'), [
+                'amounts' => [$gel1->id => [$spi->id => ''], $gel2->id => [$spi->id => 11000000]],
             ])
             ->assertSessionHasNoErrors();
 
-        $this->assertSame(
-            [[1, '2000000.00', '2027-08-01'], [2, '3000000.00', '2027-09-01']],
-            $spi->installmentTemplates()->get()->map(fn ($row) => [$row->sequence, $row->amount, $row->due_date->toDateString()])->all()
-        );
+        // Kosong kembali ke nominal default.
+        $this->assertSame('15000000.00', $spi->refresh()->load(['pathAmounts', 'waveAmounts'])->amountFor('umum', $gel1->id));
+        $this->assertSame('11000000.00', $spi->amountFor('umum', $gel2->id));
+
+        $this->actingAs($this->admin, 'web')
+            ->put(route('admin.master-data.path-fees.update'), [
+                'amounts' => [$undangan->id => [$spi->id => 8000000]],
+            ])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('8000000.00', $spi->refresh()->load(['pathAmounts', 'waveAmounts'])->amountFor('undangan', $gel2->id));
+
+        $this->actingAs($this->admin, 'web')
+            ->post(route('admin.master-data.achievement-levels.store'), ['name' => 'Tingkat 4', 'spi_amount' => 7000000, 'sort_order' => 4, 'is_active' => 1])
+            ->assertSessionHasNoErrors();
+        $level = $this->level('Tingkat 4');
+
+        $this->actingAs($this->admin, 'web')
+            ->put(route('admin.master-data.achievement-levels.update', $level), ['name' => 'Tingkat 4 · Kota', 'description' => 'Juara tingkat kota', 'spi_amount' => 7500000, 'sort_order' => 4, 'is_active' => 1])
+            ->assertSessionHasNoErrors();
+        $this->assertSame('7500000.00', $level->refresh()->spi_amount);
+
+        $this->actingAs($this->admin, 'web')->patch(route('admin.master-data.achievement-levels.toggle', $level));
+        $this->assertFalse($level->refresh()->is_active);
+
+        // Kategori nonaktif tidak bisa dipilih.
+        $applicant = $this->registerApplicant(['email' => 'p@example.com', 'registration_path' => 'prestasi']);
+        $applicant->update(['document_status' => 'valid', 'payment_status' => 'valid']);
+        $this->decide($applicant, ['achievement_level' => $level->id])->assertSessionHasErrors('achievement_level');
+
+        $operator = User::factory()->operator()->create();
+        $this->actingAs($operator, 'web')
+            ->put(route('admin.master-data.wave-fees.update'), ['amounts' => []])
+            ->assertForbidden();
     }
 
     public function test_without_installments_re_registration_is_paid_at_once_and_nothing_mentions_installments(): void
@@ -149,25 +217,16 @@ class ReRegistrationInstallmentTest extends TestCase
         $invoice = $applicant->reRegistrationInvoice;
 
         $page = $this->actingAs($applicant, 'applicant')->get('/camaba/pembayaran')->assertOk()->getContent();
-        // Nama komponen dari Master Data (mis. "Angsuran SPI") boleh tampil; fitur cicilan tidak.
         $this->assertDoesNotMatchRegularExpression('/cicil|jadwal pembayaran|tagihan berikutnya/i', $page);
 
-        $this->pay($applicant, $invoice, 5000000)->assertSessionHasErrors();
-        $this->pay($applicant, $invoice, 11500000)->assertSessionHasNoErrors();
+        $this->pay($applicant, $invoice, 9000000)->assertSessionHasErrors();
+        $this->pay($applicant, $invoice, 16000000)->assertSessionHasNoErrors();
     }
 
-    public function test_admin_enables_installments_and_re_registration_is_valid_after_first_payment(): void
+    public function test_admin_enables_spi_installments_and_re_registration_is_valid_after_first_payment(): void
     {
-        $umum = RegistrationPath::where('code', 'umum')->firstOrFail();
-        $spi = $this->fee('SPI_AWAL');
-        $spp = $this->fee('SPP_SEMESTER_1');
-
-        $this->actingAs($this->admin, 'web')->put(route('admin.master-data.registration-paths.fees', $umum), [
-            'installments' => [$spi->id => [
-                ['amount' => 2500000, 'due_date' => '2027-08-01'],
-                ['amount' => 2500000, 'due_date' => '2027-10-01'],
-            ]],
-        ])->assertSessionHasNoErrors();
+        $spi = $this->fee('SPI');
+        $ukt = $this->fee('UKT_SEMESTER_1');
 
         $applicant = $this->acceptedApplicant();
         $invoice = $applicant->reRegistrationInvoice;
@@ -183,22 +242,25 @@ class ReRegistrationInstallmentTest extends TestCase
             ->put(route('admin.applicants.installments.update', $applicant->registration_number), [])
             ->assertForbidden();
 
-        // Admin melihat form terisi dari template jalur.
+        // Admin melihat pilihan skema; UKT dibayar penuh bersama angsuran ke-1.
         $this->actingAs($this->admin, 'web')
             ->get(route('admin.applicants.show', $applicant->registration_number))
             ->assertSee('Skema Cicilan Daftar Ulang')
-            ->assertSee('2027-10-01');
+            ->assertSeeInOrder(['Bayar penuh', '50:50', '50:25:25', '25:25:25:25'])
+            ->assertSee('dibayar penuh bersama angsuran ke-1');
 
         $this->actingAs($this->admin, 'web')
             ->put(route('admin.applicants.installments.update', $applicant->registration_number), [
                 'installments' => [
                     $items[$spi->id]->id => [
-                        ['amount' => 2500000, 'due_date' => '2027-08-01'],
-                        ['amount' => 2500000, 'due_date' => '2027-10-01'],
+                        ['amount' => 4500000, 'due_date' => '2027-02-12'],
+                        ['amount' => 2250000, 'due_date' => '2027-03-12'],
+                        ['amount' => 2250000, 'due_date' => '2027-04-12'],
                     ],
-                    $items[$spp->id]->id => [
-                        ['amount' => 2000000, 'due_date' => '2027-08-01'],
-                        ['amount' => 2000000, 'due_date' => '2027-11-01'],
+                    // UKT tidak bisa dicicil: baris ini diabaikan.
+                    $items[$ukt->id]->id => [
+                        ['amount' => 3500000, 'due_date' => '2027-02-12'],
+                        ['amount' => 3500000, 'due_date' => '2027-03-12'],
                     ],
                 ],
                 'installment_note' => 'Disetujui Wadir II',
@@ -207,16 +269,18 @@ class ReRegistrationInstallmentTest extends TestCase
 
         $invoice->refresh()->load(['installments', 'payments']);
         $this->assertTrue($invoice->hasInstallments());
-        // Angsuran ke-1: Daftar Ulang 2,5 jt + SPI 2,5 jt + SPP 2 jt.
-        $this->assertSame(7000000.0, $invoice->firstInstallmentAmount());
+        $this->assertSame(1, $invoice->installments->where('fee_component_id', $ukt->id)->count());
+        // Angsuran ke-1: UKT 7 jt + SPI 4,5 jt.
+        $this->assertSame(11500000.0, $invoice->firstInstallmentAmount());
 
         $this->actingAs($applicant, 'applicant')
             ->get('/camaba/pembayaran')
             ->assertSee('Jadwal pembayaran')
-            ->assertSee('Tagihan berikutnya Rp7.000.000')
+            ->assertSeeInOrder(['Pembayaran ke-1', 'Rp11.500.000', 'Pembayaran ke-2', 'Rp2.250.000', 'Pembayaran ke-3'])
+            ->assertSee('Tagihan berikutnya Rp11.500.000')
             ->assertDontSee('Disetujui Wadir II');
 
-        $this->pay($applicant, $invoice, 7000000)->assertSessionHasNoErrors();
+        $this->pay($applicant, $invoice, 11500000)->assertSessionHasNoErrors();
         $payment = Payment::where('invoice_id', $invoice->id)->firstOrFail();
 
         $this->actingAs($this->admin, 'web')->patch(route('admin.payments.accept', $payment))->assertSessionHasNoErrors();
@@ -225,6 +289,11 @@ class ReRegistrationInstallmentTest extends TestCase
         $this->assertSame('daftar_ulang_valid', $applicant->re_registration_status);
         $this->assertSame('partial', $invoice->refresh()->status);
 
+        // Menyimpan ulang keputusan seleksi tidak memulai ulang daftar ulang yang sudah dibayar.
+        $this->decide($applicant)->assertSessionHasNoErrors();
+        $this->assertSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
+        $this->assertTrue($invoice->refresh()->hasInstallments());
+
         // Siap ditarik SIAKAD setelah NIM dibubuhkan.
         $this->assertSame('belum_siap', $applicant->sync_status);
         $this->actingAs($this->admin, 'web')->post(route('admin.nim.generate-one', $applicant))->assertSessionHasNoErrors();
@@ -232,7 +301,7 @@ class ReRegistrationInstallmentTest extends TestCase
 
         // Angsuran berikutnya tidak membuat status daftar ulang turun lagi.
         $applicant->update(['sync_status' => 'sudah_sinkron']);
-        $this->pay($applicant, $invoice, 2500000)->assertSessionHasNoErrors();
+        $this->pay($applicant, $invoice, 2250000)->assertSessionHasNoErrors();
         $this->assertSame('daftar_ulang_valid', $applicant->refresh()->re_registration_status);
 
         $second = Payment::where('invoice_id', $invoice->id)->where('status', 'waiting_verification')->firstOrFail();

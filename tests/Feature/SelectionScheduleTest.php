@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Models\AdmissionWave;
-use App\Models\FeeComponent;
 use App\Models\RefOption;
 use App\Models\SelectionComponent;
 use App\Models\SelectionSchedule;
@@ -90,17 +89,6 @@ class SelectionScheduleTest extends TestCase
 
     public function test_landing_and_forms_follow_master_data(): void
     {
-        FeeComponent::where('code', 'SPI_AWAL')->update(['amount' => 15000000, 'is_active' => true]);
-        AdmissionWave::create([
-            'pmb_year_id' => AdmissionWave::value('pmb_year_id'),
-            'code' => 'GEL5',
-            'name' => 'Gelombang 5',
-            'start_date' => '2027-08-02',
-            'end_date' => '2027-09-03',
-            'registration_fee' => 300000,
-            'status' => 'draft',
-        ]);
-
         // Jadwal ringkas: Pendaftaran, Seleksi, Pengumuman Seleksi, Daftar Ulang (tanpa nama tes).
         $this->get('/')
             ->assertOk()

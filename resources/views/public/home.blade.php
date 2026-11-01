@@ -498,26 +498,65 @@
                 </div>
             @endif
 
+            @php
+                $rupiahLabel = fn ($amount) => $amount > 0 ? 'Rp' . number_format($amount, 0, ',', '.') : 'Segera diumumkan';
+                $publicPaths = \App\Models\RegistrationPath::active();
+                $defaultPath = $publicPaths->keys()->first();
+            @endphp
+
             <div class="mt-8 divide-y divide-yellow-500/40">
                 @forelse($reRegistrationFees as $fee)
                     @php
-                        // Nominal bisa berbeda per jalur; ditampilkan rinci hanya jika memang berbeda.
-                        $pathAmounts = \App\Models\RegistrationPath::active()->map(fn ($path) => (float) $fee->amountFor($path->code));
-                        $amountLabel = fn ($amount) => $amount > 0 ? 'Rp' . number_format($amount, 0, ',', '.') : 'Segera diumumkan';
+                        // Nominal final per gelombang (jalur umum), lalu jalur yang punya nominal sendiri.
+                        $waveAmounts = $waves->mapWithKeys(fn ($wave) => [$wave->id => (float) $fee->amountFor($defaultPath, $wave->id)]);
+                        $perWave = $waves->isNotEmpty() && $waveAmounts->unique()->count() > 1;
+                        $specialPaths = $publicPaths->keys()
+                            ->reject(fn ($code) => $code === $defaultPath)
+                            ->filter(fn ($code) => $fee->pathAmounts->contains('registration_path_id', $publicPaths[$code]->id));
+                        $levels = $fee->code === \App\Models\FeeComponent::SPI_CODE && $publicPaths->has('prestasi') ? $achievementLevels : collect();
+                        $singleAmount = $perWave ? null : ($waveAmounts->first() ?? (float) $fee->amountFor($defaultPath));
                     @endphp
                     <div class="py-4 first:pt-0 last:pb-0">
                         <div class="flex items-baseline justify-between gap-4">
                             <span class="font-semibold text-polmind-blue-dark">{{ $fee->name }}</span>
-                            @if($pathAmounts->unique()->count() <= 1)
-                                <span class="shrink-0 font-black text-polmind-blue-dark">{{ $amountLabel($pathAmounts->first() ?? (float) $fee->amount) }}</span>
-                            @endif
+                            @unless($perWave)
+                                <span class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel($singleAmount) }}</span>
+                            @endunless
                         </div>
-                        @if($pathAmounts->unique()->count() > 1)
+
+                        @if($perWave)
                             <dl class="mt-2 space-y-1 text-sm">
-                                @foreach($pathAmounts as $code => $amount)
+                                @foreach($waves as $wave)
+                                    @php $isCurrent = $currentWave?->is($wave); @endphp
+                                    <div @class([
+                                        'flex items-baseline justify-between gap-4',
+                                        '-mx-2 rounded-lg bg-white px-2 py-1 shadow-sm' => $isCurrent,
+                                    ])>
+                                        <dt class="text-polmind-blue-dark/80">
+                                            {{ $wave->name }}
+                                            @if($isCurrent)
+                                                <span class="ml-1 rounded-full bg-green-600 px-2 py-0.5 text-[10px] font-black uppercase tracking-wide text-white">Berlaku sekarang</span>
+                                            @endif
+                                        </dt>
+                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel($waveAmounts[$wave->id]) }}</dd>
+                                    </div>
+                                @endforeach
+                            </dl>
+                        @endif
+
+                        @if($specialPaths->isNotEmpty() || $levels->isNotEmpty())
+                            <dl class="mt-3 space-y-1 border-t border-dashed border-yellow-600/40 pt-2 text-sm">
+                                @foreach($specialPaths as $code)
+                                    @continue($code === 'prestasi' && $levels->isNotEmpty())
                                     <div class="flex items-baseline justify-between gap-4">
-                                        <dt class="text-polmind-blue-dark/80">Jalur {{ \App\Models\RegistrationPath::labelFor($code) }}</dt>
-                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $amountLabel($amount) }}</dd>
+                                        <dt class="text-polmind-blue-dark/80">Jalur {{ $publicPaths[$code]->name }}</dt>
+                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel((float) $fee->amountFor($code)) }}</dd>
+                                    </div>
+                                @endforeach
+                                @foreach($levels as $level)
+                                    <div class="flex items-baseline justify-between gap-4">
+                                        <dt class="text-polmind-blue-dark/80">Jalur Prestasi · {{ $level->name }}</dt>
+                                        <dd class="shrink-0 font-black text-polmind-blue-dark">{{ $rupiahLabel((float) $level->spi_amount) }}</dd>
                                     </div>
                                 @endforeach
                             </dl>
@@ -529,7 +568,8 @@
             </div>
 
             <p class="mt-8 rounded-2xl bg-white/40 p-4 text-xs leading-5 text-polmind-blue-dark">
-                SPI dan UKT dibayar setelah dinyatakan diterima sebagai mahasiswa baru. Tersedia keringanan biaya SPI bagi pendaftar gelombang awal.
+                SPI dan UKT dibayar penuh pada periode daftar ulang setelah dinyatakan diterima sebagai mahasiswa baru.
+                Nominal SPI mengikuti gelombang saat Anda mendaftar: makin awal mendaftar, makin ringan SPI-nya.
             </p>
         </div>
     </div>
@@ -555,7 +595,7 @@
                     : 'Wajib: ' . $documentTypes->where('is_required', true)->pluck('name')->implode(', ') . '.'
                         . ($documentTypes->where('is_required', false)->isNotEmpty() ? ' Opsional: ' . $documentTypes->where('is_required', false)->pluck('name')->implode(', ') . '.' : '')],
                 ['q' => 'Kapan pembayaran SPI dan UKT dilakukan?', 'a' => 'SPI dan UKT dibayar setelah pendaftar dinyatakan diterima sebagai mahasiswa baru. Nominalnya tercantum di bagian Rincian Biaya.'],
-                ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Tersedia program keringanan biaya SPI untuk pendaftar gelombang awal. Hubungi admin PMB untuk detailnya.'],
+                ['q' => 'Apakah ada keringanan biaya?', 'a' => 'Ada. SPI lebih ringan bagi pendaftar gelombang awal, dan pendaftar jalur Prestasi mendapat SPI khusus sesuai kategori prestasinya. Rinciannya ada di bagian Rincian Biaya.'],
             ] as $index => $faq)
                 <div class="rounded-2xl border border-slate-200 bg-white shadow-sm">
                     <button type="button"

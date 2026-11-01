@@ -25,7 +25,7 @@ class ActivityLogController extends Controller
         'selection' => ['label' => 'Seleksi', 'prefixes' => ['selection', 'selection_score']],
         're_registration' => ['label' => 'Daftar ulang', 'prefixes' => ['re_registration']],
         'master' => ['label' => 'Master data & akun', 'prefixes' => [
-            'admission_wave', 'pmb_year', 'study_program', 'class_type', 'document_type', 'fee_component', 'fee_component_path_amount',
+            'admission_wave', 'pmb_year', 'study_program', 'class_type', 'document_type', 'fee_component', 'fee_component_path_amount', 'fee_component_wave_amount', 'achievement_level',
             'fee_installment_template', 'payment_method', 'registration_path', 'selection_component', 'selection_schedule', 'setting', 'brochure', 'user',
         ]],
         'report' => ['label' => 'Unduh laporan', 'prefixes' => ['report']],

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Http\Middleware\SelectAdminPmbYear;
+use App\Models\AchievementLevel;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FeeComponent;
@@ -161,13 +162,24 @@ class SelectionController extends Controller
                 'photoDocument',
                 'selection.scores',
                 'reRegistrationInvoice',
+                'achievementLevel',
             ])
             ->firstOrFail();
 
         $components = $this->componentsFor($applicant);
         $scores = $applicant->selection?->scores->pluck('score', 'selection_component_id') ?? collect();
 
-        return view('admin.selections.show', compact('applicant', 'components', 'scores'));
+        // Pilihan kategori prestasi (jalur Prestasi) beserta SPI bila tanpa kategori.
+        $achievementLevels = $applicant->registration_path === 'prestasi'
+            ? AchievementLevel::ordered()->where(fn ($query) => $query->where('is_active', true)->orWhere('id', $applicant->achievement_level_id))->get()
+            : collect();
+        $spiWithoutLevel = FeeComponent::with(['pathAmounts', 'waveAmounts'])
+            ->where('code', FeeComponent::SPI_CODE)
+            ->where('is_active', true)
+            ->first()
+            ?->amountFor($applicant->registration_path, $applicant->admission_wave_id);
+
+        return view('admin.selections.show', compact('applicant', 'components', 'scores', 'achievementLevels', 'spiWithoutLevel'));
     }
 
     public function saveScores(Request $request, Applicant $applicant)
@@ -186,16 +198,30 @@ class SelectionController extends Controller
 
     public function decide(Request $request, Applicant $applicant)
     {
+        // Camaba jalur Prestasi yang diterima wajib diberi kategori prestasi (atau "tanpa kategori").
+        $needsAchievementLevel = $applicant->registration_path === 'prestasi'
+            && (self::DECISIONS[$request->input('decision')] ?? null) === 'diterima';
+
         $validated = $request->validate([
             'decision' => ['required', Rule::in(array_keys(self::DECISIONS))],
             'note' => [Rule::requiredIf($request->input('decision') === 'ditolak'), 'nullable', 'string', 'max:1000'],
+            'achievement_level' => [
+                Rule::requiredIf($needsAchievementLevel),
+                'nullable',
+                Rule::in(['none', ...AchievementLevel::where('is_active', true)->pluck('id')->map(fn ($id) => (string) $id), (string) $applicant->achievement_level_id]),
+            ],
         ], [
             'decision.required' => 'Pilih keputusan seleksi terlebih dahulu.',
             'note.required' => 'Catatan wajib diisi jika camaba ditolak.',
+            'achievement_level.required' => 'Pilih kategori prestasi untuk menentukan nominal SPI camaba jalur Prestasi.',
+            'achievement_level.in' => 'Kategori prestasi tidak valid.',
         ]);
 
         $decision = $validated['decision'];
         $status = self::DECISIONS[$decision];
+        $achievementLevelId = $needsAchievementLevel && $validated['achievement_level'] !== 'none'
+            ? (int) $validated['achievement_level']
+            : null;
 
         $acceptedProgramId = match ($decision) {
             'diterima_1' => $applicant->study_program_id,
@@ -211,10 +237,14 @@ class SelectionController extends Controller
             return back()->withErrors($message);
         }
 
+        if ($achievementLevelId !== $applicant->achievement_level_id && $this->invoiceLocked($applicant->reRegistrationInvoice)) {
+            return back()->withErrors('Kategori prestasi tidak dapat diubah karena camaba sudah melakukan pembayaran daftar ulang.');
+        }
+
         $components = $this->componentsFor($applicant);
         $scores = $this->validateScores($request, $components);
 
-        DB::transaction(function () use ($applicant, $components, $scores, $status, $acceptedProgramId, $validated) {
+        DB::transaction(function () use ($applicant, $components, $scores, $status, $acceptedProgramId, $achievementLevelId, $validated) {
             $selection = $this->storeScores($applicant, $components, $scores);
 
             $selection->update([
@@ -227,8 +257,12 @@ class SelectionController extends Controller
             $applicant->update([
                 'selection_status' => $status,
                 'accepted_study_program_id' => $acceptedProgramId,
-                're_registration_status' => 'belum_daftar_ulang',
-                'sync_status' => 'belum_siap',
+                'achievement_level_id' => $achievementLevelId,
+                // Daftar ulang yang sudah dibayar tidak dimulai ulang saat keputusan disimpan lagi.
+                ...($this->invoiceLocked($applicant->reRegistrationInvoice) ? [] : [
+                    're_registration_status' => 'belum_daftar_ulang',
+                    'sync_status' => 'belum_siap',
+                ]),
             ]);
 
             if ($status === 'diterima') {
@@ -261,8 +295,7 @@ class SelectionController extends Controller
 
         $reRegistrationInvoice = $applicant->reRegistrationInvoice;
 
-        $hasReRegistrationActivity = filled($applicant->nim) || ($reRegistrationInvoice
-            && in_array($reRegistrationInvoice->status, ['waiting_verification', 'partial', 'paid']));
+        $hasReRegistrationActivity = filled($applicant->nim) || $this->invoiceLocked($reRegistrationInvoice);
 
         if ($hasReRegistrationActivity && $targetStatus !== 'diterima') {
             return 'Status seleksi tidak dapat diubah karena camaba sudah memiliki aktivitas pembayaran daftar ulang.';
@@ -340,22 +373,47 @@ class SelectionController extends Controller
         return $selection;
     }
 
+    /**
+     * Tagihan daftar ulang sudah ada pembayarannya, sehingga nominalnya tidak boleh berubah lagi.
+     */
+    private function invoiceLocked(?Invoice $invoice): bool
+    {
+        return $invoice && in_array($invoice->status, ['waiting_verification', 'partial', 'paid'], true);
+    }
+
+    /**
+     * Batas bayar daftar ulang: akhir periode daftar ulang gelombang camaba, atau 14 hari
+     * bila periode itu belum diisi atau sudah lewat.
+     */
+    private function reRegistrationDueDate(Applicant $applicant): string
+    {
+        $end = $applicant->admissionWave?->re_registration_end_date;
+
+        return ($end && $end->gte(today()) ? $end : now()->addDays(14))->toDateString();
+    }
+
     private function createReRegistrationInvoice(Applicant $applicant): void
     {
-        $fees = FeeComponent::with('pathAmounts')
+        $applicant->load(['achievementLevel', 'admissionWave']);
+
+        $fees = FeeComponent::with(['pathAmounts', 'waveAmounts'])
             ->where('type', 're_registration')
             ->where('is_active', true)
             ->orderBy('sort_order')
             ->get();
 
-        // Nominal UKT/SPI dapat berbeda per jalur pendaftaran.
-        $amounts = $fees->mapWithKeys(fn (FeeComponent $fee) => [$fee->id => $fee->amountFor($applicant->registration_path)]);
-
-        $totalAmount = $amounts->sum();
+        // Nominal per jalur, per gelombang pendaftaran, atau per kategori prestasi (SPI).
+        $prices = $fees->mapWithKeys(fn (FeeComponent $fee) => [$fee->id => $fee->priceFor($applicant)]);
+        $totalAmount = $prices->sum(fn ($price) => (float) $price['amount']);
+        $dueDate = $this->reRegistrationDueDate($applicant);
 
         $invoice = Invoice::where('applicant_id', $applicant->id)
             ->where('type', 're_registration')
             ->first();
+
+        if ($this->invoiceLocked($invoice)) {
+            return;
+        }
 
         if (! $invoice) {
             $invoice = Invoice::create([
@@ -363,12 +421,12 @@ class SelectionController extends Controller
                 'invoice_number' => 'INV/DU/' . now()->format('Y') . '/' . $applicant->registration_number,
                 'type' => 're_registration',
                 'issue_date' => now()->toDateString(),
-                'due_date' => now()->addDays(14)->toDateString(),
+                'due_date' => $dueDate,
                 'total_amount' => $totalAmount,
                 'status' => 'unpaid',
                 'note' => 'Invoice daftar ulang otomatis setelah camaba dinyatakan diterima.',
             ]);
-        } elseif (! in_array($invoice->status, ['waiting_verification', 'partial', 'paid'])) {
+        } else {
             // Nominal bisa berubah, jadwal cicilan lama tidak lagi cocok.
             $invoice->installments()->delete();
 
@@ -377,11 +435,14 @@ class SelectionController extends Controller
                 'installment_enabled_by_name' => null,
                 'invoice_number' => $invoice->invoice_number ?: 'INV/DU/' . now()->format('Y') . '/' . $applicant->registration_number,
                 'issue_date' => now()->toDateString(),
-                'due_date' => now()->addDays(14)->toDateString(),
+                'due_date' => $dueDate,
                 'total_amount' => $totalAmount,
                 'status' => 'unpaid',
                 'note' => 'Invoice daftar ulang otomatis setelah camaba dinyatakan diterima.',
             ]);
+
+            // Komponen yang sudah dinonaktifkan di Master Data tidak ditagihkan lagi.
+            $invoice->items()->whereNotIn('fee_component_id', $fees->pluck('id'))->get()->each->delete();
         }
 
         foreach ($fees as $fee) {
@@ -391,10 +452,10 @@ class SelectionController extends Controller
                     'fee_component_id' => $fee->id,
                 ],
                 [
-                    'name' => $fee->name,
-                    'amount' => $amounts[$fee->id],
+                    'name' => $prices[$fee->id]['name'],
+                    'amount' => $prices[$fee->id]['amount'],
                     'quantity' => 1,
-                    'subtotal' => $amounts[$fee->id],
+                    'subtotal' => $prices[$fee->id]['amount'],
                     'sort_order' => $fee->sort_order,
                 ]
             );
@@ -405,7 +466,7 @@ class SelectionController extends Controller
             [
                 'invoice_id' => $invoice->id,
                 'status' => 'belum_daftar_ulang',
-                'deadline_date' => now()->addDays(14)->toDateString(),
+                'deadline_date' => $dueDate,
                 'validated_at' => null,
                 'validated_by_name' => null,
                 'ready_sync_at' => null,

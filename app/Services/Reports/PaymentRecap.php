@@ -4,6 +4,7 @@ namespace App\Services\Reports;
 
 use App\Models\Applicant;
 use App\Models\Invoice;
+use App\Models\InvoiceItem;
 use App\Models\Payment;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -49,7 +50,7 @@ class PaymentRecap
 
         // Kolom komponen: Formulir, lalu komponen daftar ulang sesuai urutan di invoice (UKT, SPI, ...).
         $components = collect([self::FORM_COMPONENT])
-            ->merge($applicants->flatMap(fn (Applicant $applicant) => $applicant->reRegistrationInvoice?->items->sortBy('sort_order')->pluck('name') ?? []))
+            ->merge($applicants->flatMap(fn (Applicant $applicant) => $applicant->reRegistrationInvoice?->items->sortBy('sort_order')->map(fn (InvoiceItem $item) => self::componentName($item)) ?? []))
             ->merge($rows->flatMap(fn ($row) => array_keys($row['components'])))
             ->unique()
             ->values();
@@ -184,10 +185,10 @@ class PaymentRecap
 
         $slots = ($invoice->installments->isNotEmpty()
             ? $invoice->installments->sortBy([['sequence', 'asc'], ['due_date', 'asc']])->map(fn ($installment) => [
-                'name' => $invoice->items->firstWhere('fee_component_id', $installment->fee_component_id)?->name ?? $installment->name,
+                'name' => ($item = $invoice->items->firstWhere('fee_component_id', $installment->fee_component_id)) ? self::componentName($item) : $installment->name,
                 'remaining' => (float) $installment->amount,
             ])
-            : $invoice->items->sortBy('sort_order')->map(fn ($item) => ['name' => $item->name, 'remaining' => (float) $item->subtotal])
+            : $invoice->items->sortBy('sort_order')->map(fn ($item) => ['name' => self::componentName($item), 'remaining' => (float) $item->subtotal])
         )->values()->all();
 
         return $payments->map(function ($payment) use (&$slots) {
@@ -216,5 +217,14 @@ class PaymentRecap
 
             return $payment + ['components' => $components];
         });
+    }
+
+    /**
+     * Nama kolom rekap: nama komponen di Master Data, bukan nama baris invoice yang bisa memuat
+     * asal nominal (mis. "SPI (Gelombang 1)"), agar SPI semua camaba masuk satu kolom.
+     */
+    private static function componentName(InvoiceItem $item): string
+    {
+        return $item->feeComponent?->name ?? $item->name;
     }
 }

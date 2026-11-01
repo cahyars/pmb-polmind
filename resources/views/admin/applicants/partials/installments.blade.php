@@ -110,9 +110,10 @@
             @method('PUT')
             <input type="hidden" name="_installment_form" value="1">
 
-            @unless($enabled)
-                <p class="text-xs leading-5 text-slate-600">Jadwal awal diisi dari template cicilan jalur {{ $applicant->registration_path_label }} di Master Data. Sesuaikan bila perlu.</p>
-            @endunless
+            <p class="text-xs leading-5 text-slate-600">
+                Pilih skema cicilan, lalu sesuaikan nominal dan tanggal jatuh tempo bila perlu (custom).
+                Komponen yang tidak dicicil dibayar penuh bersama angsuran ke-1.
+            </p>
 
             @foreach($installmentRows as $entry)
                 @php
@@ -121,18 +122,27 @@
                 @endphp
 
                 @if($entry['installable'])
-                    <div x-data="{
-                             target: {{ (float) $item->subtotal }},
-                             rows: @js(array_values($rows)),
-                             get total() { return this.rows.reduce((sum, row) => sum + Number(row.amount || 0), 0) },
-                             rupiah(value) { return 'Rp' + new Intl.NumberFormat('id-ID').format(value) },
-                         }"
+                    <div x-data="installmentRows({{ (float) $item->subtotal }}, @js(array_values($rows)), @js(($invoice->due_date ?? today())->toDateString()))"
                          class="rounded-lg border border-slate-200 bg-white p-4">
                         <div class="flex flex-wrap items-center justify-between gap-2">
                             <p class="text-sm font-semibold text-slate-800">{{ $item->name }} · {{ $rupiah($item->subtotal) }}</p>
                             <p class="text-xs" :class="Math.round(total) === Math.round(target) ? 'text-green-700' : 'font-semibold text-red-600'">
                                 Total angsuran <span x-text="rupiah(total)"></span>
                             </p>
+                        </div>
+
+                        <div class="mt-3 flex flex-wrap items-center gap-2">
+                            <span class="text-xs font-semibold text-slate-500">Skema:</span>
+                            <button type="button" @click="applyScheme([100])"
+                                    class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-polmind-blue hover:text-polmind-blue">
+                                Bayar penuh
+                            </button>
+                            @foreach(\App\Http\Controllers\Admin\InstallmentController::SCHEMES as $label => $percents)
+                                <button type="button" @click="applyScheme(@js($percents))"
+                                        class="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:border-polmind-blue hover:text-polmind-blue">
+                                    {{ $label }}
+                                </button>
+                            @endforeach
                         </div>
 
                         <template x-for="(row, index) in rows" :key="index">
@@ -179,3 +189,40 @@
         </form>
     @endif
 </div>
+
+<script>
+    // Isi baris angsuran dari skema persen: nominal dibulatkan ke ribuan (sisa di angsuran terakhir),
+    // jatuh tempo mulai tanggal angsuran ke-1 lalu bertambah satu bulan.
+    window.installmentRows = (target, rows, defaultDueDate) => ({
+        target,
+        rows,
+
+        get total() {
+            return this.rows.reduce((sum, row) => sum + Number(row.amount || 0), 0);
+        },
+
+        rupiah(value) {
+            return 'Rp' + new Intl.NumberFormat('id-ID').format(value);
+        },
+
+        addMonths(date, months) {
+            const [year, month, day] = date.split('-').map(Number);
+            const lastDay = new Date(year, month - 1 + months + 1, 0).getDate();
+            const result = new Date(year, month - 1 + months, Math.min(day, lastDay));
+
+            return [result.getFullYear(), String(result.getMonth() + 1).padStart(2, '0'), String(result.getDate()).padStart(2, '0')].join('-');
+        },
+
+        applyScheme(percents) {
+            const firstDueDate = this.rows[0]?.due_date || defaultDueDate;
+            let remaining = this.target;
+
+            this.rows = percents.map((percent, index) => {
+                const amount = index === percents.length - 1 ? remaining : Math.floor(this.target * percent / 100 / 1000) * 1000;
+                remaining -= amount;
+
+                return { amount, due_date: this.addMonths(firstDueDate, index) };
+            });
+        },
+    });
+</script>

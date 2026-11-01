@@ -235,7 +235,11 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::post('/master-data/fee-components', [MasterDataController::class, 'storeFeeComponent'])->name('master-data.fee-components.store');
         Route::put('/master-data/fee-components/{feeComponent}', [MasterDataController::class, 'updateFeeComponent'])->name('master-data.fee-components.update');
         Route::patch('/master-data/fee-components/{feeComponent}/toggle', [MasterDataController::class, 'toggleFeeComponent'])->name('master-data.fee-components.toggle');
-        Route::put('/master-data/registration-paths/{registrationPath}/fees', [MasterDataController::class, 'updatePathFees'])->name('master-data.registration-paths.fees');
+        Route::put('/master-data/wave-fees', [MasterDataController::class, 'updateWaveFees'])->name('master-data.wave-fees.update');
+        Route::put('/master-data/path-fees', [MasterDataController::class, 'updatePathFees'])->name('master-data.path-fees.update');
+        Route::post('/master-data/achievement-levels', [MasterDataController::class, 'storeAchievementLevel'])->name('master-data.achievement-levels.store');
+        Route::put('/master-data/achievement-levels/{achievementLevel}', [MasterDataController::class, 'updateAchievementLevel'])->name('master-data.achievement-levels.update');
+        Route::patch('/master-data/achievement-levels/{achievementLevel}/toggle', [MasterDataController::class, 'toggleAchievementLevel'])->name('master-data.achievement-levels.toggle');
 
         Route::post('/master-data/pmb-years', [MasterDataController::class, 'storePmbYear'])->name('master-data.pmb-years.store');
         Route::put('/master-data/pmb-years/{pmbYear}', [MasterDataController::class, 'updatePmbYear'])->name('master-data.pmb-years.update');

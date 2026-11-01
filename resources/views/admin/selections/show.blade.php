@@ -99,7 +99,7 @@
                         <p class="text-sm font-semibold text-blue-100">{{ $applicant->registration_number }}</p>
                         <h1 class="mt-2 text-2xl font-bold">{{ $applicant->full_name }}</h1>
                         <p class="mt-2 text-sm text-blue-100">
-                            {{ $applicant->education?->school_name ?? '-' }} · {{ $applicant->registration_path_label }} · {{ $applicant->admissionWave?->name ?? '-' }}
+                            {{ $applicant->education?->school_name ?? '-' }} · {{ $applicant->registration_path_label }}{{ $applicant->achievementLevel ? ' (' . $applicant->achievementLevel->name . ')' : '' }} · {{ $applicant->admissionWave?->name ?? '-' }}
                         </p>
                         <a href="{{ route('admin.applicants.show', $applicant->registration_number) }}"
                            class="mt-3 inline-flex text-xs font-semibold text-white underline underline-offset-4 hover:text-blue-100">
@@ -238,6 +238,35 @@
                         </label>
                     @endforeach
                 </fieldset>
+
+                @if($applicant->registration_path === 'prestasi')
+                    @php
+                        $rupiah = fn ($amount) => 'Rp' . number_format((float) $amount, 0, ',', '.');
+                        $currentLevel = old('achievement_level', $applicant->achievement_level_id ?? ($acceptedChoice ? 'none' : ''));
+                    @endphp
+                    <div>
+                        <label for="achievement_level" class="text-sm font-semibold text-slate-700">Kategori Prestasi</label>
+                        <p class="mt-1 text-xs text-slate-500">Wajib dipilih jika diterima. Menentukan nominal SPI di invoice daftar ulang.</p>
+                        <select id="achievement_level" name="achievement_level" @disabled(! $isReady)
+                                class="mt-2 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-polmind-blue focus:ring-4 focus:ring-blue-100 disabled:bg-slate-50">
+                            <option value="">Pilih kategori prestasi</option>
+                            @foreach($achievementLevels as $level)
+                                <option value="{{ $level->id }}" @selected((string) $currentLevel === (string) $level->id)>
+                                    {{ $level->name }} · SPI {{ $rupiah($level->spi_amount) }}{{ $level->is_active ? '' : ' (nonaktif)' }}
+                                </option>
+                            @endforeach
+                            <option value="none" @selected($currentLevel === 'none')>
+                                Tanpa kategori · SPI {{ $applicant->admissionWave?->name ?? 'default' }}{{ $spiWithoutLevel !== null ? ' ' . $rupiah($spiWithoutLevel) : '' }}
+                            </option>
+                        </select>
+                        @if($achievementLevels->isEmpty())
+                            <p class="mt-2 text-xs text-yellow-700">
+                                Belum ada kategori prestasi aktif. Tambahkan di
+                                <a href="{{ route('admin.master-data.show', 'biaya') }}" class="font-semibold underline">Master Data › Komponen Biaya</a>.
+                            </p>
+                        @endif
+                    </div>
+                @endif
 
                 <div>
                     <label for="note" class="text-sm font-semibold text-slate-700">Catatan untuk camaba</label>

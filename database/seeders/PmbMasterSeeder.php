@@ -64,6 +64,15 @@ class PmbMasterSeeder extends Seeder
                 'is_active' => false,
                 'status' => 'draft',
             ],
+            [
+                'code' => 'GEL5',
+                'name' => 'Gelombang 5',
+                'start_date' => '2027-08-02',
+                'end_date' => '2027-09-03',
+                'registration_fee' => 300000,
+                'is_active' => false,
+                'status' => 'draft',
+            ],
         ];
 
         foreach ($waves as $wave) {
@@ -225,30 +234,6 @@ class PmbMasterSeeder extends Seeder
                 'sort_order' => 1,
                 'is_active' => true,
             ],
-            [
-                'code' => 'DAFTAR_ULANG',
-                'name' => 'Daftar Ulang',
-                'type' => 're_registration',
-                'amount' => 2500000,
-                'sort_order' => 1,
-                'is_active' => true,
-            ],
-            [
-                'code' => 'SPI_AWAL',
-                'name' => 'Angsuran SPI',
-                'type' => 're_registration',
-                'amount' => 5000000,
-                'sort_order' => 2,
-                'is_active' => true,
-            ],
-            [
-                'code' => 'SPP_SEMESTER_1',
-                'name' => 'SPP Semester 1',
-                'type' => 're_registration',
-                'amount' => 4000000,
-                'sort_order' => 3,
-                'is_active' => true,
-            ],
         ];
 
         foreach ($fees as $fee) {
@@ -257,5 +242,8 @@ class PmbMasterSeeder extends Seeder
                 $fee
             );
         }
+
+        // SPI, UKT, SPI per gelombang/jalur, dan kategori prestasi.
+        $this->call(FeeScheme2027Seeder::class);
     }
 }

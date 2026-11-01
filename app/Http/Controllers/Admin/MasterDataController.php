@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\AchievementLevel;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
 use App\Models\FeeComponentPathAmount;
-use App\Models\FeeInstallmentTemplate;
+use App\Models\FeeComponentWaveAmount;
 use App\Models\PmbYear;
 use App\Models\RegistrationPath;
 use App\Models\SelectionComponent;
@@ -39,7 +40,7 @@ class MasterDataController extends Controller
         'jalur' => ['label' => 'Jalur Pendaftaran', 'description' => 'Pilihan jalur pendaftaran yang tampil di landing page dan form registrasi.'],
         'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
         'berkas' => ['label' => 'Jenis Berkas', 'description' => 'Dokumen yang wajib atau opsional diunggah camaba.'],
-        'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI, UKT, dan komponen daftar ulang.'],
+        'biaya' => ['label' => 'Komponen Biaya', 'description' => 'Biaya formulir, SPI per gelombang dan jalur, kategori prestasi, dan UKT.'],
         'penomoran' => ['label' => 'Penomoran', 'description' => 'Format NIM mahasiswa baru dan nomor kwitansi pembayaran.'],
     ];
 
@@ -79,12 +80,14 @@ class MasterDataController extends Controller
             ],
             'biaya' => [
                 'feeComponents' => FeeComponent::orderBy('type')->orderBy('sort_order')->get(),
-                'reRegistrationFees' => FeeComponent::with(['pathAmounts', 'installmentTemplates'])
+                'reRegistrationFees' => FeeComponent::with(['pathAmounts', 'waveAmounts'])
                     ->where('type', 're_registration')
                     ->where('is_active', true)
                     ->orderBy('sort_order')
                     ->get(),
                 'registrationPaths' => RegistrationPath::orderBy('sort_order')->orderBy('id')->get(),
+                'admissionWaves' => AdmissionWave::orderBy('start_date')->orderBy('id')->get(),
+                'achievementLevels' => AchievementLevel::ordered()->withCount('applicants')->get(),
             ],
             'penomoran' => [
                 'studyPrograms' => StudyProgram::orderBy('code')->get(),
@@ -345,72 +348,100 @@ class MasterDataController extends Controller
     }
 
     /**
-     * Nominal daftar ulang dan template skema cicilan untuk satu jalur.
-     * Nominal kosong berarti memakai nominal default komponen.
+     * Nominal komponen daftar ulang per gelombang (Tahun PMB terpilih). Kosong berarti nominal default.
      */
-    public function updatePathFees(Request $request, RegistrationPath $registrationPath)
+    public function updateWaveFees(Request $request)
     {
-        $fees = FeeComponent::where('type', 're_registration')->where('is_active', true)->orderBy('sort_order')->get();
+        $waves = AdmissionWave::orderBy('start_date')->get();
 
+        $this->saveAmountGrid($request, $waves, 'admission_wave_id', FeeComponentWaveAmount::class);
+
+        return back()->with('success', 'Biaya daftar ulang per gelombang berhasil disimpan.');
+    }
+
+    /**
+     * Nominal komponen daftar ulang per jalur. Kosong berarti mengikuti nominal gelombang/default.
+     */
+    public function updatePathFees(Request $request)
+    {
+        $paths = RegistrationPath::orderBy('sort_order')->get();
+
+        $this->saveAmountGrid($request, $paths, 'registration_path_id', FeeComponentPathAmount::class);
+
+        return back()->with('success', 'Biaya daftar ulang per jalur berhasil disimpan.');
+    }
+
+    /**
+     * Simpan isian amounts[{baris}][{komponen}]: terisi disimpan, kosong dihapus.
+     *
+     * @param  \Illuminate\Support\Collection<int, \Illuminate\Database\Eloquent\Model>  $rows
+     * @param  class-string<\Illuminate\Database\Eloquent\Model>  $model
+     */
+    private function saveAmountGrid(Request $request, $rows, string $rowKey, string $model): void
+    {
         $validated = $request->validate([
             'amounts' => ['nullable', 'array'],
-            'amounts.*' => ['nullable', 'numeric', 'min:0'],
-            'installments' => ['nullable', 'array'],
-            'installments.*' => ['array'],
-            'installments.*.*.amount' => ['required', 'numeric', 'min:1'],
-            'installments.*.*.due_date' => ['required', 'date'],
+            'amounts.*' => ['array'],
+            'amounts.*.*' => ['nullable', 'numeric', 'min:0'],
         ], [], [
-            'amounts.*' => 'nominal',
-            'installments.*.*.amount' => 'nominal angsuran',
-            'installments.*.*.due_date' => 'tanggal jatuh tempo',
+            'amounts.*.*' => 'nominal',
         ]);
 
-        $errors = [];
+        $fees = FeeComponent::where('type', 're_registration')->where('is_active', true)->get();
 
-        foreach ($fees as $fee) {
-            $amount = $validated['amounts'][$fee->id] ?? null;
-            $effective = filled($amount) ? (float) $amount : (float) $fee->amount;
-            $rows = $fee->is_installable ? ($validated['installments'][$fee->id] ?? []) : [];
+        DB::transaction(function () use ($rows, $fees, $validated, $rowKey, $model) {
+            foreach ($rows as $row) {
+                foreach ($fees as $fee) {
+                    $amount = $validated['amounts'][$row->id][$fee->id] ?? null;
+                    $match = ['fee_component_id' => $fee->id, $rowKey => $row->id];
 
-            if ($rows && round(collect($rows)->sum('amount'), 2) !== round($effective, 2)) {
-                $errors[] = 'Total angsuran ' . $fee->name . ' harus sama dengan nominalnya: Rp' . number_format($effective, 0, ',', '.') . '.';
-            }
-        }
-
-        if ($errors) {
-            return back()->withErrors($errors)->withInput();
-        }
-
-        DB::transaction(function () use ($fees, $validated, $registrationPath) {
-            foreach ($fees as $fee) {
-                $amount = $validated['amounts'][$fee->id] ?? null;
-                $match = ['fee_component_id' => $fee->id, 'registration_path_id' => $registrationPath->id];
-
-                if (filled($amount)) {
-                    FeeComponentPathAmount::updateOrCreate($match, ['amount' => $amount]);
-                } else {
-                    FeeComponentPathAmount::where($match)->delete();
-                }
-
-                FeeInstallmentTemplate::where($match)->delete();
-
-                $rows = collect($fee->is_installable ? ($validated['installments'][$fee->id] ?? []) : [])
-                    ->sortBy('due_date')
-                    ->values();
-
-                foreach ($rows as $index => $row) {
-                    FeeInstallmentTemplate::create($match + [
-                        'sequence' => $index + 1,
-                        'amount' => $row['amount'],
-                        'due_date' => $row['due_date'],
-                    ]);
+                    // Per model (bukan update massal) agar perubahan tercatat di Log Aktivitas.
+                    if (filled($amount)) {
+                        $model::updateOrCreate($match, ['amount' => $amount]);
+                    } else {
+                        $model::where($match)->get()->each->delete();
+                    }
                 }
             }
         });
+    }
 
-        return back()
-            ->with('success', 'Biaya daftar ulang jalur ' . $registrationPath->name . ' berhasil disimpan.')
-            ->with('fee_path_tab', $registrationPath->id);
+    public function storeAchievementLevel(Request $request)
+    {
+        AchievementLevel::create($this->validateAchievementLevel($request));
+
+        return back()->with('success', 'Kategori prestasi berhasil ditambahkan.');
+    }
+
+    public function updateAchievementLevel(Request $request, AchievementLevel $achievementLevel)
+    {
+        $achievementLevel->update($this->validateAchievementLevel($request));
+
+        return back()->with('success', 'Kategori prestasi berhasil diperbarui. Nominal baru berlaku untuk invoice yang dibuat setelah ini.');
+    }
+
+    public function toggleAchievementLevel(AchievementLevel $achievementLevel)
+    {
+        $achievementLevel->update(['is_active' => ! $achievementLevel->is_active]);
+
+        return back()->with('success', 'Status kategori prestasi berhasil diubah.');
+    }
+
+    private function validateAchievementLevel(Request $request): array
+    {
+        $validated = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'description' => ['nullable', 'string', 'max:1000'],
+            'spi_amount' => ['required', 'numeric', 'min:0'],
+            'sort_order' => ['required', 'integer', 'min:0'],
+        ], [], [
+            'name' => 'nama kategori',
+            'description' => 'kriteria',
+            'spi_amount' => 'nominal SPI',
+            'sort_order' => 'urutan',
+        ]);
+
+        return $validated + ['is_active' => $request->boolean('is_active')];
     }
 
     public function toggleFeeComponent(FeeComponent $feeComponent)

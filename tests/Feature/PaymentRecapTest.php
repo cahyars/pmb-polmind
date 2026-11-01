@@ -67,10 +67,13 @@ class PaymentRecapTest extends TestCase
         ]);
 
         foreach ([['DAFTAR_ULANG', 'Daftar Ulang', 2500000], ['SPI_AWAL', 'SPI', 5000000]] as $order => [$code, $name, $amount]) {
+            // Kolom rekap memakai nama komponen di Master Data, bukan nama baris invoice.
+            $component = FeeComponent::firstOrCreate(['code' => $code], ['name' => $name, 'type' => 're_registration', 'amount' => $amount, 'sort_order' => $order + 1]);
+
             InvoiceItem::create([
                 'invoice_id' => $invoice->id,
-                'fee_component_id' => FeeComponent::where('code', $code)->value('id'),
-                'name' => $name,
+                'fee_component_id' => $component->id,
+                'name' => $name . ' (Gelombang 1)',
                 'amount' => $amount,
                 'quantity' => 1,
                 'subtotal' => $amount,

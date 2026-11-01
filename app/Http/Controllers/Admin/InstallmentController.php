@@ -4,10 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Applicant;
-use App\Models\FeeInstallmentTemplate;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
-use App\Models\RegistrationPath;
 use App\Services\InvoiceStatus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -20,33 +18,35 @@ use Illuminate\Support\Facades\DB;
 class InstallmentController extends Controller
 {
     /**
-     * Baris awal form per item invoice: jadwal tersimpan, template jalur, atau satu kali bayar.
+     * Pilihan skema cicilan (persen per angsuran) yang mengisi form; nominal tetap bisa diubah admin.
+     * Default tanpa skema: dibayar sekaligus.
+     */
+    public const SCHEMES = [
+        '50:50' => [50, 50],
+        '50:25:25' => [50, 25, 25],
+        '25:25:25:25' => [25, 25, 25, 25],
+    ];
+
+    /**
+     * Baris awal form per item invoice: jadwal tersimpan, atau satu kali bayar penuh.
      *
      * @return Collection<int, array{item: InvoiceItem, installable: bool, rows: array}>
      */
-    public static function formRows(Applicant $applicant, Invoice $invoice): Collection
+    public static function formRows(Invoice $invoice): Collection
     {
-        $pathId = RegistrationPath::forCode($applicant->registration_path)?->id;
-        $templates = FeeInstallmentTemplate::where('registration_path_id', $pathId)->orderBy('sequence')->get();
         $dueDate = ($invoice->due_date ?? today())->toDateString();
 
-        return $invoice->items->sortBy('sort_order')->values()->map(function (InvoiceItem $item) use ($invoice, $templates, $dueDate) {
-            $saved = $invoice->installments->where('fee_component_id', $item->fee_component_id);
-            $template = $templates->where('fee_component_id', $item->fee_component_id);
+        return $invoice->items->sortBy('sort_order')->values()->map(function (InvoiceItem $item) use ($invoice, $dueDate) {
+            $saved = $invoice->hasInstallments() ? $invoice->installments->where('fee_component_id', $item->fee_component_id) : collect();
 
-            $rows = match (true) {
-                $invoice->hasInstallments() && $saved->isNotEmpty() => $saved,
-                $template->isNotEmpty() => $template,
-                default => collect([(object) ['amount' => $item->subtotal, 'due_date' => null]]),
-            };
+            $rows = $saved->isNotEmpty()
+                ? $saved->map(fn ($row) => ['amount' => (float) $row->amount, 'due_date' => $row->due_date->toDateString()])
+                : collect([['amount' => (float) $item->subtotal, 'due_date' => $dueDate]]);
 
             return [
                 'item' => $item,
                 'installable' => (bool) $item->feeComponent?->is_installable,
-                'rows' => $rows->map(fn ($row) => [
-                    'amount' => (float) $row->amount,
-                    'due_date' => $row->due_date?->toDateString() ?? $dueDate,
-                ])->values()->all(),
+                'rows' => $rows->values()->all(),
             ];
         });
     }

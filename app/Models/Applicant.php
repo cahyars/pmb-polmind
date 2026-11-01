@@ -48,6 +48,7 @@ class Applicant extends Authenticatable
 
         'source_information',
         'registration_path',
+        'achievement_level_id',
         'registered_via',
         'registered_by_name',
 
@@ -165,6 +166,11 @@ class Applicant extends Authenticatable
     public function getReligionNameAttribute(): ?string
     {
         return RefOption::nameOf(RefOption::AGAMA, $this->religion_id);
+    }
+
+    public function achievementLevel()
+    {
+        return $this->belongsTo(AchievementLevel::class);
     }
 
     public function getRegistrationPathLabelAttribute(): string

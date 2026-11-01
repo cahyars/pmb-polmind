@@ -168,7 +168,7 @@ class ApplicantController extends Controller
             ->firstOrFail();
 
         $installmentRows = $applicant->reRegistrationInvoice && $request->user('web')?->isAdmin()
-            ? InstallmentController::formRows($applicant, $applicant->reRegistrationInvoice)
+            ? InstallmentController::formRows($applicant->reRegistrationInvoice)
             : collect();
 
         $loginPin = LoginInfoMessage::activePin($applicant);
