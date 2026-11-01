@@ -3,7 +3,8 @@ import Chart from 'chart.js/auto';
 /**
  * Grafik halaman Laporan. Setiap <canvas data-chart='{"type":..., "labels":[...], "datasets":[...]}'>
  * dirender otomatis. Warna dataset memakai slot palet di bawah (urutan tetap, tidak diputar),
- * atau warna status untuk dataset yang menyebut "status".
+ * atau warna status untuk dataset yang menyebut "status". Tipe "doughnut" memakai warna per
+ * irisan dari dataset.colors; opsi "trend" menambah garis tren linear di atas dataset pertama.
  */
 const SERIES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100'];
 
@@ -61,10 +62,96 @@ function datasetStyle(config, dataset, index) {
     };
 }
 
+function tooltipStyle(label) {
+    return {
+        backgroundColor: '#0b0b0b',
+        padding: 10,
+        cornerRadius: 6,
+        boxPadding: 4,
+        callbacks: { label },
+    };
+}
+
+function renderDoughnut(canvas, config) {
+    const dataset = config.datasets[0];
+    const total = dataset.data.reduce((sum, value) => sum + value, 0);
+
+    new Chart(canvas, {
+        type: 'doughnut',
+        data: {
+            labels: config.labels,
+            datasets: [{
+                label: dataset.label,
+                data: dataset.data,
+                backgroundColor: dataset.colors ?? SERIES,
+                hoverBackgroundColor: dataset.colors ?? SERIES,
+                // Celah 2px warna permukaan di antara irisan.
+                borderColor: INK.surface,
+                borderWidth: 2,
+                hoverOffset: 4,
+            }],
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: { display: false },
+                tooltip: tooltipStyle((item) => {
+                    const percent = total > 0 ? Math.round(item.parsed / total * 100) : 0;
+
+                    return `${item.label}: ${numberFormat.format(item.parsed)} ${config.unit ?? ''} (${percent}%)`;
+                }),
+            },
+        },
+    });
+}
+
+/** Garis tren regresi linear (kuadrat terkecil) dari deret nilai. */
+function linearTrend(values) {
+    const n = values.length;
+    const meanX = (n - 1) / 2;
+    const meanY = values.reduce((sum, value) => sum + value, 0) / n;
+    let numerator = 0;
+    let denominator = 0;
+
+    values.forEach((value, x) => {
+        numerator += (x - meanX) * (value - meanY);
+        denominator += (x - meanX) ** 2;
+    });
+
+    const slope = denominator ? numerator / denominator : 0;
+
+    return values.map((_, x) => Math.round((meanY + slope * (x - meanX)) * 10) / 10);
+}
+
+function trendDataset(values) {
+    return {
+        type: 'line',
+        label: 'Tren',
+        data: linearTrend(values),
+        borderColor: INK.secondary,
+        backgroundColor: INK.secondary,
+        borderWidth: 2,
+        borderDash: [6, 4],
+        pointRadius: 0,
+        pointHoverRadius: 0,
+        pointStyle: 'line',
+        tension: 0,
+        order: 0,
+    };
+}
+
 function render(canvas) {
     const config = JSON.parse(canvas.dataset.chart);
+
+    if (config.type === 'doughnut') {
+        return renderDoughnut(canvas, config);
+    }
+
     const horizontal = Boolean(config.horizontal);
-    const multiSeries = config.datasets.length > 1;
+    const withTrend = Boolean(config.trend) && config.datasets[0].data.length > 1;
+    const multiSeries = config.datasets.length > 1 || withTrend;
 
     const valueAxis = {
         beginAtZero: true,
@@ -85,11 +172,16 @@ function render(canvas) {
         type: config.type === 'line' ? 'line' : 'bar',
         data: {
             labels: config.labels,
-            datasets: config.datasets.map((dataset, index) => ({
-                label: dataset.label,
-                data: dataset.data,
-                ...datasetStyle(config, dataset, index),
-            })),
+            datasets: [
+                ...config.datasets.map((dataset, index) => ({
+                    label: dataset.label,
+                    data: dataset.data,
+                    order: 1,
+                    ...(withTrend ? { pointStyle: 'rectRounded' } : {}),
+                    ...datasetStyle(config, dataset, index),
+                })),
+                ...(withTrend ? [trendDataset(config.datasets[0].data)] : []),
+            ],
         },
         options: {
             indexAxis: horizontal ? 'y' : 'x',
@@ -104,17 +196,21 @@ function render(canvas) {
                     display: multiSeries,
                     position: 'top',
                     align: 'start',
-                    labels: { boxWidth: 10, boxHeight: 10, useBorderRadius: true, borderRadius: 2, color: INK.secondary, padding: 16 },
-                },
-                tooltip: {
-                    backgroundColor: '#0b0b0b',
-                    padding: 10,
-                    cornerRadius: 6,
-                    boxPadding: 4,
-                    callbacks: {
-                        label: (item) => `${item.dataset.label}: ${numberFormat.format(item.parsed[horizontal ? 'x' : 'y'])} ${config.unit ?? ''}`.trim(),
+                    labels: {
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        useBorderRadius: true,
+                        borderRadius: 2,
+                        color: INK.secondary,
+                        padding: 16,
+                        // Garis tren tampil sebagai garis di legenda dan selalu di urutan terakhir.
+                        usePointStyle: withTrend,
+                        sort: (a, b) => a.datasetIndex - b.datasetIndex,
                     },
                 },
+                tooltip: tooltipStyle(
+                    (item) => `${item.dataset.label}: ${numberFormat.format(item.parsed[horizontal ? 'x' : 'y'])} ${config.unit ?? ''}`.trim(),
+                ),
             },
         },
     });

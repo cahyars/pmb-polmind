@@ -45,19 +45,52 @@
                     Salin Ringkasan
                 </button>
             </div>
-            <ul class="mt-5 space-y-3">
-                @foreach($report['funnel'] as $item)
-                    <li>
-                        <div class="flex items-baseline justify-between gap-3 text-sm">
-                            <span class="font-medium text-slate-700">{{ $item['label'] }}</span>
-                            <span class="text-slate-500"><span class="font-semibold text-slate-900">{{ $number($item['value']) }}</span> · {{ $item['percent'] }}%</span>
-                        </div>
-                        <div class="mt-1.5 h-2 overflow-hidden rounded-full bg-slate-100">
-                            <div class="h-full rounded-full bg-[#2a78d6]" style="width: {{ $item['percent'] }}%"></div>
-                        </div>
-                    </li>
-                @endforeach
-            </ul>
+            @php
+                // Funnel horizontal: tiap tahap trapesium dari tingginya sendiri ke tinggi tahap berikutnya.
+                $stages = $report['funnel']->values();
+                $stageCount = $stages->count();
+                $funnelMax = max($stages->max('value'), 1);
+                $funnelColors = ['#104281', '#1c5cab', '#2a78d6', '#5598e7', '#6da7ec', '#86b6ef'];
+                [$svgWidth, $svgHeight, $gap] = [600, 220, 3];
+                $columnWidth = $svgWidth / max($stageCount, 1);
+                $stageHeight = fn ($value) => max($value / $funnelMax * $svgHeight, $svgHeight * 0.02);
+            @endphp
+            <div class="mt-5 overflow-x-auto">
+                <div class="min-w-[560px]">
+                    <svg viewBox="0 0 {{ $svgWidth }} {{ $svgHeight }}" preserveAspectRatio="none" class="block h-56 w-full" role="img" aria-label="Funnel tahapan pendaftar">
+                        @foreach($stages as $i => $item)
+                            @php
+                                $left = $stageHeight($item['value']);
+                                $right = $stageHeight($stages[$i + 1]['value'] ?? $item['value']);
+                                $x0 = $i * $columnWidth + ($i > 0 ? $gap / 2 : 0);
+                                $x1 = ($i + 1) * $columnWidth - ($i < $stageCount - 1 ? $gap / 2 : 0);
+                                $mid = $svgHeight / 2;
+                            @endphp
+                            <polygon points="{{ $x0 }},{{ $mid - $left / 2 }} {{ $x1 }},{{ $mid - $right / 2 }} {{ $x1 }},{{ $mid + $right / 2 }} {{ $x0 }},{{ $mid + $left / 2 }}"
+                                     fill="{{ $funnelColors[$i % count($funnelColors)] }}" class="transition-opacity hover:opacity-80">
+                                <title>{{ $item['label'] }}: {{ $number($item['value']) }} camaba ({{ $item['percent'] }}%)</title>
+                            </polygon>
+                        @endforeach
+                    </svg>
+                    <ol class="mt-4 grid gap-3" style="grid-template-columns: repeat({{ max($stageCount, 1) }}, minmax(0, 1fr))">
+                        @foreach($stages as $i => $item)
+                            @php
+                                $previous = $i > 0 ? $stages[$i - 1]['value'] : null;
+                            @endphp
+                            <li class="min-w-0">
+                                <p class="flex min-h-[2rem] items-start gap-1.5 text-xs font-medium leading-tight text-slate-600">
+                                    <span class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm" style="background: {{ $funnelColors[$i % count($funnelColors)] }}"></span>{{ $item['label'] }}
+                                </p>
+                                <p class="mt-1.5 text-lg font-semibold text-slate-900">{{ $number($item['value']) }}</p>
+                                <p class="text-xs text-slate-500">{{ $item['percent'] }}% dari pendaftar</p>
+                                @if($previous !== null)
+                                    <p class="mt-0.5 text-xs text-slate-400">{{ $previous > 0 ? round($item['value'] / $previous * 100) : 0 }}% dari tahap sebelumnya</p>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ol>
+                </div>
+            </div>
         </section>
 
         {{-- Gender --}}
@@ -65,19 +98,30 @@
             <h2 class="text-base font-semibold text-slate-900">Jenis Kelamin</h2>
             <p class="mt-1 text-sm text-slate-600">Dari biodata yang sudah diisi.</p>
             @php
-                $genderColors = ['Laki-laki' => 'bg-[#2a78d6]', 'Perempuan' => 'bg-[#eb6834]', 'Belum diisi' => 'bg-slate-300'];
+                $genderColors = ['Laki-laki' => '#2a78d6', 'Perempuan' => '#eb6834', 'Belum diisi' => '#c3c2b7'];
             @endphp
-            <div class="mt-5 flex h-3 gap-0.5 overflow-hidden rounded-full bg-slate-100" role="img" aria-label="Komposisi jenis kelamin pendaftar">
-                @foreach($report['gender'] as $label => $count)
-                    @if($count > 0)
-                        <div class="{{ $genderColors[$label] }}" style="width: {{ $percent($count) }}%" title="{{ $label }}: {{ $count }}"></div>
-                    @endif
-                @endforeach
+            <div class="relative mt-5">
+                @include('admin.reports.partials.chart', [
+                    'label' => 'Komposisi jenis kelamin pendaftar',
+                    'height' => 'h-56',
+                    'config' => [
+                        'type' => 'doughnut',
+                        'labels' => array_keys($report['gender']),
+                        'datasets' => [['label' => 'Pendaftar', 'data' => array_values($report['gender']), 'colors' => array_values($genderColors)]],
+                        'unit' => 'pendaftar',
+                    ],
+                ])
+                @if($total > 0)
+                    <div class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-2xl font-semibold text-slate-900">{{ $number($total) }}</span>
+                        <span class="text-xs text-slate-500">pendaftar</span>
+                    </div>
+                @endif
             </div>
             <dl class="mt-5 space-y-3">
                 @foreach($report['gender'] as $label => $count)
                     <div class="flex items-center justify-between text-sm">
-                        <dt class="flex items-center gap-2 text-slate-700"><span class="h-2.5 w-2.5 rounded-sm {{ $genderColors[$label] }}"></span>{{ $label }}</dt>
+                        <dt class="flex items-center gap-2 text-slate-700"><span class="h-2.5 w-2.5 rounded-sm" style="background: {{ $genderColors[$label] }}"></span>{{ $label }}</dt>
                         <dd class="text-slate-500"><span class="font-semibold text-slate-900">{{ $number($count) }}</span> · {{ $percent($count) }}%</dd>
                     </div>
                 @endforeach
@@ -137,7 +181,7 @@
         {{-- Per bulan --}}
         <section class="{{ $card }}">
             <h2 class="text-base font-semibold text-slate-900">Pendaftar per Bulan</h2>
-            <p class="mt-1 text-sm text-slate-600">Berdasarkan tanggal pembuatan akun.</p>
+            <p class="mt-1 text-sm text-slate-600">Berdasarkan tanggal pembuatan akun. Garis putus-putus menunjukkan tren linear.</p>
             <div class="mt-5">
                 @include('admin.reports.partials.chart', [
                     'label' => 'Jumlah pendaftar per bulan',
@@ -145,6 +189,7 @@
                         'type' => 'bar',
                         'labels' => $report['monthly']->keys(),
                         'datasets' => [['label' => 'Pendaftar', 'data' => $report['monthly']->values()]],
+                        'trend' => true,
                         'unit' => 'pendaftar',
                     ],
                 ])
