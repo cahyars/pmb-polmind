@@ -45,51 +45,8 @@
                     Salin Ringkasan
                 </button>
             </div>
-            @php
-                // Funnel horizontal: tiap tahap trapesium dari tingginya sendiri ke tinggi tahap berikutnya.
-                $stages = $report['funnel']->values();
-                $stageCount = $stages->count();
-                $funnelMax = max($stages->max('value'), 1);
-                $funnelColors = ['#104281', '#1c5cab', '#2a78d6', '#5598e7', '#6da7ec', '#86b6ef'];
-                [$svgWidth, $svgHeight, $gap] = [600, 220, 3];
-                $columnWidth = $svgWidth / max($stageCount, 1);
-                $stageHeight = fn ($value) => max($value / $funnelMax * $svgHeight, $svgHeight * 0.02);
-            @endphp
-            <div class="mt-5 overflow-x-auto">
-                <div class="min-w-[560px]">
-                    <svg viewBox="0 0 {{ $svgWidth }} {{ $svgHeight }}" preserveAspectRatio="none" class="block h-56 w-full" role="img" aria-label="Funnel tahapan pendaftar">
-                        @foreach($stages as $i => $item)
-                            @php
-                                $left = $stageHeight($item['value']);
-                                $right = $stageHeight($stages[$i + 1]['value'] ?? $item['value']);
-                                $x0 = $i * $columnWidth + ($i > 0 ? $gap / 2 : 0);
-                                $x1 = ($i + 1) * $columnWidth - ($i < $stageCount - 1 ? $gap / 2 : 0);
-                                $mid = $svgHeight / 2;
-                            @endphp
-                            <polygon points="{{ $x0 }},{{ $mid - $left / 2 }} {{ $x1 }},{{ $mid - $right / 2 }} {{ $x1 }},{{ $mid + $right / 2 }} {{ $x0 }},{{ $mid + $left / 2 }}"
-                                     fill="{{ $funnelColors[$i % count($funnelColors)] }}" class="transition-opacity hover:opacity-80">
-                                <title>{{ $item['label'] }}: {{ $number($item['value']) }} camaba ({{ $item['percent'] }}%)</title>
-                            </polygon>
-                        @endforeach
-                    </svg>
-                    <ol class="mt-4 grid gap-3" style="grid-template-columns: repeat({{ max($stageCount, 1) }}, minmax(0, 1fr))">
-                        @foreach($stages as $i => $item)
-                            @php
-                                $previous = $i > 0 ? $stages[$i - 1]['value'] : null;
-                            @endphp
-                            <li class="min-w-0">
-                                <p class="flex min-h-[2rem] items-start gap-1.5 text-xs font-medium leading-tight text-slate-600">
-                                    <span class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-sm" style="background: {{ $funnelColors[$i % count($funnelColors)] }}"></span>{{ $item['label'] }}
-                                </p>
-                                <p class="mt-1.5 text-lg font-semibold text-slate-900">{{ $number($item['value']) }}</p>
-                                <p class="text-xs text-slate-500">{{ $item['percent'] }}% dari pendaftar</p>
-                                @if($previous !== null)
-                                    <p class="mt-0.5 text-xs text-slate-400">{{ $previous > 0 ? round($item['value'] / $previous * 100) : 0 }}% dari tahap sebelumnya</p>
-                                @endif
-                            </li>
-                        @endforeach
-                    </ol>
-                </div>
+            <div class="mt-5">
+                @include('admin.partials.funnel', ['stages' => $report['funnel']])
             </div>
         </section>
 

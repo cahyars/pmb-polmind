@@ -56,16 +56,16 @@ class DashboardController extends Controller
                 'value' => $totalApplicants,
             ],
             [
+                'label' => 'Formulir Lunas',
+                'value' => Applicant::where('payment_status', 'valid')->count(),
+            ],
+            [
                 'label' => 'Biodata Lengkap',
                 'value' => $biodataComplete,
             ],
             [
                 'label' => 'Berkas Valid',
                 'value' => Applicant::where('document_status', 'valid')->count(),
-            ],
-            [
-                'label' => 'Pembayaran Valid',
-                'value' => Applicant::where('payment_status', 'valid')->count(),
             ],
             [
                 'label' => 'Diterima',

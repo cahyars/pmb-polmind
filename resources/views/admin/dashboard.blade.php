@@ -197,7 +197,7 @@
     <div class="grid gap-8 xl:grid-cols-3">
 
         {{-- Main Column --}}
-        <div class="space-y-8 xl:col-span-2">
+        <div class="min-w-0 space-y-8 xl:col-span-2">
 
             {{-- Funnel --}}
             <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
@@ -210,29 +210,8 @@
                     </p>
                 </div>
 
-                <div class="mt-6 space-y-5">
-                    @foreach($funnel as $item)
-                        <div>
-                            <div class="flex items-center justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-bold text-slate-900">
-                                        {{ $item['label'] }}
-                                    </p>
-                                    <p class="mt-1 text-xs text-slate-500">
-                                        {{ $item['value'] }} camaba
-                                    </p>
-                                </div>
-
-                                <p class="text-sm font-bold text-polmind-blue">
-                                    {{ $item['percent'] }}%
-                                </p>
-                            </div>
-
-                            <div class="mt-3 h-3 overflow-hidden rounded-full bg-slate-100">
-                                <div class="h-full rounded-full bg-polmind-blue" style="width: {{ $item['percent'] }}%"></div>
-                            </div>
-                        </div>
-                    @endforeach
+                <div class="mt-6">
+                    @include('admin.partials.funnel', ['stages' => $funnel])
                 </div>
             </div>
 
@@ -499,26 +478,44 @@
                 <p class="mt-2 text-xs leading-5 text-slate-500">"Kirim ke WhatsApp" membuka WhatsApp untuk memilih grup tujuan.</p>
             </div>
 
-            {{-- Admin Notes --}}
-            <div class="rounded-xl border border-yellow-200 bg-yellow-50 p-6 shadow-sm">
-                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-yellow-100 text-yellow-800">
-                    <x-icon name="bookmark" class="h-6 w-6" />
-                </div>
-
-                <h3 class="mt-5 text-lg font-bold text-yellow-800">
-                    Catatan Pengembangan
-                </h3>
-
-                <ul class="mt-3 space-y-2 text-sm leading-6 text-yellow-800">
-                    <li>• Dashboard sudah menggunakan data real database.</li>
-                    <li>• Monitoring jalur pendaftaran sudah aktif.</li>
-                    <li>• Integrasi SIAKAD sudah masuk tahap simulasi workflow.</li>
-                    <li>• Tahap berikutnya: laporan detail dan export data.</li>
-                </ul>
-            </div>
-
         </aside>
     </div>
+
+    {{-- Catatan Pengembangan: blok penutup selebar halaman --}}
+    <footer class="overflow-hidden rounded-xl bg-polmind-blue-dark text-white shadow-sm">
+        <div class="grid gap-6 p-6 lg:grid-cols-3 lg:p-8">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 text-polmind-yellow">
+                        <x-icon name="bookmark" class="h-5 w-5" />
+                    </span>
+                    <h3 class="text-base font-semibold">Catatan Pengembangan</h3>
+                </div>
+                <p class="mt-3 text-sm leading-6 text-blue-100">
+                    Status fitur admin PMB Politeknik Mitra Industri.
+                </p>
+            </div>
+
+            <ul class="grid gap-3 text-sm leading-6 text-blue-100 sm:grid-cols-2 lg:col-span-2">
+                @foreach([
+                    'Dashboard sudah menggunakan data real database.',
+                    'Monitoring jalur pendaftaran sudah aktif.',
+                    'Integrasi SIAKAD sudah masuk tahap simulasi workflow.',
+                    'Laporan detail dan export CSV tersedia; PDF & XLSX menyusul.',
+                ] as $note)
+                    <li class="flex gap-2.5">
+                        <x-icon name="check" class="mt-0.5 h-5 w-5 shrink-0 text-polmind-yellow" />
+                        <span>{{ $note }}</span>
+                    </li>
+                @endforeach
+            </ul>
+        </div>
+
+        <div class="flex flex-col gap-1 border-t border-white/10 px-6 py-4 text-xs text-blue-200 sm:flex-row sm:items-center sm:justify-between lg:px-8">
+            <span>&copy; {{ now()->year }} PMB Politeknik Mitra Industri &middot; Admin Panel</span>
+            <span>Tahun PMB {{ $selectedPmbYear?->name ?? '-' }}</span>
+        </div>
+    </footer>
 
 </div>
 @endsection
