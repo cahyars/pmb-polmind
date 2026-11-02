@@ -27,27 +27,15 @@
         @php
             $adminUser = auth('web')->user();
 
-            // Badge pekerjaan yang perlu ditindaklanjuti (mengikuti Tahun Akademik terpilih).
-            $badges = [
-                'applicants' => \App\Models\Applicant::query()
-                    ->when($adminUser?->applicants_seen_at, fn ($query, $seenAt) => $query->where('created_at', '>', $seenAt))
-                    ->count(),
-                'documents' => \App\Models\ApplicantDocument::where('status', 'menunggu_verifikasi')->count(),
-                'payments' => \App\Models\Payment::where('status', 'waiting_verification')->count(),
-            ];
-
-            $notifications = collect([
-                ['count' => $badges['applicants'], 'label' => 'camaba baru sejak terakhir dibuka', 'url' => '/admin/applicants'],
-                ['count' => $badges['documents'], 'label' => 'berkas menunggu verifikasi', 'url' => '/admin/documents'],
-                ['count' => $badges['payments'], 'label' => 'pembayaran menunggu verifikasi', 'url' => '/admin/payments'],
-            ])->where('count', '>', 0);
+            // Badge pekerjaan yang perlu ditindaklanjuti (mengikuti Tahun Akademik terpilih), diperbarui polling lonceng.
+            $badges = \App\Services\AdminNotifications::counts($adminUser);
 
             $menuGroups = [
                 'Menu' => [
                     ['label' => 'Dashboard', 'url' => '/admin/dashboard', 'icon' => 'dashboard', 'active' => request()->is('admin/dashboard')],
-                    ['label' => 'Data Camaba', 'url' => '/admin/applicants', 'icon' => 'users', 'badge' => $badges['applicants'], 'badgeTitle' => 'camaba baru sejak terakhir dibuka', 'active' => request()->is('admin/applicants*')],
-                    ['label' => 'Verifikasi Berkas', 'url' => '/admin/documents', 'icon' => 'document', 'badge' => $badges['documents'], 'badgeTitle' => 'berkas menunggu verifikasi', 'active' => request()->is('admin/documents*')],
-                    ['label' => 'Verifikasi Pembayaran', 'url' => '/admin/payments', 'icon' => 'card', 'badge' => $badges['payments'], 'badgeTitle' => 'pembayaran menunggu verifikasi', 'active' => request()->is('admin/payments*')],
+                    ['label' => 'Data Camaba', 'url' => '/admin/applicants', 'icon' => 'users', 'badge' => 'applicants', 'active' => request()->is('admin/applicants*')],
+                    ['label' => 'Verifikasi Berkas', 'url' => '/admin/documents', 'icon' => 'document', 'badge' => 'documents', 'active' => request()->is('admin/documents*')],
+                    ['label' => 'Verifikasi Pembayaran', 'url' => '/admin/payments', 'icon' => 'card', 'badge' => 'payments', 'active' => request()->is('admin/payments*')],
                     ['label' => 'Seleksi', 'url' => '/admin/selections', 'icon' => 'check', 'active' => request()->is('admin/selections*')],
                     [
                         'label' => 'Kelulusan',
@@ -218,21 +206,26 @@
                                         ? 'bg-polmind-blue font-semibold text-white shadow-sm shadow-blue-900/20'
                                         : 'font-medium text-slate-500 hover:bg-slate-50 hover:text-slate-900'
                                    }}">
+                                    @php($badgeKey = $menu['badge'] ?? null)
                                     <span class="relative shrink-0">
                                         <x-icon :name="$menu['icon']" class="h-5 w-5" stroke-width="1.5" />
-                                        @if(($menu['badge'] ?? 0) > 0)
+                                        @if($badgeKey)
                                             {{-- Penanda badge saat sidebar diciutkan --}}
-                                            <span class="sidebar-dot absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
+                                            <span x-show="$store.adminBadges.counts.{{ $badgeKey }} > 0" @if(! $badges[$badgeKey]) style="display: none" @endif
+                                                  class="sidebar-dot absolute -right-1 -top-1 hidden h-2.5 w-2.5 rounded-full bg-red-500 ring-2 ring-white"></span>
                                         @endif
                                     </span>
 
                                     <span class="sidebar-label line-clamp-1 flex-1">{{ $menu['label'] }}</span>
 
-                                    @if(($menu['badge'] ?? 0) > 0)
-                                        <span class="sidebar-label ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold
+                                    @if($badgeKey)
+                                        <span x-show="$store.adminBadges.counts.{{ $badgeKey }} > 0" @if(! $badges[$badgeKey]) style="display: none" @endif
+                                              x-text="$store.adminBadges.label('{{ $badgeKey }}')"
+                                              class="sidebar-label ml-auto inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold
                                               {{ $menu['active'] ? 'bg-white text-polmind-blue' : 'bg-polmind-blue text-white' }}"
-                                              title="{{ $menu['badge'] }} {{ $menu['badgeTitle'] }}">
-                                            {{ $menu['badge'] > 99 ? '99+' : $menu['badge'] }}
+                                              title="{{ $badges[$badgeKey] }} {{ \App\Services\AdminNotifications::LABELS[$badgeKey]['label'] }}"
+                                              :title="$store.adminBadges.counts.{{ $badgeKey }} + @js(' ' . \App\Services\AdminNotifications::LABELS[$badgeKey]['label'])">
+                                            {{ $badges[$badgeKey] > 99 ? '99+' : $badges[$badgeKey] }}
                                         </span>
                                     @endif
                                 </a>
@@ -351,9 +344,8 @@
                                     class="relative flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900">
                                 <span class="sr-only">Notifikasi</span>
                                 <x-icon name="bell" class="h-5 w-5" stroke-width="1.5" />
-                                @if($notifications->isNotEmpty())
-                                    <span class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                                @endif
+                                <span x-show="$store.adminBadges.items().length > 0" @if(! array_sum($badges)) style="display: none" @endif
+                                      class="absolute right-2 top-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
                             </button>
 
                             <div x-show="open"
@@ -361,15 +353,20 @@
                                  x-cloak
                                  class="absolute right-0 mt-2 w-72 rounded-xl border border-slate-200 bg-white p-2 shadow-lg shadow-slate-200/60">
                                 <p class="px-3 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">Perlu ditindaklanjuti</p>
-                                @forelse($notifications as $notification)
-                                    <a href="{{ url($notification['url']) }}"
+                                <template x-for="item in $store.adminBadges.items()" :key="item.key">
+                                    <a :href="item.url"
                                        class="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm text-slate-600 transition hover:bg-slate-50">
-                                        <span class="inline-flex min-w-7 justify-center rounded-full bg-polmind-blue px-2 py-0.5 text-xs font-semibold text-white">{{ $notification['count'] }}</span>
-                                        {{ $notification['label'] }}
+                                        <span class="inline-flex min-w-7 justify-center rounded-full bg-polmind-blue px-2 py-0.5 text-xs font-semibold text-white" x-text="item.count"></span>
+                                        <span x-text="item.label"></span>
                                     </a>
-                                @empty
-                                    <p class="px-3 py-4 text-sm text-slate-500">Tidak ada pekerjaan tertunda.</p>
-                                @endforelse
+                                </template>
+                                <p x-show="$store.adminBadges.items().length === 0" class="px-3 py-4 text-sm text-slate-500">Tidak ada pekerjaan tertunda.</p>
+                                <button type="button" @click="$store.adminBadges.toggleSound()"
+                                        class="mt-1 flex w-full items-center justify-between rounded-lg border-t border-slate-100 px-3 py-2.5 text-xs font-semibold text-slate-500 hover:bg-slate-50">
+                                    <span>Bunyi notifikasi</span>
+                                    <span x-text="$store.adminBadges.sound ? 'Aktif' : 'Mati'"
+                                          :class="$store.adminBadges.sound ? 'text-green-700' : 'text-slate-400'"></span>
+                                </button>
                             </div>
                         </div>
 
@@ -394,6 +391,7 @@
     </div>
 
     @include('partials.file-preview-modal')
+    @include('partials.admin-notifications', ['badges' => $badges])
 
     @stack('scripts')
 </body>

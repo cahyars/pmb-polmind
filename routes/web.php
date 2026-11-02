@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\NimController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\PrintController as AdminPrintController;
 use App\Http\Controllers\Admin\SiakadApiController;
 use App\Http\Controllers\Admin\WalkInApplicantController;
@@ -136,6 +137,7 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::post('/pmb-year', [AdminAuthController::class, 'selectPmbYear'])->name('pmb-year.select');
 
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/notifications', [NotificationController::class, 'index'])->middleware('throttle:60,1')->name('notifications.index');
 
     Route::get('/applicants', [ApplicantController::class, 'index'])->name('applicants.index');
     // Pendaftar yang datang langsung ke kampus (sebelum route {registration_number}).

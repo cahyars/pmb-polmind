@@ -222,7 +222,43 @@ class PaymentFlowTest extends TestCase
         $this->actingAs($admin, 'web')->get('/admin/applicants')->assertOk();
         $this->travel(1)->seconds();
 
-        $this->assertDoesNotMatchRegularExpression('/camaba baru sejak/', $this->actingAs($admin, 'web')->get('/admin/dashboard')->getContent());
+        $this->assertMatchesRegularExpression('/title="0 camaba baru/', $this->actingAs($admin, 'web')->get('/admin/dashboard')->getContent());
+    }
+
+    public function test_admin_bell_polling_returns_counts_and_new_events(): void
+    {
+        $admin = User::factory()->create();
+
+        $first = $this->register('satu@example.com');
+
+        $this->actingAs($admin, 'web')
+            ->getJson(route('admin.notifications.index', ['applicant_after' => 0, 'payment_after' => 0]))
+            ->assertOk()
+            ->assertJsonPath('counts.applicants', 1)
+            ->assertJsonPath('cursor.applicant', $first->id)
+            ->assertJsonPath('events.0.title', 'Pendaftar baru');
+
+        $second = $this->register('dua@example.com');
+
+        Payment::create([
+            'applicant_id' => $first->id,
+            'invoice_id' => $first->registrationInvoice()->value('id'),
+            'payment_number' => 'PAY/TEST/1',
+            'amount' => 300000,
+            'status' => 'waiting_verification',
+        ]);
+
+        // Hanya data setelah penanda terakhir yang muncul sebagai pop-up.
+        $this->actingAs($admin, 'web')
+            ->getJson(route('admin.notifications.index', ['applicant_after' => $first->id, 'payment_after' => 0]))
+            ->assertJsonPath('counts.applicants', 2)
+            ->assertJsonPath('counts.payments', 1)
+            ->assertJsonCount(2, 'events')
+            ->assertJsonPath('events.0.text', $second->full_name . ' (' . $second->registration_number . ')')
+            ->assertJsonPath('events.1.title', 'Bukti bayar baru');
+
+        auth('web')->logout();
+        $this->getJson(route('admin.notifications.index', ['applicant_after' => 0, 'payment_after' => 0]))->assertUnauthorized();
     }
 
     public function test_command_finalizes_legacy_numbers(): void
