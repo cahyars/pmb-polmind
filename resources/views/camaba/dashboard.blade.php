@@ -293,6 +293,20 @@
 
         <aside class="space-y-6">
 
+            {{-- Grup WhatsApp camaba, terbuka setelah bukti bayar formulir diunggah --}}
+            @if(($registrationPaid || $journey->paymentWaiting()) && config('pmb.camaba_whatsapp_group'))
+                <div class="rounded-3xl border border-green-300 bg-green-50 p-6 shadow-sm">
+                    <h2 class="flex items-center gap-2 text-lg font-black text-green-800"><x-icon name="chat" class="h-5 w-5" /> Grup WhatsApp Camaba</h2>
+                    <p class="mt-2 text-sm leading-6 text-green-900">
+                        Bergabunglah ke grup WhatsApp calon mahasiswa baru untuk mendapatkan informasi jadwal seleksi, pengumuman, dan daftar ulang.
+                    </p>
+                    <a href="{{ config('pmb.camaba_whatsapp_group') }}" target="_blank" rel="noopener"
+                       class="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 text-sm font-bold text-white transition hover:bg-green-700">
+                        Gabung Grup WhatsApp <x-icon name="arrow-up-right" class="h-4 w-4" stroke-width="2" />
+                    </a>
+                </div>
+            @endif
+
             {{-- Panduan --}}
             <div class="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm" x-data="{ open: {{ $registrationPaid ? 'null' : '0' }} }">
                 <h2 class="flex items-center gap-2 text-lg font-black text-polmind-blue"><x-icon name="book" class="h-5 w-5" /> Panduan Pendaftaran</h2>

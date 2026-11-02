@@ -22,6 +22,12 @@ return [
     ],
 
     /*
+    | Tautan grup WhatsApp camaba, ditampilkan di dashboard camaba setelah
+    | bukti bayar formulir diunggah.
+    */
+    'camaba_whatsapp_group' => env('PMB_CAMABA_WHATSAPP_GROUP', 'https://chat.whatsapp.com/HUzWjpNESCuDDnz1OUCjy9'),
+
+    /*
     | Alamat kampus untuk footer landing page dan kop dokumen cetak.
     */
     'campus_address' => 'Tower Vasanta Innopark P1-P2, Kawasan Industri MM2100 Jl. Kalimantan Blok CB-2, Gandasari, Kec. Cikarang Barat, Kab. Bekasi, Jawa Barat 17530',

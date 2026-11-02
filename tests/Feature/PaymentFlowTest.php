@@ -70,6 +70,10 @@ class PaymentFlowTest extends TestCase
             ->assertDontSee('Rekening Lama')
             ->assertDontSee('Sisa Tagihan');
 
+        $this->actingAs($applicant, 'applicant')
+            ->get('/camaba/dashboard')
+            ->assertDontSee('Gabung Grup WhatsApp');
+
         $proof = fn () => [
             'sender_name' => 'Ammar',
             'sender_bank' => 'BRI',
@@ -107,7 +111,9 @@ class PaymentFlowTest extends TestCase
 
         $this->actingAs($applicant, 'applicant')
             ->get('/camaba/dashboard')
-            ->assertSee('Pembayaran sedang diverifikasi');
+            ->assertSee('Pembayaran sedang diverifikasi')
+            ->assertSee('Gabung Grup WhatsApp')
+            ->assertSee(config('pmb.camaba_whatsapp_group'), false);
     }
 
     public function test_admin_can_delete_only_rejected_payments(): void
