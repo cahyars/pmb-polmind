@@ -88,6 +88,32 @@ class AnnouncementTest extends TestCase
             ->assertSee('Belum dibaca');
     }
 
+    public function test_admin_filters_recipients_by_read_status(): void
+    {
+        $this->peminat->updateQuietly(['full_name' => 'Peminat Sudah Baca']);
+        $this->diterima->updateQuietly(['full_name' => 'Diterima Belum Baca']);
+
+        $announcement = Announcement::create(['title' => 'Info', 'body' => 'Isi', 'audiences' => ['semua']]);
+        $announcement->applicants()->attach([
+            $this->peminat->id => ['read_at' => now()],
+            $this->diterima->id => ['read_at' => null],
+        ]);
+
+        $admin = User::factory()->create();
+
+        $this->actingAs($admin, 'web')
+            ->get(route('admin.announcements.show', [$announcement, 'baca' => 'sudah']))
+            ->assertOk()
+            ->assertSee('Peminat Sudah Baca')
+            ->assertDontSee('Diterima Belum Baca');
+
+        $this->actingAs($admin, 'web')
+            ->get(route('admin.announcements.show', [$announcement, 'baca' => 'belum']))
+            ->assertOk()
+            ->assertSee('Diterima Belum Baca')
+            ->assertDontSee('Peminat Sudah Baca');
+    }
+
     public function test_store_rejects_target_without_recipients(): void
     {
         $this->actingAs(User::factory()->create(), 'web')

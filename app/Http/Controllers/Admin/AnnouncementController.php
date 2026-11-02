@@ -108,8 +108,9 @@ class AnnouncementController extends Controller
 
         $recipients = $announcement->applicants()
             ->with(['admissionWave', 'studyProgram'])
-            ->when($readFilter === 'sudah', fn ($query) => $query->wherePivotNotNull('read_at'))
-            ->when($readFilter === 'belum', fn ($query) => $query->wherePivotNull('read_at'))
+            // when() diteruskan ke Eloquent Builder, jadi wherePivot*() tidak tersedia di closure.
+            ->when($readFilter === 'sudah', fn ($query) => $query->whereNotNull('announcement_recipients.read_at'))
+            ->when($readFilter === 'belum', fn ($query) => $query->whereNull('announcement_recipients.read_at'))
             ->orderBy('full_name')
             ->paginate(50)
             ->withQueryString();
