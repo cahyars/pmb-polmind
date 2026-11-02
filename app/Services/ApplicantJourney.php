@@ -228,8 +228,8 @@ class ApplicantJourney
                     ? 'Hasil seleksi sudah diumumkan.'
                     : 'Ikuti ujian seleksi sesuai jadwal gelombang, lalu pantau pengumuman.',
                 'state' => ! ($paid && $biodataComplete && $documentsComplete) ? 'locked' : ($selectionDecided ? 'done' : 'waiting'),
-                'url' => route($selectionDecided ? 'camaba.pengumuman' : 'camaba.status-seleksi'),
-                'action' => $selectionDecided ? 'Lihat Pengumuman' : 'Lihat Status Seleksi',
+                'url' => route($selectionDecided ? 'camaba.hasil-seleksi' : 'camaba.status-seleksi'),
+                'action' => $selectionDecided ? 'Lihat Hasil Seleksi' : 'Lihat Status Seleksi',
             ],
             [
                 'key' => 'daftar_ulang',

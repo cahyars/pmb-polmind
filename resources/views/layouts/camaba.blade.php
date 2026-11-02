@@ -32,6 +32,10 @@
         $photoDocument = $authApplicant?->photoDocument;
         $photoUrl = $photoDocument ? route('camaba.documents.file', $photoDocument) : null;
         $isTemporaryNumber = \App\Services\RegistrationNumber::isTemporary($registrationNumber);
+
+        // Pengumuman admin untuk lonceng: 5 terbaru dan jumlah yang belum dibaca.
+        $latestAnnouncements = $authApplicant?->announcements()->latest('announcements.created_at')->take(5)->get() ?? collect();
+        $unreadAnnouncements = $authApplicant?->announcements()->wherePivotNull('read_at')->count() ?? 0;
     @endphp
 
         @php
@@ -70,10 +74,17 @@
                     'active' => request()->is('camaba/status-seleksi*'),
                 ],
                 [
-                    'label' => 'Pengumuman',
+                    'label' => 'Hasil Seleksi',
                     'locked' => ! $registrationPaid,
+                    'url' => '/camaba/hasil-seleksi',
+                    'icon' => 'badge-check',
+                    'active' => request()->is('camaba/hasil-seleksi*'),
+                ],
+                [
+                    'label' => 'Pengumuman',
                     'url' => '/camaba/pengumuman',
                     'icon' => 'megaphone',
+                    'badge' => $unreadAnnouncements,
                     'active' => request()->is('camaba/pengumuman*'),
                 ],
                 [
@@ -180,6 +191,10 @@
 
                             @if($locked)
                                 <x-icon name="lock" class="h-4 w-4 shrink-0" />
+                            @elseif(($menu['badge'] ?? 0) > 0)
+                                <span class="inline-flex min-w-6 items-center justify-center rounded-full bg-red-600 px-1.5 py-0.5 text-[11px] font-bold text-white">
+                                    {{ $menu['badge'] > 99 ? '99+' : $menu['badge'] }}
+                                </span>
                             @endif
                         </a>
                     @endforeach
@@ -231,6 +246,56 @@
                         </div>
                     </div>
 
+                    <div class="flex shrink-0 items-center gap-4">
+                    {{-- Lonceng pengumuman admin --}}
+                    <div class="relative" x-data="{ open: false }" @click.outside="open = false" @keydown.escape="open = false">
+                        <button type="button"
+                                @click="open = ! open"
+                                :aria-expanded="open"
+                                class="relative flex h-11 w-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-polmind-blue shadow-sm transition hover:bg-blue-50">
+                            <span class="sr-only">Pengumuman</span>
+                            <x-icon name="bell" class="h-5 w-5" />
+                            @if($unreadAnnouncements > 0)
+                                <span class="absolute -right-1.5 -top-1.5 inline-flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 py-0.5 text-[10px] font-bold leading-none text-white ring-2 ring-white">
+                                    {{ $unreadAnnouncements > 99 ? '99+' : $unreadAnnouncements }}
+                                </span>
+                            @endif
+                        </button>
+
+                        <div x-show="open"
+                             x-transition.origin.top.right
+                             x-cloak
+                             class="absolute right-0 z-40 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-900/10">
+                            <div class="flex items-center justify-between gap-3 px-3 py-2">
+                                <p class="text-sm font-black text-polmind-blue">Pengumuman</p>
+                                @if($unreadAnnouncements > 0)
+                                    <form action="{{ route('camaba.announcements.read-all') }}" method="POST">
+                                        @csrf
+                                        <button type="submit" class="text-xs font-bold text-slate-500 hover:text-polmind-blue">Tandai semua dibaca</button>
+                                    </form>
+                                @endif
+                            </div>
+
+                            @forelse($latestAnnouncements as $bellAnnouncement)
+                                <a href="{{ route('camaba.announcements.show', $bellAnnouncement->id) }}"
+                                   class="flex gap-3 rounded-xl px-3 py-2.5 transition hover:bg-slate-50">
+                                    <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $bellAnnouncement->pivot->read_at ? 'bg-transparent' : 'bg-red-600' }}"></span>
+                                    <span class="min-w-0">
+                                        <span class="line-clamp-2 text-sm {{ $bellAnnouncement->pivot->read_at ? 'font-semibold text-slate-600' : 'font-black text-slate-900' }}">{{ $bellAnnouncement->title }}</span>
+                                        <span class="mt-0.5 block text-xs text-slate-500">{{ $bellAnnouncement->created_at->diffForHumans() }}</span>
+                                    </span>
+                                </a>
+                            @empty
+                                <p class="px-3 py-4 text-sm text-slate-500">Belum ada pengumuman.</p>
+                            @endforelse
+
+                            <a href="{{ route('camaba.announcements.index') }}"
+                               class="mt-1 block rounded-xl border-t border-slate-100 px-3 py-2.5 text-center text-sm font-bold text-polmind-blue hover:bg-blue-50">
+                                Lihat semua pengumuman
+                            </a>
+                        </div>
+                    </div>
+
                     <div class="hidden items-center gap-3 sm:flex">
                         <div class="text-right">
                             <p class="text-sm font-black text-slate-900">
@@ -248,6 +313,7 @@
                                 {{ $initials }}
                             </div>
                         @endif
+                    </div>
                     </div>
                 </div>
             </header>

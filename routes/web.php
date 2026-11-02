@@ -8,6 +8,7 @@ use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\FileController as AdminFileController;
 use App\Http\Controllers\Admin\ApplicantController;
 use App\Http\Controllers\Admin\ActivityLogController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ApplicantBiodataController;
 use App\Http\Controllers\Admin\LoginAsController;
 use App\Http\Controllers\Admin\SelectionNumberController;
@@ -33,6 +34,7 @@ use App\Http\Controllers\RegionController;
 use App\Http\Controllers\SchoolController;
 use App\Http\Controllers\Camaba\DashboardController as CamabaDashboardController;
 use App\Http\Controllers\Camaba\AccountController as CamabaAccountController;
+use App\Http\Controllers\Camaba\AnnouncementController as CamabaAnnouncementController;
 use App\Http\Controllers\Camaba\BiodataController as CamabaBiodataController;
 use App\Http\Controllers\Camaba\DocumentController as CamabaDocumentController;
 use App\Http\Controllers\Camaba\FileController as CamabaFileController;
@@ -95,6 +97,11 @@ Route::middleware('auth:applicant')
             ->middleware('throttle:10,1')
             ->name('account.password');
 
+        // Pengumuman admin (lonceng), terbuka juga untuk peminat yang belum bayar.
+        Route::get('/pengumuman', [CamabaAnnouncementController::class, 'index'])->name('announcements.index');
+        Route::post('/pengumuman/tandai-dibaca', [CamabaAnnouncementController::class, 'markAllRead'])->name('announcements.read-all');
+        Route::get('/pengumuman/{announcement}', [CamabaAnnouncementController::class, 'show'])->whereNumber('announcement')->name('announcements.show');
+
         // Terbuka setelah pembayaran formulir diverifikasi admin.
         Route::middleware(EnsureRegistrationPaid::class)->group(function () {
             Route::get('/biodata', [CamabaBiodataController::class, 'edit'])->name('biodata.edit');
@@ -107,7 +114,7 @@ Route::middleware('auth:applicant')
             Route::delete('/upload-berkas/{document}', [CamabaDocumentController::class, 'destroy'])->name('documents.destroy');
 
             Route::get('/status-seleksi', [CamabaSelectionStatusController::class, 'index'])->name('status-seleksi');
-            Route::get('/pengumuman', [CamabaSelectionStatusController::class, 'announcement'])->name('pengumuman');
+            Route::get('/hasil-seleksi', [CamabaSelectionStatusController::class, 'announcement'])->name('hasil-seleksi');
 
             Route::get('/daftar-ulang', [CamabaReRegistrationController::class, 'index'])->name('re-registration.index');
 
@@ -193,6 +200,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::post('/nim/{applicant}/generate', [NimController::class, 'generateOne'])->name('nim.generate-one');
     Route::put('/nim/{applicant}', [NimController::class, 'update'])->name('nim.update');
     Route::delete('/nim/{applicant}', [NimController::class, 'destroy'])->name('nim.destroy');
+
+    Route::get('/announcements', [AnnouncementController::class, 'index'])->name('announcements.index');
+    Route::get('/announcements/recipient-count', [AnnouncementController::class, 'recipientCount'])->name('announcements.recipient-count');
+    Route::post('/announcements', [AnnouncementController::class, 'store'])->middleware('throttle:20,1')->name('announcements.store');
+    Route::get('/announcements/{announcement}', [AnnouncementController::class, 'show'])->name('announcements.show');
+    Route::delete('/announcements/{announcement}', [AnnouncementController::class, 'destroy'])->name('announcements.destroy');
 
     Route::get('/follow-ups', [FollowUpController::class, 'index'])->name('follow-ups.index');
     Route::post('/follow-ups/{applicant}', [FollowUpController::class, 'store'])->name('follow-ups.store');

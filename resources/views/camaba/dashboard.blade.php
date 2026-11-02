@@ -53,7 +53,7 @@
         ],
         [
             'title' => '4. Ikuti seleksi dan pantau pengumuman',
-            'body' => 'Ikuti ujian seleksi sesuai jadwal gelombang Anda. Hasil seleksi diumumkan di menu Pengumuman.',
+            'body' => 'Ikuti ujian seleksi sesuai jadwal gelombang Anda. Hasil seleksi diumumkan di menu Hasil Seleksi.',
         ],
         [
             'title' => '5. Daftar ulang',

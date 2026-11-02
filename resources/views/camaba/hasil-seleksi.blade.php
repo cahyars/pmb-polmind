@@ -1,7 +1,7 @@
 @extends('layouts.camaba')
 
-@section('title', 'Pengumuman Seleksi')
-@section('page_title', 'Pengumuman Seleksi')
+@section('title', 'Hasil Seleksi')
+@section('page_title', 'Hasil Seleksi')
 @section('page_subtitle', 'Informasi resmi hasil seleksi dan daftar ulang.')
 
 @section('content')

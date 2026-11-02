@@ -43,6 +43,6 @@ class SelectionStatusController extends Controller
             'reRegistration',
         ]);
 
-        return view('camaba.pengumuman', compact('applicant'));
+        return view('camaba.hasil-seleksi', compact('applicant'));
     }
 }

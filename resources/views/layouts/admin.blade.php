@@ -59,6 +59,7 @@
                         ],
                     ],
                     ['label' => 'Follow Up', 'url' => '/admin/follow-ups', 'icon' => 'chat', 'active' => request()->is('admin/follow-ups*')],
+                    ['label' => 'Pengumuman', 'url' => '/admin/announcements', 'icon' => 'megaphone', 'active' => request()->is('admin/announcements*')],
                     ['label' => 'Login As', 'url' => '/admin/login-as', 'icon' => 'user', 'admin_only' => true, 'active' => request()->is('admin/login-as*')],
                     [
                         'label' => 'Laporan',

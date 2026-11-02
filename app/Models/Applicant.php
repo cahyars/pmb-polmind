@@ -320,4 +320,11 @@ class Applicant extends Authenticatable
     {
         return $this->hasMany(IntegrationLog::class);
     }
+
+    public function announcements()
+    {
+        return $this->belongsToMany(Announcement::class, 'announcement_recipients')
+            ->withPivot('read_at')
+            ->withTimestamps();
+    }
 }

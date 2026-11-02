@@ -126,7 +126,7 @@ class SiakadBiodataTest extends TestCase
 
         $applicant = $this->registeredApplicant();
 
-        foreach (['/camaba/dashboard', '/camaba/biodata', '/camaba/upload-berkas', '/camaba/pembayaran', '/camaba/status-seleksi', '/camaba/pengumuman', '/camaba/daftar-ulang'] as $url) {
+        foreach (['/camaba/dashboard', '/camaba/biodata', '/camaba/upload-berkas', '/camaba/pembayaran', '/camaba/status-seleksi', '/camaba/hasil-seleksi', '/camaba/pengumuman', '/camaba/daftar-ulang'] as $url) {
             $content = $this->actingAs($applicant, 'applicant')->get($url)->assertOk()->getContent();
 
             $this->assertDoesNotMatchRegularExpression($emoji, $content, $url);
@@ -358,7 +358,7 @@ class SiakadBiodataTest extends TestCase
 
         $this->fillBiodata($applicant);
 
-        foreach (['/camaba/dashboard', '/camaba/status-seleksi', '/camaba/pengumuman', '/camaba/daftar-ulang', '/camaba/upload-berkas', '/camaba/pembayaran'] as $url) {
+        foreach (['/camaba/dashboard', '/camaba/status-seleksi', '/camaba/hasil-seleksi', '/camaba/pengumuman', '/camaba/daftar-ulang', '/camaba/upload-berkas', '/camaba/pembayaran'] as $url) {
             $this->actingAs($applicant, 'applicant')->get($url)->assertOk();
         }
 

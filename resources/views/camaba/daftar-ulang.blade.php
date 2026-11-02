@@ -543,9 +543,9 @@
                     <h2 class="text-lg font-black text-polmind-blue">Navigasi</h2>
 
                     <div class="mt-5 space-y-3">
-                        <a href="{{ route('camaba.pengumuman') }}"
+                        <a href="{{ route('camaba.hasil-seleksi') }}"
                            class="block rounded-xl border border-slate-300 bg-white px-5 py-3 text-center text-sm font-bold text-slate-700 transition hover:bg-slate-50">
-                            Pengumuman Seleksi
+                            Hasil Seleksi
                         </a>
 
                         <a href="{{ route('camaba.payments.index') }}"

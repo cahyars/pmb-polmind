@@ -81,9 +81,9 @@
         </p>
 
         <div class="mt-6 flex flex-wrap justify-center gap-3">
-            <a href="{{ route('camaba.pengumuman') }}"
+            <a href="{{ route('camaba.hasil-seleksi') }}"
                class="rounded-xl bg-polmind-blue px-5 py-3 text-sm font-black text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
-                Lihat Pengumuman
+                Lihat Hasil Seleksi
             </a>
 
             @if($selectionStatus === 'diterima')
