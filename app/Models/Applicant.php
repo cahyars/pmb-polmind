@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Models\Concerns\LogsActivity;
+use App\Services\AutoAnnouncements;
 use App\Services\SequenceRewinder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -88,6 +89,16 @@ class Applicant extends Authenticatable
         'synced_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+    protected static function booted(): void
+    {
+        // Pembayaran formulir baru valid (dibayar atau dibebaskan): kirim pengumuman pengambilan kaos.
+        static::saved(function (Applicant $applicant) {
+            if ($applicant->payment_status === 'valid' && ($applicant->wasRecentlyCreated || $applicant->wasChanged('payment_status'))) {
+                AutoAnnouncements::shirtPickup($applicant);
+            }
+        });
+    }
 
     /**
      * 1 NIK hanya boleh mendaftar sekali dalam satu gelombang,

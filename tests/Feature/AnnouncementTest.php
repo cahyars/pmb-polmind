@@ -36,10 +36,11 @@ class AnnouncementTest extends TestCase
         $this->peminat = $this->registerApplicant(['email' => 'peminat@example.com']);
 
         $this->seleksi = $this->registerApplicant(['email' => 'seleksi@example.com']);
-        $this->seleksi->update(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap']);
+        // Tanpa event agar pengumuman kaos otomatis tidak ikut terhitung di test ini.
+        $this->seleksi->updateQuietly(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap']);
 
         $this->diterima = $this->registerApplicant(['email' => 'diterima@example.com']);
-        $this->diterima->update(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap', 'selection_status' => 'diterima']);
+        $this->diterima->updateQuietly(['payment_status' => 'valid', 'registration_status' => 'biodata_lengkap', 'selection_status' => 'diterima']);
     }
 
     public function test_admin_sends_announcement_only_to_selected_categories(): void

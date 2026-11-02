@@ -23,7 +23,7 @@
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2">
             <h2 class="text-lg font-semibold text-slate-900">{{ $announcement->title }}</h2>
             <p class="mt-1 text-xs text-slate-500">
-                {{ $announcement->created_at->translatedFormat('d F Y, H.i') }} WIB · oleh {{ $announcement->creator?->name ?? '-' }}
+                {{ $announcement->created_at->translatedFormat('d F Y, H.i') }} WIB · oleh {{ $announcement->auto_key ? 'Sistem (otomatis)' : ($announcement->creator?->name ?? '-') }}
             </p>
             <div class="mt-5 whitespace-pre-line break-words text-sm leading-7 text-slate-700">{{ $announcement->body }}</div>
             @if($announcement->link_url)

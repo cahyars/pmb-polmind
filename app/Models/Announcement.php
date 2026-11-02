@@ -4,6 +4,7 @@ namespace App\Models;
 
 use App\Models\Concerns\LogsActivity;
 use App\Services\AnnouncementAudience;
+use App\Services\AutoAnnouncements;
 use Illuminate\Database\Eloquent\Model;
 
 /**
@@ -15,8 +16,11 @@ class Announcement extends Model
 
     protected string $activityLabel = 'Pengumuman';
 
+    protected array $activityIgnore = ['recipient_count'];
+
     protected $fillable = [
         'pmb_year_id',
+        'auto_key',
         'title',
         'body',
         'link_url',
@@ -65,6 +69,10 @@ class Announcement extends Model
      */
     public function getAudienceLabelAttribute(): string
     {
+        if ($this->auto_key) {
+            return AutoAnnouncements::AUDIENCE_LABELS[$this->auto_key] ?? 'Otomatis';
+        }
+
         return collect([
             collect($this->audiences)->map(fn ($key) => AnnouncementAudience::SEGMENTS[$key]['label'] ?? $key)->implode(', '),
             $this->admissionWave?->name,

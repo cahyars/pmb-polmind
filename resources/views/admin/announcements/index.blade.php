@@ -149,10 +149,13 @@
                         <tr>
                             <td class="whitespace-nowrap px-5 py-3.5 text-slate-600">
                                 {{ $announcement->created_at->translatedFormat('d/m/Y H.i') }}
-                                <p class="mt-0.5 text-xs text-slate-400">{{ $announcement->creator?->name ?? '-' }}</p>
+                                <p class="mt-0.5 text-xs text-slate-400">{{ $announcement->auto_key ? 'Sistem' : ($announcement->creator?->name ?? '-') }}</p>
                             </td>
                             <td class="px-5 py-3.5">
                                 <a href="{{ route('admin.announcements.show', $announcement) }}" class="font-semibold text-slate-900 hover:text-polmind-blue hover:underline">{{ $announcement->title }}</a>
+                                @if($announcement->auto_key)
+                                    <span class="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[11px] font-bold text-amber-800">Otomatis</span>
+                                @endif
                                 <p class="mt-0.5 line-clamp-1 max-w-md text-xs text-slate-500">{{ $announcement->body }}</p>
                             </td>
                             <td class="max-w-64 px-5 py-3.5 text-xs text-slate-600">{{ $announcement->audience_label }}</td>

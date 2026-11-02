@@ -34,7 +34,7 @@
         $isTemporaryNumber = \App\Services\RegistrationNumber::isTemporary($registrationNumber);
 
         // Pengumuman admin untuk lonceng: 5 terbaru dan jumlah yang belum dibaca.
-        $latestAnnouncements = $authApplicant?->announcements()->latest('announcements.created_at')->take(5)->get() ?? collect();
+        $latestAnnouncements = $authApplicant?->announcements()->latest('announcement_recipients.created_at')->take(5)->get() ?? collect();
         $unreadAnnouncements = $authApplicant?->announcements()->wherePivotNull('read_at')->count() ?? 0;
     @endphp
 
@@ -282,7 +282,7 @@
                                     <span class="mt-1.5 h-2 w-2 shrink-0 rounded-full {{ $bellAnnouncement->pivot->read_at ? 'bg-transparent' : 'bg-red-600' }}"></span>
                                     <span class="min-w-0">
                                         <span class="line-clamp-2 text-sm {{ $bellAnnouncement->pivot->read_at ? 'font-semibold text-slate-600' : 'font-black text-slate-900' }}">{{ $bellAnnouncement->title }}</span>
-                                        <span class="mt-0.5 block text-xs text-slate-500">{{ $bellAnnouncement->created_at->diffForHumans() }}</span>
+                                        <span class="mt-0.5 block text-xs text-slate-500">{{ $bellAnnouncement->pivot->created_at->diffForHumans() }}</span>
                                     </span>
                                 </a>
                             @empty

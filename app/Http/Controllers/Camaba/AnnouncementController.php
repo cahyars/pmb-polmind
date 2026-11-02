@@ -14,7 +14,7 @@ class AnnouncementController extends Controller
     {
         $announcements = Auth::guard('applicant')->user()
             ->announcements()
-            ->latest('announcements.created_at')
+            ->latest('announcement_recipients.created_at')
             ->paginate(15);
 
         return view('camaba.pengumuman.index', compact('announcements'));

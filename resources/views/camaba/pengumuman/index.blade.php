@@ -21,7 +21,7 @@
                             <span class="rounded-full bg-red-600 px-2 py-0.5 text-[11px] font-bold text-white">Baru</span>
                         @endif
                     </div>
-                    <p class="mt-1 text-xs font-semibold text-slate-500">{{ $announcement->created_at->translatedFormat('d F Y, H:i') }} WIB</p>
+                    <p class="mt-1 text-xs font-semibold text-slate-500">{{ $announcement->pivot->created_at->translatedFormat('d F Y, H:i') }} WIB</p>
                     <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-600">{{ $announcement->body }}</p>
                 </div>
             </div>

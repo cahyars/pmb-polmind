@@ -17,7 +17,7 @@
             </div>
             <div class="min-w-0">
                 <h2 class="text-xl font-black text-polmind-blue">{{ $announcement->title }}</h2>
-                <p class="mt-1 text-xs font-semibold text-slate-500">{{ $announcement->created_at->translatedFormat('l, d F Y, H:i') }} WIB</p>
+                <p class="mt-1 text-xs font-semibold text-slate-500">{{ $announcement->pivot->created_at->translatedFormat('l, d F Y, H:i') }} WIB</p>
             </div>
         </div>
 
