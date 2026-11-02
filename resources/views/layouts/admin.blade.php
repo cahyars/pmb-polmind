@@ -392,6 +392,7 @@
 
     @include('partials.file-preview-modal')
     @include('partials.admin-notifications', ['badges' => $badges])
+    @include('partials.admin-scroll-restore')
 
     @stack('scripts')
 </body>
