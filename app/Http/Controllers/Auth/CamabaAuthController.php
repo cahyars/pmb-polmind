@@ -9,6 +9,7 @@ use App\Models\Applicant;
 use App\Models\ApplicantEducation;
 use App\Models\ClassType;
 use App\Models\FeeComponent;
+use App\Models\InformationSource;
 use App\Models\PmbYear;
 use App\Models\RefRegion;
 use App\Models\RegistrationPath;
@@ -76,7 +77,7 @@ class CamabaAuthController extends Controller
             'study_program_id' => ['required', Rule::exists('study_programs', 'id')->where('is_active', true)],
             'class_type_id' => ['required', Rule::exists('class_types', 'id')->where('is_active', true)],
             'registration_path' => ['required', Rule::in(RegistrationPath::active()->keys()->all())],
-            'source_information' => ['nullable', 'string', 'max:255'],
+            'source_information' => ['nullable', Rule::in(InformationSource::activeNames())],
             'password' => ['required', 'string', 'min:8', 'confirmed'],
         ] + ApplicantEducation::schoolRules($request->boolean('is_manual_school')), [
             'phone.regex' => 'Nomor WhatsApp hanya boleh berisi angka (9-15 digit).',
@@ -89,6 +90,7 @@ class CamabaAuthController extends Controller
             'birth_date.required' => 'Isi tanggal lahir.',
             'birth_date.before' => 'Tanggal lahir harus sebelum hari ini.',
             'graduation_year.required' => 'Pilih tahun lulus.',
+            'source_information.in' => 'Pilih sumber informasi dari daftar.',
         ] + Applicant::nikMessages($activeWave) + ApplicantEducation::schoolMessages());
 
         $applicant = DB::transaction(function () use ($validated, $activePmbYear, $activeWave) {

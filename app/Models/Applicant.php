@@ -68,11 +68,6 @@ class Applicant extends Authenticatable
 
     public const ALMAMATER_SIZES = ['S', 'M', 'L', 'XL', 'XXL'];
 
-    /**
-     * Pilihan sumber informasi di form registrasi online dan form pendaftar di kampus.
-     */
-    public const SOURCE_OPTIONS = ['Instagram', 'TikTok', 'Website', 'Roadshow Sekolah', 'Teman/Keluarga', 'WhatsApp', 'Brosur/Poster', 'Spanduk/Banner', 'Lainnya'];
-
     protected $hidden = [
         'password',
         'remember_token',

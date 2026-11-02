@@ -78,6 +78,7 @@
                     ],
                     ['label' => 'Tujuan Pembayaran', 'url' => '/admin/payment-methods', 'icon' => 'bank', 'admin_only' => true, 'active' => request()->is('admin/payment-methods*')],
                     ['label' => 'Brosur', 'url' => '/admin/brochures', 'icon' => 'book', 'active' => request()->is('admin/brochures*')],
+                    ['label' => 'Sumber Informasi', 'url' => '/admin/information-sources', 'icon' => 'bookmark', 'active' => request()->is('admin/information-sources*')],
                     [
                         'label' => 'Integrasi SIAKAD',
                         'icon' => 'sync',

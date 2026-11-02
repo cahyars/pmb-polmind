@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Middleware\SelectAdminPmbYear;
 use App\Models\AdmissionWave;
 use App\Models\ClassType;
+use App\Models\InformationSource;
 use App\Models\PmbYear;
 use App\Models\SelectionComponent;
 use App\Models\StudyProgram;
@@ -17,6 +18,7 @@ use App\Services\Reports\PaymentRecapExport;
 use App\Services\Reports\ReportFilter;
 use App\Services\Reports\ReRegistrationReport;
 use App\Services\Reports\SelectionReport;
+use App\Services\Reports\SourceReport;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -27,6 +29,7 @@ class ReportController extends Controller
      */
     public const SECTIONS = [
         'pendaftar' => ['label' => 'Laporan Pendaftar', 'description' => 'Asal sekolah, pilihan prodi, gender, tren bulanan, sumber informasi, dan latar pendidikan pendaftar.'],
+        'sumber-informasi' => ['label' => 'Laporan Sumber Informasi', 'description' => 'Pendaftar dan konversinya per sumber informasi, tren bulanan, dan sebaran prodi untuk tim marketing.'],
         'seleksi' => ['label' => 'Laporan Seleksi', 'description' => 'Kesiapan dan hasil seleksi per prodi, jalur, dan gelombang.'],
         'daftar-ulang' => ['label' => 'Laporan Daftar Ulang', 'description' => 'Pembayaran daftar ulang, NIM, dan keterisian kuota prodi.'],
         'pembayaran' => ['label' => 'Rekap Pembayaran', 'description' => 'Pemasukan per camaba per minggu: formulir, daftar ulang, UKT, SPI, dan outstanding.'],
@@ -48,6 +51,7 @@ class ReportController extends Controller
 
         $report = match ($section) {
             'pendaftar' => ApplicantReport::build($filter),
+            'sumber-informasi' => SourceReport::build($filter),
             'seleksi' => SelectionReport::build($filter),
             'daftar-ulang' => ReRegistrationReport::build($filter),
             'pembayaran' => PaymentRecap::build($filter),
@@ -61,6 +65,7 @@ class ReportController extends Controller
             'studyPrograms' => StudyProgram::orderBy('code')->get(),
             'classTypes' => ClassType::orderBy('code')->get(),
             'admissionWaves' => AdmissionWave::orderBy('start_date')->get(),
+            'informationSources' => InformationSource::ordered()->pluck('name'),
         ]);
     }
 
@@ -149,6 +154,7 @@ class ReportController extends Controller
                 'Kelas',
                 'Jalur Pendaftaran',
                 'Cara Daftar',
+                'Sumber Informasi',
                 'Ukuran Jas Almamater',
                 'Asal Sekolah',
                 'Jurusan Asal',
@@ -184,6 +190,7 @@ class ReportController extends Controller
                     $applicant->classType?->name,
                     $applicant->registration_path_label,
                     $applicant->registered_via === 'kampus' ? 'Di kampus' : 'Online',
+                    $applicant->source_information,
                     $applicant->almamater_size,
                     $applicant->education?->school_name,
                     $applicant->education?->major,
@@ -216,7 +223,7 @@ class ReportController extends Controller
         return collect($request->only(ReportFilter::KEYS))->filter(fn ($value) => filled($value))
             ->map(fn ($value, $key) => ['label' => [
                 'start_date' => 'Dari tanggal', 'end_date' => 'Sampai tanggal', 'admission_wave' => 'Gelombang',
-                'study_program' => 'Prodi', 'class_type' => 'Kelas', 'registration_path' => 'Jalur',
+                'study_program' => 'Prodi', 'class_type' => 'Kelas', 'registration_path' => 'Jalur', 'source' => 'Sumber informasi',
             ][$key] ?? $key, 'old' => null, 'new' => (string) match ($key) {
                 'admission_wave' => AdmissionWave::find($value)?->name ?? $value,
                 'study_program' => StudyProgram::find($value)?->code ?? $value,

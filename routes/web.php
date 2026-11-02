@@ -18,6 +18,7 @@ use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
 use App\Http\Controllers\Admin\ReRegistrationController;
+use App\Http\Controllers\Admin\InformationSourceController;
 use App\Http\Controllers\Admin\InstallmentController;
 use App\Http\Controllers\Admin\NimController;
 use App\Http\Controllers\Admin\NotificationController;
@@ -288,6 +289,12 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/users/{user}', [UserController::class, 'update'])->name('users.update');
         Route::patch('/users/{user}/toggle', [UserController::class, 'toggle'])->name('users.toggle');
     });
+
+    Route::get('/information-sources', [InformationSourceController::class, 'index'])->name('information-sources.index');
+    Route::post('/information-sources', [InformationSourceController::class, 'store'])->name('information-sources.store');
+    Route::put('/information-sources/{informationSource}', [InformationSourceController::class, 'update'])->name('information-sources.update');
+    Route::patch('/information-sources/{informationSource}/toggle', [InformationSourceController::class, 'toggle'])->name('information-sources.toggle');
+    Route::delete('/information-sources/{informationSource}', [InformationSourceController::class, 'destroy'])->name('information-sources.destroy');
 
     Route::get('/brochures', [AdminBrochureController::class, 'index'])->name('brochures.index');
     Route::post('/brochures', [AdminBrochureController::class, 'store'])->middleware('throttle:20,1')->name('brochures.store');

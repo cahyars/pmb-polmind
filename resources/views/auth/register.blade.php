@@ -311,7 +311,7 @@
                     <label for="source_information" class="{{ $label }}">Sumber Informasi <span class="font-semibold text-slate-400">(opsional)</span></label>
                     <select id="source_information" name="source_information" class="{{ $field }}">
                         <option value="">Pilih sumber informasi</option>
-                        @foreach(\App\Models\Applicant::SOURCE_OPTIONS as $source)
+                        @foreach(\App\Models\InformationSource::activeNames() as $source)
                             <option value="{{ $source }}" @selected(old('source_information') === $source)>
                                 {{ $source }}
                             </option>

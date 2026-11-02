@@ -8,7 +8,7 @@
 
     <form action="{{ route('admin.reports.show', $section) }}" method="GET"
           class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-7">
+        <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 2xl:grid-cols-8">
             <div>
                 <label for="start_date" class="text-xs font-semibold text-slate-600">{{ $section === 'pembayaran' ? 'Tanggal bayar dari' : 'Tanggal daftar dari' }}</label>
                 <input type="date" id="start_date" name="start_date" value="{{ $filters['start_date'] ?? '' }}" class="{{ $input }}">
@@ -51,6 +51,16 @@
                     @foreach(\App\Models\RegistrationPath::ordered() as $path)
                         <option value="{{ $path->code }}" @selected(($filters['registration_path'] ?? '') === $path->code)>{{ $path->name }}</option>
                     @endforeach
+                </select>
+            </div>
+            <div>
+                <label for="source" class="text-xs font-semibold text-slate-600">Sumber informasi</label>
+                <select id="source" name="source" class="{{ $input }}">
+                    <option value="">Semua sumber</option>
+                    @foreach($informationSources as $sourceName)
+                        <option value="{{ $sourceName }}" @selected(($filters['source'] ?? '') === $sourceName)>{{ $sourceName }}</option>
+                    @endforeach
+                    <option value="{{ \App\Models\InformationSource::NOT_FILLED_KEY }}" @selected(($filters['source'] ?? '') === \App\Models\InformationSource::NOT_FILLED_KEY)>{{ \App\Models\InformationSource::NOT_FILLED_LABEL }}</option>
                 </select>
             </div>
             <div class="flex items-end gap-2">

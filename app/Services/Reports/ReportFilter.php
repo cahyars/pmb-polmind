@@ -3,6 +3,7 @@
 namespace App\Services\Reports;
 
 use App\Models\Applicant;
+use App\Models\InformationSource;
 use App\Models\RegistrationPath;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -21,6 +22,7 @@ class ReportFilter
         'study_program',
         'class_type',
         'registration_path',
+        'source',
     ];
 
     public function __construct(public readonly array $values = [])
@@ -36,6 +38,7 @@ class ReportFilter
             'study_program' => ['nullable', 'integer'],
             'class_type' => ['nullable', 'integer'],
             'registration_path' => ['nullable', 'string', Rule::in(RegistrationPath::ordered()->keys()->all())],
+            'source' => ['nullable', 'string', 'max:100'],
         ]);
 
         return new self(array_filter($values, fn ($value) => filled($value)));
@@ -49,6 +52,7 @@ class ReportFilter
             ->when($this->values['admission_wave'] ?? null, fn ($query, $id) => $query->where('applicants.admission_wave_id', $id))
             ->when($this->values['study_program'] ?? null, fn ($query, $id) => $query->where('applicants.study_program_id', $id))
             ->when($this->values['class_type'] ?? null, fn ($query, $id) => $query->where('applicants.class_type_id', $id))
-            ->when($this->values['registration_path'] ?? null, fn ($query, $path) => $query->where('applicants.registration_path', $path));
+            ->when($this->values['registration_path'] ?? null, fn ($query, $path) => $query->where('applicants.registration_path', $path))
+            ->when($this->values['source'] ?? null, fn ($query, $source) => InformationSource::filterApplicants($query, $source));
     }
 }

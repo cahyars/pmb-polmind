@@ -132,6 +132,7 @@
                         'admission_wave' => request('wave'),
                         'study_program' => request('study_program'),
                         'registration_path' => request('registration_path'),
+                        'source' => request('source'),
                     ])) }}"
                    class="rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                     Export Excel
@@ -139,7 +140,7 @@
             </div>
         </div>
 
-        <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-6">
+        <form action="{{ url('/admin/applicants') }}" method="GET" class="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-7">
             @if($summary)
                 <input type="hidden" name="summary" value="{{ $summary }}">
             @endif
@@ -209,7 +210,19 @@
                 </select>
             </div>
 
-            <div class="flex items-end gap-3 xl:col-span-6">
+            <div>
+                <label class="text-sm font-semibold text-slate-700">Sumber Informasi</label>
+                <select name="source"
+                        class="mt-2 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-polmind-blue focus:ring-4 focus:ring-blue-100">
+                    <option value="">Semua Sumber</option>
+                    @foreach($informationSources as $sourceName)
+                        <option value="{{ $sourceName }}" @selected(request('source') === $sourceName)>{{ $sourceName }}</option>
+                    @endforeach
+                    <option value="{{ \App\Models\InformationSource::NOT_FILLED_KEY }}" @selected(request('source') === \App\Models\InformationSource::NOT_FILLED_KEY)>{{ \App\Models\InformationSource::NOT_FILLED_LABEL }}</option>
+                </select>
+            </div>
+
+            <div class="flex items-end gap-3 xl:col-span-7">
                 <button type="submit"
                         class="rounded-lg bg-polmind-blue px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-blue-900/20 transition hover:bg-polmind-blue-dark">
                     Terapkan Filter

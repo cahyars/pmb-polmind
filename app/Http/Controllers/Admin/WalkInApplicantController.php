@@ -9,6 +9,7 @@ use App\Models\Applicant;
 use App\Models\ApplicantEducation;
 use App\Models\ClassType;
 use App\Models\FeeComponent;
+use App\Models\InformationSource;
 use App\Models\Payment;
 use App\Models\PaymentMethod;
 use App\Models\PmbYear;
@@ -78,7 +79,7 @@ class WalkInApplicantController extends Controller
                 'second_study_program_id' => ['nullable', 'different:study_program_id', Rule::exists('study_programs', 'id')->where('is_active', true)],
                 'class_type_id' => ['required', Rule::exists('class_types', 'id')->where('is_active', true)],
                 'registration_path' => ['required', Rule::in(RegistrationPath::active()->keys()->all())],
-                'source_information' => ['nullable', Rule::in(Applicant::SOURCE_OPTIONS)],
+                'source_information' => ['nullable', Rule::in(InformationSource::activeNames())],
 
                 'major' => ['nullable', 'string', 'max:255'],
                 'graduation_year' => ['nullable', 'integer', 'min:2000', 'max:' . (now()->year + 1)],

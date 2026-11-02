@@ -7,6 +7,7 @@ use App\Models\ActivityLog;
 use App\Models\AdmissionWave;
 use App\Models\Applicant;
 use App\Models\FollowUp;
+use App\Models\InformationSource;
 use App\Models\Invoice;
 use App\Models\StudyProgram;
 use App\Services\LoginInfoMessage;
@@ -97,10 +98,13 @@ class ApplicantController extends Controller
             ->when($request->filled('status'), function ($query) use ($request) {
                 $query->where('registration_status', $request->status);
             })
+            ->when($request->filled('source'), fn ($query) => InformationSource::filterApplicants($query, (string) $request->source))
             ->when($summary, fn ($query) => self::applySummaryFilter($query, $summary))
             ->latest()
             ->paginate($this->perPage($request))
             ->withQueryString();
+
+        $informationSources = InformationSource::ordered()->pluck('name');
 
         return view('admin.applicants.index', compact(
             'totalApplicants',
@@ -114,6 +118,7 @@ class ApplicantController extends Controller
             'registrationPathStats',
             'waves',
             'studyPrograms',
+            'informationSources',
             'applicants'
         ));
     }
