@@ -58,6 +58,7 @@ class Applicant extends Authenticatable
         'payment_status',
         'selection_status',
         'selection_sequence',
+        'selection_group_id',
         're_registration_status',
         'sync_status',
 
@@ -80,6 +81,7 @@ class Applicant extends Authenticatable
         'kps_recipient' => 'boolean',
         'special_need_id' => 'integer',
         'selection_sequence' => 'integer',
+        'selection_group_id' => 'integer',
         'nim_generated_at' => 'datetime',
         'synced_at' => 'datetime',
         'password' => 'hashed',
@@ -305,6 +307,14 @@ class Applicant extends Authenticatable
     public function selection()
     {
         return $this->hasOne(Selection::class);
+    }
+
+    /**
+     * Kelompok peserta tes seleksi, diatur Ketua SPMB.
+     */
+    public function selectionGroup()
+    {
+        return $this->belongsTo(SelectionGroup::class);
     }
 
     public function reRegistration()

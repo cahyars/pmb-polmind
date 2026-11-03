@@ -29,7 +29,7 @@ class ActivityLogger
         'document_status' => 'Status berkas', 'payment_status' => 'Status pembayaran', 'selection_status' => 'Status seleksi',
         're_registration_status' => 'Status daftar ulang', 'sync_status' => 'Status sinkron SIAKAD', 'nim' => 'NIM',
         'study_program_id' => 'Prodi pilihan 1', 'second_study_program_id' => 'Prodi pilihan 2', 'accepted_study_program_id' => 'Prodi diterima',
-        'class_type_id' => 'Kelas', 'selection_sequence' => 'Nomor urut peserta', 'registration_path' => 'Jalur', 'admission_wave_id' => 'Gelombang', 'source_information' => 'Sumber informasi',
+        'class_type_id' => 'Kelas', 'selection_sequence' => 'Nomor urut peserta', 'selection_group_id' => 'Kelompok tes', 'registration_path' => 'Jalur', 'admission_wave_id' => 'Gelombang', 'source_information' => 'Sumber informasi',
         'address' => 'Jalan', 'hamlet' => 'Dusun', 'rt' => 'RT', 'rw' => 'RW', 'village_name' => 'Desa/Kelurahan', 'district_name' => 'Kecamatan',
         'regency_name' => 'Kab/Kota', 'province_name' => 'Provinsi', 'postal_code' => 'Kode pos', 'residence_type_id' => 'Jenis tinggal',
         'school_name' => 'Asal sekolah', 'school_npsn' => 'NPSN', 'school_type' => 'Jenis sekolah', 'school_status' => 'Status sekolah',

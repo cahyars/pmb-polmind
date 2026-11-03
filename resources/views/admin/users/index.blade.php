@@ -2,7 +2,7 @@
 
 @section('title', 'Kelola Akun')
 @section('page_title', 'Kelola Akun')
-@section('page_subtitle', 'Akun Admin dan Operator PMB yang dapat masuk ke panel admin.')
+@section('page_subtitle', 'Akun Admin PMB, Operator PMB, dan Ketua SPMB yang dapat masuk ke panel admin.')
 
 @section('content')
 @php
@@ -26,13 +26,15 @@
         </div>
     @endif
 
-    <div class="grid gap-4 md:grid-cols-2">
+    <div class="grid gap-4 md:grid-cols-3">
         @foreach(\App\Models\User::ROLES as $role => $roleLabel)
             <div class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
                 <p class="text-sm font-semibold text-slate-900">{{ $roleLabel }}</p>
                 <p class="mt-1 text-sm leading-6 text-slate-600">
                     @if($role === 'admin')
                         Akses penuh, termasuk Master Data, Tujuan Pembayaran, dan Kelola Akun.
+                    @elseif($role === 'ketua_spmb')
+                        PIC tes yang ditugaskan pimpinan menjelang seleksi (H-5). Hanya membuka menu Seleksi: nomor peserta, kelompok tes, dan cetak dokumen tes.
                     @else
                         Akses penuh ke pendaftar, verifikasi, seleksi, daftar ulang, laporan, dan brosur. Tidak dapat mengelola Master Data, Tujuan Pembayaran, dan akun lain.
                     @endif
@@ -93,7 +95,7 @@
                             </td>
                             <td class="px-5 py-3.5 text-slate-600">{{ $user->email }}</td>
                             <td class="px-5 py-3.5">
-                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $user->isAdmin() ? 'bg-blue-100 text-polmind-blue' : 'bg-slate-100 text-slate-700' }}">{{ $user->role_label }}</span>
+                                <span class="rounded-full px-3 py-1 text-xs font-bold {{ $user->isAdmin() ? 'bg-blue-100 text-polmind-blue' : ($user->isSelectionChair() ? 'bg-purple-100 text-purple-700' : 'bg-slate-100 text-slate-700') }}">{{ $user->role_label }}</span>
                             </td>
                             <td class="px-5 py-3.5">
                                 <span class="rounded-full px-3 py-1 text-xs font-bold {{ $user->is_active ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700' }}">{{ $user->is_active ? 'Aktif' : 'Nonaktif' }}</span>

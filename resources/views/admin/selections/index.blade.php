@@ -70,7 +70,7 @@
                 </p>
             </div>
 
-            <a href="{{ route('admin.selections.cards', array_filter(['study_program' => request('study_program')])) }}" target="_blank"
+            <a href="{{ route('admin.spmb.prints.cards', array_filter(['study_program' => request('study_program')])) }}" target="_blank"
                class="inline-flex shrink-0 items-center gap-2 rounded-lg bg-polmind-yellow px-5 py-3 text-sm font-bold text-polmind-blue-dark shadow-sm transition hover:brightness-95">
                 <x-icon name="printer" class="h-5 w-5" stroke-width="2" />
                 Cetak Kartu Peserta

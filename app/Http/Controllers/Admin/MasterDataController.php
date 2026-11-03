@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AchievementLevel;
 use App\Models\AdmissionWave;
-use App\Models\Applicant;
 use App\Models\ClassType;
 use App\Models\DocumentType;
 use App\Models\FeeComponent;
@@ -18,7 +17,6 @@ use App\Models\Setting;
 use App\Models\StudyProgram;
 use App\Services\NimGenerator;
 use App\Services\ReceiptNumber;
-use App\Services\SelectionNumber;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -32,10 +30,7 @@ class MasterDataController extends Controller
     public const SECTIONS = [
         'tahun-pmb' => ['label' => 'Tahun PMB', 'description' => 'Periode penerimaan mahasiswa baru dan tahun akademik.'],
         'gelombang' => ['label' => 'Gelombang', 'description' => 'Periode pendaftaran tiap gelombang dan biaya formulir.'],
-        'jadwal-seleksi' => ['label' => 'Jadwal Seleksi', 'description' => 'Jadwal tes, pengumuman, dan daftar ulang tiap gelombang.'],
         'komponen-tes' => ['label' => 'Komponen Tes', 'description' => 'Jenis tes yang diikuti camaba saat seleksi.'],
-        'pic-tes' => ['label' => 'PIC Tes Seleksi', 'description' => 'Dosen penanggung jawab setiap jadwal tes seleksi.'],
-        'nomor-peserta' => ['label' => 'Nomor Peserta Seleksi', 'description' => 'Nomor urut peserta seleksi per gelombang (contoh 1.001) untuk kartu peserta.'],
         'prodi' => ['label' => 'Program Studi', 'description' => 'Program studi, kuota, dan kode PDDikti/SIAKAD.'],
         'jalur' => ['label' => 'Jalur Pendaftaran', 'description' => 'Pilihan jalur pendaftaran yang tampil di landing page dan form registrasi.'],
         'kelas' => ['label' => 'Jenis Kelas', 'description' => 'Skema kelas yang ditampilkan ke camaba saat registrasi.'],
@@ -61,8 +56,6 @@ class MasterDataController extends Controller
                 'pmbYears' => PmbYear::orderByDesc('year')->get(),
                 'admissionWaves' => AdmissionWave::with('pmbYear')->orderByDesc('id')->get(),
             ],
-            'jadwal-seleksi', 'pic-tes' => $this->scheduleData($request),
-            'nomor-peserta' => $this->selectionNumberData($request),
             'komponen-tes' => [
                 'selectionComponents' => SelectionComponent::withCount('schedules')->orderBy('sort_order')->orderBy('name')->get(),
             ],
@@ -105,54 +98,6 @@ class MasterDataController extends Controller
             'sections' => self::SECTIONS,
             'activePmbYear' => $activePmbYear,
         ]);
-    }
-
-    /**
-     * Gelombang (Tahun PMB terpilih) beserta jadwal tesnya. Gelombang yang ditampilkan
-     * dipilih lewat ?gelombang=, default gelombang yang sedang dibuka atau terdekat.
-     */
-    private function scheduleData(Request $request): array
-    {
-        $waves = AdmissionWave::with(['selectionSchedules.component'])
-            ->orderBy('start_date')
-            ->orderBy('id')
-            ->get();
-
-        $current = AdmissionWave::current();
-
-        $selectedWave = $waves->firstWhere('id', (int) $request->query('gelombang'))
-            ?? $waves->firstWhere('id', $current?->id)
-            ?? $waves->first(fn (AdmissionWave $wave) => $wave->end_date?->gte(now()->startOfDay()))
-            ?? $waves->last();
-
-        return [
-            'waves' => $waves,
-            'selectedWave' => $selectedWave,
-            'currentWave' => $current,
-            'selectionComponents' => SelectionComponent::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
-        ];
-    }
-
-    /**
-     * Peserta gelombang terpilih: yang sudah bernomor (urut nomor) dan yang sudah bayar tetapi belum bernomor.
-     */
-    private function selectionNumberData(Request $request): array
-    {
-        $data = $this->scheduleData($request);
-        $wave = $data['selectedWave'];
-
-        if (! $wave) {
-            return $data + ['numbered' => collect(), 'unnumbered' => collect()];
-        }
-
-        return $data + [
-            'numbered' => Applicant::with(['studyProgram', 'admissionWave'])
-                ->where('admission_wave_id', $wave->id)
-                ->whereNotNull('selection_sequence')
-                ->orderBy('selection_sequence')
-                ->get(),
-            'unnumbered' => SelectionNumber::eligible($wave)->with(['studyProgram', 'admissionWave'])->whereNull('selection_sequence')->get(),
-        ];
     }
 
     public function storeStudyProgram(Request $request)

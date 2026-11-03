@@ -1,7 +1,7 @@
 @extends('layouts.print')
 
 @section('title', 'Kartu Peserta Seleksi' . ($wave ? ' ' . $wave->name : ''))
-@section('back_url', route('admin.selections.index'))
+@section('back_url', route('admin.spmb.prints.index', array_filter(['gelombang' => $wave?->id])))
 
 @section('content')
 @php
@@ -31,12 +31,21 @@
 </style>
 
 {{-- Filter (tidak ikut tercetak) --}}
-<form method="GET" action="{{ route('admin.selections.cards') }}" class="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-5 print:hidden">
+<form method="GET" action="{{ route('admin.spmb.prints.cards') }}" class="mb-6 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-4 print:hidden">
     <div>
-        <label for="wave" class="text-xs font-semibold text-slate-600">Gelombang</label>
-        <select id="wave" name="wave" class="{{ $input }}">
+        <label for="gelombang" class="text-xs font-semibold text-slate-600">Gelombang</label>
+        <select id="gelombang" name="gelombang" class="{{ $input }}">
             @foreach($waves as $option)
                 <option value="{{ $option->id }}" @selected($wave?->is($option))>{{ $option->name }}</option>
+            @endforeach
+        </select>
+    </div>
+    <div>
+        <label for="kelompok" class="text-xs font-semibold text-slate-600">Kelompok</label>
+        <select id="kelompok" name="kelompok" class="{{ $input }}">
+            <option value="">Semua kelompok</option>
+            @foreach($groups as $group)
+                <option value="{{ $group->id }}" @selected((int) ($filters['kelompok'] ?? 0) === $group->id)>{{ $group->name }}</option>
             @endforeach
         </select>
     </div>
@@ -50,6 +59,10 @@
         </select>
     </div>
     <div>
+        <label for="kosong" class="text-xs font-semibold text-slate-600">+ Kartu kosong</label>
+        <input id="kosong" type="number" min="0" max="60" name="kosong" value="{{ $filters['kosong'] ?? 0 }}" class="{{ $input }}">
+    </div>
+    <div>
         <label for="from" class="text-xs font-semibold text-slate-600">Dari urutan</label>
         <input id="from" type="number" min="1" name="from" value="{{ $filters['from'] ?? '' }}" placeholder="1" class="{{ $input }}">
     </div>
@@ -57,21 +70,23 @@
         <label for="to" class="text-xs font-semibold text-slate-600">Sampai urutan</label>
         <input id="to" type="number" min="1" name="to" value="{{ $filters['to'] ?? '' }}" placeholder="terakhir" class="{{ $input }}">
     </div>
+    <label class="flex items-end gap-2 pb-2 text-sm text-slate-700">
+        <input type="checkbox" name="hanya_kosong" value="1" @checked($filters['hanya_kosong'] ?? false) class="rounded border-slate-300">
+        Hanya kartu kosong
+    </label>
     <div class="flex items-end">
         <button type="submit" class="w-full rounded-lg bg-polmind-blue px-4 py-2 text-sm font-semibold text-white">Tampilkan</button>
     </div>
-    <p class="text-xs text-slate-600 sm:col-span-5">
-        {{ $applicants->count() }} kartu · {{ (int) ceil($applicants->count() / 10) }} lembar A4.
+    <p class="text-xs text-slate-600 sm:col-span-4">
+        {{ $applicantCount }} kartu peserta{{ $cards->count() > $applicantCount ? ' + ' . ($cards->count() - $applicantCount) . ' kartu kosong' : '' }} · {{ (int) ceil($cards->count() / 10) }} lembar A4.
         @if($unnumbered)
             <span class="font-semibold text-amber-700">{{ $unnumbered }} camaba sudah bayar tetapi belum bernomor, sehingga belum ada kartunya.</span>
-            @if(auth('web')->user()?->isAdmin())
-                <a href="{{ route('admin.master-data.show', ['nomor-peserta', 'gelombang' => $wave?->id]) }}" class="font-semibold text-polmind-blue underline">Beri nomor di Master Data</a>
-            @endif
+            <a href="{{ route('admin.spmb.numbers.index', ['gelombang' => $wave?->id]) }}" class="font-semibold text-polmind-blue underline">Beri nomor peserta</a>
         @endif
     </p>
 </form>
 
-@forelse($applicants->chunk(10) as $page)
+@forelse($cards->chunk(10) as $page)
     <div class="kp-page">
         @foreach($page as $applicant)
             <table class="kp-card">
@@ -85,18 +100,19 @@
                         {{ $academicYear }}
                     </td>
                 </tr>
+                {{-- Kartu kosong ($applicant null): nama, nomor, dan prodi diisi tangan di hari H. --}}
                 <tr>
                     <td class="kp-label">Nama Peserta</td>
-                    @php($nameLength = mb_strlen($applicant->full_name))
-                    <td colspan="3" class="kp-name {{ $nameLength > 36 ? 'kp-longer' : ($nameLength > 28 ? 'kp-long' : '') }}">{{ mb_strtoupper($applicant->full_name) }}</td>
+                    @php($nameLength = mb_strlen($applicant?->full_name ?? ''))
+                    <td colspan="3" class="kp-name {{ $nameLength > 36 ? 'kp-longer' : ($nameLength > 28 ? 'kp-long' : '') }}">{{ mb_strtoupper($applicant?->full_name ?? '') }}</td>
                 </tr>
                 <tr>
                     <td class="kp-label">Nomor Urut</td>
-                    <td colspan="3" class="kp-number">{{ $applicant->selection_number }}</td>
+                    <td colspan="3" class="kp-number">{{ $applicant?->selection_number }}</td>
                 </tr>
                 <tr>
                     <td class="kp-label">Program Studi</td>
-                    <td colspan="3" class="kp-program">{{ $applicant->studyProgram ? $applicant->studyProgram->degree . ' - ' . $applicant->studyProgram->name : '-' }}</td>
+                    <td colspan="3" class="kp-program">{{ $applicant ? ($applicant->studyProgram ? $applicant->studyProgram->degree . ' - ' . $applicant->studyProgram->name : '-') : '' }}</td>
                 </tr>
                 <tr class="kp-test">
                     <td>TPA dan TMB</td><td>Tes Fisik</td><td>Interview</td><td>MCU</td>
@@ -110,7 +126,7 @@
 @empty
     <div class="rounded-lg border-2 border-dashed border-slate-300 p-10 text-center text-sm text-slate-600 print:hidden">
         Belum ada peserta bernomor{{ $wave ? ' pada ' . $wave->name : '' }}.
-        Nomor peserta diberikan di Master Data &gt; Nomor Peserta Seleksi.
+        Nomor peserta diberikan di Seleksi &gt; Nomor Peserta.
     </div>
 @endforelse
 @endsection

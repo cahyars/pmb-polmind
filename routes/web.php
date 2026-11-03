@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\DocumentVerificationController;
 use App\Http\Controllers\Admin\PaymentMethodController;
 use App\Http\Controllers\Admin\PaymentVerificationController;
 use App\Http\Controllers\Admin\SelectionController;
+use App\Http\Controllers\Admin\SelectionGroupController;
+use App\Http\Controllers\Admin\SelectionPrintController;
 use App\Http\Controllers\Admin\ReRegistrationController;
 use App\Http\Controllers\Admin\InformationSourceController;
 use App\Http\Controllers\Admin\InstallmentController;
@@ -186,8 +188,38 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
     Route::get('/payments/{payment}/kwitansi', [AdminPrintController::class, 'receipt'])->name('payments.receipt');
     Route::get('/invoices/{invoice}/cetak', [AdminPrintController::class, 'invoice'])->name('invoices.print');
 
+    // Seleksi (SPMB): jadwal & PIC tes, nomor peserta, kelompok tes, dan cetak dokumen hari H. Juga terbuka untuk Ketua SPMB.
+    Route::prefix('seleksi')->name('spmb.')->group(function () {
+        // Jadwal, PIC, dan tanggal pengumuman/daftar ulang: Admin PMB dan Ketua SPMB (bukan operator).
+        Route::middleware(AdminAccess::class . ':spmb')->group(function () {
+            Route::get('/jadwal', [SelectionScheduleController::class, 'index'])->name('schedules.index');
+            Route::post('/jadwal', [SelectionScheduleController::class, 'storeSchedule'])->name('schedules.store');
+            Route::put('/jadwal/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('schedules.update');
+            Route::delete('/jadwal/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('schedules.destroy');
+            Route::put('/gelombang/{admissionWave}/pengumuman', [SelectionScheduleController::class, 'updateTimeline'])->name('schedules.timeline');
+            Route::get('/pic-tes', [SelectionScheduleController::class, 'pics'])->name('pics.index');
+            Route::put('/gelombang/{admissionWave}/pic-tes', [SelectionScheduleController::class, 'updatePics'])->name('pics.update');
+        });
+
+        Route::get('/nomor-peserta', [SelectionNumberController::class, 'index'])->name('numbers.index');
+        Route::post('/gelombang/{admissionWave}/nomor-peserta', [SelectionNumberController::class, 'assign'])->name('numbers.assign');
+        Route::post('/gelombang/{admissionWave}/nomor-peserta/susun-ulang', [SelectionNumberController::class, 'renumber'])->name('numbers.renumber');
+
+        Route::get('/kelompok', [SelectionGroupController::class, 'index'])->name('groups.index');
+        Route::post('/gelombang/{admissionWave}/kelompok', [SelectionGroupController::class, 'store'])->name('groups.store');
+        Route::post('/gelombang/{admissionWave}/kelompok/standar', [SelectionGroupController::class, 'createDefaults'])->name('groups.defaults');
+        Route::post('/gelombang/{admissionWave}/kelompok/bagi', [SelectionGroupController::class, 'distribute'])->name('groups.distribute');
+        Route::patch('/gelombang/{admissionWave}/kelompok/pindah', [SelectionGroupController::class, 'move'])->name('groups.move');
+        Route::put('/kelompok/{selectionGroup}', [SelectionGroupController::class, 'update'])->name('groups.update');
+        Route::delete('/kelompok/{selectionGroup}', [SelectionGroupController::class, 'destroy'])->name('groups.destroy');
+
+        Route::get('/cetak', [SelectionPrintController::class, 'index'])->name('prints.index');
+        Route::get('/cetak/daftar-hadir', [SelectionPrintController::class, 'attendance'])->name('prints.attendance');
+        Route::get('/cetak/daftar-kelompok', [SelectionPrintController::class, 'groupSheet'])->name('prints.groups');
+        Route::get('/cetak/kartu-peserta', [SelectionPrintController::class, 'cards'])->name('prints.cards');
+    });
+
     Route::get('/selections', [SelectionController::class, 'index'])->name('selections.index');
-    Route::get('/selections/kartu-peserta', [SelectionController::class, 'cards'])->name('selections.cards');
     Route::get('/selections/{registration_number}', [SelectionController::class, 'show'])->name('selections.show');
     Route::patch('/selections/{applicant}/scores', [SelectionController::class, 'saveScores'])->name('selections.scores');
     Route::patch('/selections/{applicant}/decision', [SelectionController::class, 'decide'])->name('selections.decide');
@@ -233,13 +265,6 @@ Route::prefix('admin')->name('admin.')->middleware(['auth:web', AdminAccess::cla
         Route::put('/master-data/selection-components/{selectionComponent}', [SelectionScheduleController::class, 'updateComponent'])->name('master-data.selection-components.update');
         Route::patch('/master-data/selection-components/{selectionComponent}/toggle', [SelectionScheduleController::class, 'toggleComponent'])->name('master-data.selection-components.toggle');
 
-        Route::post('/master-data/selection-schedules', [SelectionScheduleController::class, 'storeSchedule'])->name('master-data.selection-schedules.store');
-        Route::put('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'updateSchedule'])->name('master-data.selection-schedules.update');
-        Route::delete('/master-data/selection-schedules/{selectionSchedule}', [SelectionScheduleController::class, 'destroySchedule'])->name('master-data.selection-schedules.destroy');
-        Route::put('/master-data/admission-waves/{admissionWave}/timeline', [SelectionScheduleController::class, 'updateTimeline'])->name('master-data.admission-waves.timeline');
-        Route::post('/master-data/admission-waves/{admissionWave}/selection-numbers', [SelectionNumberController::class, 'assign'])->name('master-data.selection-numbers.assign');
-        Route::post('/master-data/admission-waves/{admissionWave}/selection-numbers/renumber', [SelectionNumberController::class, 'renumber'])->name('master-data.selection-numbers.renumber');
-        Route::put('/master-data/admission-waves/{admissionWave}/pics', [SelectionScheduleController::class, 'updatePics'])->name('master-data.admission-waves.pics');
 
         Route::put('/master-data/numbering', [MasterDataController::class, 'updateNumbering'])->name('master-data.numbering.update');
         Route::put('/master-data/numbering/receipt', [MasterDataController::class, 'updateReceiptNumbering'])->name('master-data.numbering.receipt');

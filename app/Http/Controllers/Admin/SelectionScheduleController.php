@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Admin\Concerns\PicksAdmissionWave;
 use App\Http\Controllers\Controller;
 use App\Models\AdmissionWave;
 use App\Models\SelectionComponent;
@@ -10,11 +11,23 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 /**
- * Master Data seleksi: komponen tes, jadwal tes per gelombang, PIC, serta
- * tanggal pengumuman dan daftar ulang gelombang.
+ * Komponen tes (Master Data), serta jadwal tes per gelombang, PIC, dan tanggal pengumuman
+ * dan daftar ulang gelombang (menu Seleksi, dikelola Admin PMB dan Ketua SPMB).
  */
 class SelectionScheduleController extends Controller
 {
+    use PicksAdmissionWave;
+
+    public function index(Request $request)
+    {
+        return view('admin.spmb.jadwal', $this->scheduleData($request));
+    }
+
+    public function pics(Request $request)
+    {
+        return view('admin.spmb.pic-tes', $this->scheduleData($request));
+    }
+
     public function storeComponent(Request $request)
     {
         $validated = $this->validateComponent($request);
@@ -97,6 +110,16 @@ class SelectionScheduleController extends Controller
         }
 
         return back()->with('success', 'PIC tes seleksi ' . $admissionWave->name . ' berhasil disimpan.');
+    }
+
+    private function scheduleData(Request $request): array
+    {
+        $data = $this->pickWave($request);
+        $data['selectedWave']?->load('selectionSchedules.component');
+
+        return $data + [
+            'selectionComponents' => SelectionComponent::where('is_active', true)->orderBy('sort_order')->orderBy('name')->get(),
+        ];
     }
 
     private function validateComponent(Request $request, ?SelectionComponent $component = null): array

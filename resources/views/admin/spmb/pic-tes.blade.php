@@ -1,17 +1,21 @@
-{{-- Penugasan PIC (nama dosen) untuk setiap jadwal tes --}}
-@if($waves->isEmpty())
-    <div class="rounded-xl border border-dashed border-slate-300 bg-white p-10 text-center">
-        <p class="font-semibold text-slate-800">Belum ada gelombang pada {{ $selectedPmbYear?->name ?? 'Tahun PMB ini' }}.</p>
-    </div>
-@else
-    @include('admin.master-data.sections._wave-tabs')
+@extends('layouts.admin')
 
+@section('title', 'PIC Tes Seleksi')
+@section('page_title', 'PIC Tes Seleksi')
+@section('page_subtitle', 'Seleksi · Dosen penanggung jawab setiap jadwal tes seleksi.')
+
+{{-- Penugasan PIC (nama dosen) untuk setiap jadwal tes --}}
+@section('content')
+<div class="space-y-6">
+@include('admin.spmb.partials.header')
+
+@if($selectedWave)
     @php
         $schedules = $selectedWave->selectionSchedules;
         $assigned = $schedules->filter(fn ($schedule) => filled($schedule->pic_name))->count();
     @endphp
 
-    <form action="{{ route('admin.master-data.admission-waves.pics', $selectedWave) }}" method="POST"
+    <form action="{{ route('admin.spmb.pics.update', $selectedWave) }}" method="POST"
           class="rounded-xl border border-slate-200 bg-white shadow-sm">
         @csrf
         @method('PUT')
@@ -32,7 +36,7 @@
         @if($schedules->isEmpty())
             <div class="px-6 py-10 text-center text-sm text-slate-500">
                 Belum ada jadwal tes untuk {{ $selectedWave->name }}.
-                <a href="{{ route('admin.master-data.show', ['jadwal-seleksi', 'gelombang' => $selectedWave->id]) }}" class="font-semibold text-polmind-blue underline">Atur jadwal seleksi</a>
+                <a href="{{ route('admin.spmb.schedules.index', ['gelombang' => $selectedWave->id]) }}" class="font-semibold text-polmind-blue underline">Atur jadwal seleksi</a>
             </div>
         @else
             <ul class="divide-y divide-slate-100">
@@ -66,3 +70,5 @@
         @endif
     </form>
 @endif
+</div>
+@endsection

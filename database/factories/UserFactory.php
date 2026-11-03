@@ -42,6 +42,13 @@ class UserFactory extends Factory
         ]);
     }
 
+    public function selectionChair(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'role' => 'ketua_spmb',
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

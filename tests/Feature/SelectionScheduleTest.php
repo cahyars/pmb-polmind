@@ -41,7 +41,7 @@ class SelectionScheduleTest extends TestCase
         $component = SelectionComponent::where('code', 'TES_KESEHATAN')->firstOrFail();
 
         $this->actingAs($admin, 'web')
-            ->post(route('admin.master-data.selection-schedules.store'), [
+            ->post(route('admin.spmb.schedules.store'), [
                 'admission_wave_id' => $wave->id,
                 'selection_component_id' => $component->id,
                 'test_date' => '2027-04-04',
@@ -51,7 +51,7 @@ class SelectionScheduleTest extends TestCase
             ->assertSessionHasErrors('end_time');
 
         $this->actingAs($admin, 'web')
-            ->post(route('admin.master-data.selection-schedules.store'), [
+            ->post(route('admin.spmb.schedules.store'), [
                 'admission_wave_id' => $wave->id,
                 'selection_component_id' => $component->id,
                 'test_date' => '2027-04-04',
@@ -62,7 +62,7 @@ class SelectionScheduleTest extends TestCase
             ->assertSessionHasNoErrors();
 
         $this->actingAs($admin, 'web')
-            ->put(route('admin.master-data.admission-waves.timeline', $wave), [
+            ->put(route('admin.spmb.schedules.timeline', $wave), [
                 'announcement_date' => '2027-04-08',
                 're_registration_start_date' => '2027-04-08',
                 're_registration_end_date' => '2027-04-18',
@@ -72,7 +72,7 @@ class SelectionScheduleTest extends TestCase
         $schedules = $wave->selectionSchedules()->get();
 
         $this->actingAs($admin, 'web')
-            ->put(route('admin.master-data.admission-waves.pics', $wave), [
+            ->put(route('admin.spmb.pics.update', $wave), [
                 'pic_name' => $schedules->mapWithKeys(fn ($schedule) => [$schedule->id => ' Budi Santoso, M.T. '])->all(),
             ])
             ->assertSessionHasNoErrors();
@@ -81,10 +81,21 @@ class SelectionScheduleTest extends TestCase
         $this->assertSame('2027-04-18', $wave->refresh()->re_registration_end_date->toDateString());
 
         $this->actingAs($admin, 'web')
-            ->get(route('admin.master-data.show', ['pic-tes', 'gelombang' => $wave->id]))
+            ->get(route('admin.spmb.pics.index', ['gelombang' => $wave->id]))
             ->assertOk()
             ->assertSee('Tes Kesehatan')
             ->assertSee('2 dari 2 tes sudah ada PIC');
+
+        // Jadwal dan PIC tes juga dikelola Ketua SPMB, tetapi tidak oleh operator.
+        $chair = User::factory()->selectionChair()->create();
+        $this->actingAs($chair, 'web')->get(route('admin.spmb.schedules.index', ['gelombang' => $wave->id]))->assertOk()->assertSee('Klinik Kampus');
+        $this->actingAs($chair, 'web')
+            ->put(route('admin.spmb.pics.update', $wave), ['pic_name' => $schedules->mapWithKeys(fn ($schedule) => [$schedule->id => 'Siti, M.Kes.'])->all()])
+            ->assertSessionHasNoErrors();
+        $this->assertSame(['Siti, M.Kes.'], $wave->selectionSchedules()->pluck('pic_name')->unique()->values()->all());
+
+        $operator = User::factory()->operator()->create();
+        $this->actingAs($operator, 'web')->get(route('admin.spmb.schedules.index'))->assertForbidden();
     }
 
     public function test_landing_and_forms_follow_master_data(): void

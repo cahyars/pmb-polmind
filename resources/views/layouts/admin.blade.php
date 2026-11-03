@@ -27,8 +27,13 @@
         @php
             $adminUser = auth('web')->user();
 
+            // Ketua SPMB hanya mengelola seleksi: tanpa lonceng, pencarian camaba, dan menu lain.
+            $isSelectionChair = (bool) $adminUser?->isSelectionChair();
+
             // Badge pekerjaan yang perlu ditindaklanjuti (mengikuti Tahun Akademik terpilih), diperbarui polling lonceng.
-            $badges = \App\Services\AdminNotifications::counts($adminUser);
+            $badges = $isSelectionChair
+                ? array_fill_keys(array_keys(\App\Services\AdminNotifications::LABELS), 0)
+                : \App\Services\AdminNotifications::counts($adminUser);
 
             $menuGroups = [
                 'Menu' => [
@@ -36,7 +41,20 @@
                     ['label' => 'Data Camaba', 'url' => '/admin/applicants', 'icon' => 'users', 'badge' => 'applicants', 'active' => request()->is('admin/applicants*')],
                     ['label' => 'Verifikasi Berkas', 'url' => '/admin/documents', 'icon' => 'document', 'badge' => 'documents', 'active' => request()->is('admin/documents*')],
                     ['label' => 'Verifikasi Pembayaran', 'url' => '/admin/payments', 'icon' => 'card', 'badge' => 'payments', 'active' => request()->is('admin/payments*')],
-                    ['label' => 'Seleksi', 'url' => '/admin/selections', 'icon' => 'check', 'active' => request()->is('admin/selections*')],
+                    [
+                        'label' => 'Seleksi',
+                        'icon' => 'check',
+                        'spmb' => true,
+                        'active' => request()->is('admin/selections*', 'admin/seleksi*'),
+                        'children' => [
+                            ['label' => 'Jadwal Tes', 'url' => route('admin.spmb.schedules.index'), 'spmb' => true, 'admin_only' => true, 'active' => request()->routeIs('admin.spmb.schedules.*')],
+                            ['label' => 'PIC Tes', 'url' => route('admin.spmb.pics.index'), 'spmb' => true, 'admin_only' => true, 'active' => request()->routeIs('admin.spmb.pics.*')],
+                            ['label' => 'Nomor Peserta', 'url' => route('admin.spmb.numbers.index'), 'spmb' => true, 'active' => request()->routeIs('admin.spmb.numbers.*')],
+                            ['label' => 'Kelompok Tes', 'url' => route('admin.spmb.groups.index'), 'spmb' => true, 'active' => request()->routeIs('admin.spmb.groups.*')],
+                            ['label' => 'Cetak Dokumen Tes', 'url' => route('admin.spmb.prints.index'), 'spmb' => true, 'active' => request()->routeIs('admin.spmb.prints.*')],
+                            ['label' => 'Penetapan Hasil', 'url' => route('admin.selections.index'), 'spmb' => true, 'active' => request()->is('admin/selections*')],
+                        ],
+                    ],
                     [
                         'label' => 'Kelulusan',
                         'icon' => 'cap',
@@ -92,11 +110,15 @@
                 ],
             ];
 
-            // Operator PMB tidak melihat menu khusus Admin PMB.
+            // Operator PMB tidak melihat menu khusus Admin PMB; Ketua SPMB hanya melihat menu bertanda spmb.
+            $visible = fn ($menu) => $isSelectionChair
+                ? ! empty($menu['spmb'])
+                : empty($menu['admin_only']) || $adminUser?->isAdmin();
+
             $menuGroups = collect($menuGroups)
-                ->map(fn ($menus) => array_values(array_filter($menus, fn ($menu) => empty($menu['admin_only']) || $adminUser?->isAdmin())))
+                ->map(fn ($menus) => array_values(array_filter($menus, $visible)))
                 ->map(fn ($menus) => array_map(fn ($menu) => isset($menu['children'])
-                    ? ['children' => array_values(array_filter($menu['children'], fn ($child) => empty($child['admin_only']) || $adminUser?->isAdmin()))] + $menu
+                    ? ['children' => array_values(array_filter($menu['children'], $visible))] + $menu
                     : $menu, $menus))
                 ->filter()
                 ->all();
@@ -297,6 +319,7 @@
                     </div>
 
                     {{-- Pencarian cepat camaba --}}
+                    @unless($isSelectionChair)
                     <form action="{{ route('admin.applicants.index') }}" method="GET" role="search" class="hidden w-56 shrink xl:block 2xl:w-80">
                         <label for="admin-search" class="sr-only">Cari camaba</label>
                         <div class="relative">
@@ -310,6 +333,7 @@
                                    class="w-full rounded-lg border border-slate-200 bg-slate-50 py-2.5 pl-9 pr-3 text-sm outline-none transition placeholder:text-slate-400 focus:border-polmind-blue focus:bg-white focus:ring-4 focus:ring-blue-100">
                         </div>
                     </form>
+                    @endunless
 
                     @if(isset($adminPmbYears) && $adminPmbYears->isNotEmpty())
                         <form action="{{ route('admin.pmb-year.select') }}" method="POST" class="hidden shrink-0 md:block">
@@ -330,6 +354,7 @@
                     @endif
 
                     <div class="flex shrink-0 items-center gap-2">
+                        @unless($isSelectionChair)
                         <a href="{{ url('/admin/follow-ups') }}"
                            title="Follow Up camaba"
                            class="hidden h-10 w-10 items-center justify-center rounded-lg border border-slate-200 text-slate-500 transition hover:bg-slate-50 hover:text-slate-900 sm:flex">
@@ -370,6 +395,7 @@
                                 </button>
                             </div>
                         </div>
+                        @endunless
 
                         <div class="ml-2 hidden items-center gap-3 border-l border-slate-200 pl-4 sm:flex">
                             <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold text-slate-600">
@@ -392,7 +418,9 @@
     </div>
 
     @include('partials.file-preview-modal')
-    @include('partials.admin-notifications', ['badges' => $badges])
+    @unless($isSelectionChair)
+        @include('partials.admin-notifications', ['badges' => $badges])
+    @endunless
     @include('partials.admin-scroll-restore')
 
     @stack('scripts')

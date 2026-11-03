@@ -20,12 +20,19 @@ class User extends Authenticatable
 
     /**
      * Admin PMB mengelola semuanya. Operator PMB punya akses penuh kecuali
-     * Master Data, Tujuan Pembayaran, dan Kelola Akun.
+     * Master Data, Tujuan Pembayaran, dan Kelola Akun. Ketua SPMB (PIC tes yang
+     * ditugaskan pimpinan) hanya mengelola persiapan seleksi.
      */
     public const ROLES = [
         'admin' => 'Admin PMB',
         'operator' => 'Operator PMB',
+        'ketua_spmb' => 'Ketua SPMB',
     ];
+
+    /**
+     * Halaman yang dapat dibuka Ketua SPMB (nama route); selebihnya ditolak.
+     */
+    public const SELECTION_CHAIR_ROUTES = ['admin.spmb.*', 'admin.selections.*', 'admin.documents.file', 'admin.logout', 'admin.pmb-year.select'];
 
     /**
      * The attributes that are mass assignable.
@@ -68,6 +75,11 @@ class User extends Authenticatable
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
+    }
+
+    public function isSelectionChair(): bool
+    {
+        return $this->role === 'ketua_spmb';
     }
 
     public function getRoleLabelAttribute(): string

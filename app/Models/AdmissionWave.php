@@ -121,6 +121,11 @@ class AdmissionWave extends Model
         return $this->hasMany(SelectionSchedule::class)->orderBy('test_date')->orderBy('start_time');
     }
 
+    public function selectionGroups()
+    {
+        return $this->hasMany(SelectionGroup::class)->orderBy('sort_order')->orderBy('id');
+    }
+
     public function applicants()
     {
         return $this->hasMany(Applicant::class);

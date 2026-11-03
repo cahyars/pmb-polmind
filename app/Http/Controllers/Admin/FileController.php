@@ -14,6 +14,9 @@ class FileController extends Controller
 {
     public function document(ApplicantDocument $document)
     {
+        // Ketua SPMB hanya perlu pas foto untuk mengenali peserta di Penetapan Hasil.
+        abort_if(auth('web')->user()?->isSelectionChair() && $document->documentType?->code !== 'PAS_FOTO', 403);
+
         return $this->stream($document->file_path);
     }
 

@@ -86,30 +86,64 @@ class SelectionNumberTest extends TestCase
         $this->assertNull(Applicant::withTrashed()->find($c->id)->selection_sequence);
     }
 
-    public function test_admin_manages_numbers_in_master_data(): void
+    public function test_partner_applicants_get_a_separate_range_numbered_last(): void
+    {
+        [$a, $b, $c] = $this->registerThree();
+        $b->update(['payment_status' => 'valid']);
+        $b->education->update(['school_name' => 'SMKS MITRA INDUSTRI MM2100']);
+
+        $this->assertSame(2, SelectionNumber::assignMissing($this->wave));
+        $this->assertSame(['1.001', null, '1.002'], [$a->fresh()->selection_number, $b->fresh()->selection_number, $c->fresh()->selection_number]);
+        $this->assertSame(101, SelectionNumber::partnerStart($this->wave));
+
+        $this->assertSame(1, SelectionNumber::assignMissing($this->wave, partner: true));
+        $this->assertSame('1.101', $b->fresh()->selection_number);
+
+        // Pendaftar umum baru tetap melanjutkan nomor umum.
+        $this->travelTo(Carbon::parse('2026-11-05 09:00'));
+        $d = $this->registerApplicant(['email' => 'd@example.com', 'full_name' => 'Camaba d']);
+        $this->travelBack();
+        $d->update(['payment_status' => 'valid']);
+        SelectionNumber::assignMissing($this->wave);
+        $this->assertSame('1.003', $d->fresh()->selection_number);
+
+        // Nomor mulai mitra yang menimpa nomor umum ditolak.
+        $admin = User::factory()->create();
+        $this->actingAs($admin, 'web')
+            ->post(route('admin.spmb.numbers.renumber', $this->wave), ['jenis' => 'mitra', 'mulai' => 2])
+            ->assertSessionHasErrors('mulai');
+        $this->actingAs($admin, 'web')
+            ->post(route('admin.spmb.numbers.renumber', $this->wave), ['jenis' => 'mitra', 'mulai' => 201])
+            ->assertSessionHas('success', 'Nomor peserta mitra Gelombang 1 disusun ulang: 1 peserta, mulai 1.201.');
+        $this->assertSame('1.201', $b->fresh()->selection_number);
+        $this->assertSame('1.003', $d->fresh()->selection_number);
+    }
+
+    public function test_numbers_are_managed_in_selection_menu(): void
     {
         [$a, , $c] = $this->registerThree();
         $admin = User::factory()->create();
 
         $this->actingAs($admin, 'web')
-            ->get(route('admin.master-data.show', ['nomor-peserta', 'gelombang' => $this->wave->id]))
+            ->get(route('admin.spmb.numbers.index', ['gelombang' => $this->wave->id]))
             ->assertOk()
             ->assertSee('Nomor Peserta Seleksi')
             ->assertSee('1.001')
             ->assertSee('Beri Nomor (2)');
 
         $this->actingAs($admin, 'web')
-            ->post(route('admin.master-data.selection-numbers.assign', $this->wave))
-            ->assertRedirect(route('admin.master-data.show', ['nomor-peserta', 'gelombang' => $this->wave->id]))
-            ->assertSessionHas('success', '2 camaba Gelombang 1 mendapat nomor peserta baru.');
+            ->post(route('admin.spmb.numbers.assign', $this->wave))
+            ->assertRedirect(route('admin.spmb.numbers.index', ['gelombang' => $this->wave->id]))
+            ->assertSessionHas('success', '2 pendaftar umum Gelombang 1 mendapat nomor peserta baru.');
 
         $this->actingAs($admin, 'web')
-            ->post(route('admin.master-data.selection-numbers.renumber', $this->wave))
+            ->post(route('admin.spmb.numbers.renumber', $this->wave))
             ->assertSessionHas('success');
         $this->assertSame(['1.001', '1.002'], [$a->fresh()->selection_number, $c->fresh()->selection_number]);
 
-        $operator = User::factory()->operator()->create();
-        $this->actingAs($operator, 'web')->post(route('admin.master-data.selection-numbers.assign', $this->wave))->assertForbidden();
+        // Ketua SPMB yang ditugaskan juga mengelola nomor peserta.
+        $chair = User::factory()->selectionChair()->create();
+        $this->actingAs($chair, 'web')->post(route('admin.spmb.numbers.assign', $this->wave))->assertSessionHas('success');
     }
 
     public function test_selection_cards_print_numbered_applicants(): void
@@ -120,27 +154,27 @@ class SelectionNumberTest extends TestCase
 
         $this->actingAs($operator, 'web')
             ->get(route('admin.selections.index'))
-            ->assertSee(route('admin.selections.cards'))
+            ->assertSee(route('admin.spmb.prints.cards'))
             ->assertSee('No. Peserta');
 
         $this->actingAs($operator, 'web')
-            ->get(route('admin.selections.cards', ['wave' => $this->wave->id]))
+            ->get(route('admin.spmb.prints.cards', ['gelombang' => $this->wave->id]))
             ->assertOk()
             ->assertSee('KARTU PESERTA SELEKSI')
             ->assertSee('TAHUN AKADEMIK 2027/2028')
             ->assertSeeInOrder(['CAMABA A', '1.001', 'D4 - Teknologi Rekayasa Perangkat Lunak', 'TPA dan TMB', 'Tes Fisik', 'Interview', 'MCU', 'CAMABA C', '1.002'])
             ->assertDontSee('CAMABA B')
-            ->assertSee('2 kartu · 1 lembar A4');
+            ->assertSee('2 kartu peserta · 1 lembar A4');
 
         $this->actingAs($operator, 'web')
-            ->get(route('admin.selections.cards', ['wave' => $this->wave->id, 'from' => 2]))
+            ->get(route('admin.spmb.prints.cards', ['gelombang' => $this->wave->id, 'from' => 2]))
             ->assertDontSee('CAMABA A')
             ->assertSee('CAMABA C');
 
         // Belum bernomor: diberi tahu, tanpa kartu.
         $b->update(['payment_status' => 'valid']);
         $this->actingAs($operator, 'web')
-            ->get(route('admin.selections.cards', ['wave' => $this->wave->id]))
+            ->get(route('admin.spmb.prints.cards', ['gelombang' => $this->wave->id]))
             ->assertSee('1 camaba sudah bayar tetapi belum bernomor');
     }
 }

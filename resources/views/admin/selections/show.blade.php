@@ -101,10 +101,12 @@
                         <p class="mt-2 text-sm text-blue-100">
                             {{ $applicant->education?->school_name ?? '-' }} · {{ $applicant->registration_path_label }}{{ $applicant->achievementLevel ? ' (' . $applicant->achievementLevel->name . ')' : '' }} · {{ $applicant->admissionWave?->name ?? '-' }}
                         </p>
-                        <a href="{{ route('admin.applicants.show', $applicant->registration_number) }}"
-                           class="mt-3 inline-flex text-xs font-semibold text-white underline underline-offset-4 hover:text-blue-100">
-                            Lihat data lengkap camaba
-                        </a>
+                        @unless(auth('web')->user()?->isSelectionChair())
+                            <a href="{{ route('admin.applicants.show', $applicant->registration_number) }}"
+                               class="mt-3 inline-flex text-xs font-semibold text-white underline underline-offset-4 hover:text-blue-100">
+                                Lihat data lengkap camaba
+                            </a>
+                        @endunless
                     </div>
                 </div>
             </div>
