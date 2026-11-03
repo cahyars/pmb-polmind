@@ -13,8 +13,8 @@ use Illuminate\Support\Collection;
 /**
  * Rekap harian pendaftaran untuk dikirim ke grup WhatsApp pimpinan, mengikuti template PMB.
  * Pendaftar resmi = semua yang sudah registrasi (sudah bayar formulir atau belum).
- * Hari rekap ditutup pukul 18.00 WIB: pertambahan hari H dihitung dari H-1 18.00 sampai
- * H 18.00, sehingga pendaftar malam hari masuk laporan sore keesokan harinya.
+ * Hari rekap ditutup pukul 16.30 WIB: pertambahan hari H dihitung dari H-1 16.31 sampai
+ * H 16.30, sehingga pendaftar setelah laporan sore dikirim masuk laporan keesokan harinya.
  */
 class DailyRecap
 {
@@ -29,7 +29,12 @@ class DailyRecap
      */
     public const PARTNER_KEYWORD = 'MITRA INDUSTRI';
 
-    public const CUTOFF_HOUR = 18;
+    /**
+     * Pendaftar mulai pukul 16.31 WIB masuk rekap besok.
+     */
+    public const CUTOFF_HOUR = 16;
+
+    public const CUTOFF_MINUTE = 31;
 
     private const SCHOOL_TYPE_ORDER = ['SMA', 'SMK', 'MA', 'MAK', 'Paket C', 'Lainnya'];
 
@@ -107,19 +112,27 @@ class DailyRecap
      * @return Collection<int, Applicant>
      */
     /**
-     * Awal pertambahan hari H: H-1 pukul 18.00 WIB.
+     * Batas tutup rekap pada tanggal tersebut (eksklusif): pukul 16.31 WIB.
      */
-    public function windowStart(): Carbon
+    public static function cutoff(Carbon $date): Carbon
     {
-        return $this->date->copy()->subDay()->setTime(self::CUTOFF_HOUR, 0);
+        return $date->copy()->setTime(self::CUTOFF_HOUR, self::CUTOFF_MINUTE);
     }
 
     /**
-     * Batas rekap hari H: H pukul 18.00 WIB (pendaftar setelahnya masuk rekap besok).
+     * Awal pertambahan hari H: H-1 pukul 16.31 WIB.
+     */
+    public function windowStart(): Carbon
+    {
+        return self::cutoff($this->date->copy()->subDay());
+    }
+
+    /**
+     * Batas rekap hari H (eksklusif): H pukul 16.31 WIB, pendaftar sejak itu masuk rekap besok.
      */
     public function windowEnd(): Carbon
     {
-        return $this->date->copy()->setTime(self::CUTOFF_HOUR, 0);
+        return self::cutoff($this->date);
     }
 
     /**

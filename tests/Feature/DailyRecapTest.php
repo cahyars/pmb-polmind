@@ -48,22 +48,22 @@ class DailyRecapTest extends TestCase
 
     private int $counter = 0;
 
-    public function test_recap_counts_registrants_with_six_pm_daily_cutoff(): void
+    public function test_recap_counts_registrants_with_afternoon_daily_cutoff(): void
     {
         // 10 pendaftar lama.
         foreach (range(1, 10) as $i) {
             $this->registerAt('2027-04-20 10:00');
         }
 
-        // 5 pendaftar masuk rekap 28 April: 27 April 18.00 s.d. 28 April 18.00 WIB, bayar atau belum.
-        $this->registerAt('2027-04-27 19:00', ['source_information' => 'Instagram'], ['school_type' => 'SMA', 'school_status' => 'Negeri', 'graduation_year' => 2026]);
+        // 5 pendaftar masuk rekap 28 April: 27 April 16.31 s.d. 28 April 16.30 WIB, bayar atau belum.
+        $this->registerAt('2027-04-27 16:31', ['source_information' => 'Instagram'], ['school_type' => 'SMA', 'school_status' => 'Negeri', 'graduation_year' => 2026]);
         $this->registerAt('2027-04-27 23:30');
         $this->registerAt('2027-04-28 08:00', [], [], ['payment_status' => 'valid']);
         $this->registerAt('2027-04-28 12:00', [], [], ['registered_via' => 'kampus']);
         $this->registerAt('2027-04-28 16:00');
 
-        // Pendaftar 27 April sore (sebelum 18.00) sudah masuk rekap 27 April.
-        $this->registerAt('2027-04-27 17:59');
+        // Pendaftar 27 April pukul 16.30 sudah masuk rekap 27 April.
+        $this->registerAt('2027-04-27 16:30:59');
 
         $this->travelTo(Carbon::parse('2027-04-28 16:30'));
         $wave = AdmissionWave::where('code', 'GEL1')->first();
@@ -97,7 +97,7 @@ class DailyRecapTest extends TestCase
         // Camaba lama yang mendaftar sebelum tahun lulus wajib di form registrasi.
         $this->registerAt('2027-04-10 13:00', [], ['school_type' => 'MA', 'school_status' => 'Swasta', 'graduation_year' => null]);
 
-        // Setelah 18.00 masuk rekap besok.
+        // Setelah 16.30 masuk rekap besok.
         $this->registerAt('2027-04-10 18:30', [], ['school_type' => 'SMA']);
 
         $this->travelTo(Carbon::parse('2027-04-10 18:45'));
@@ -156,7 +156,7 @@ class DailyRecapTest extends TestCase
             ->assertOk()
             ->assertSee('hasil rekap Pendaftaran PMB 2027 *Gelombang 1*', false)
             ->assertSee('sebanyak *1 pendaftar*', false)
-            ->assertSee('09/04/2027 18.00 s.d. 10/04/2027 18.00 WIB')
+            ->assertSee('09/04/2027 16.31 s.d. 10/04/2027 16.30 WIB')
             ->assertSee('https://wa.me/?text=', false)
             ->assertSee('Salin Teks');
 

@@ -53,7 +53,7 @@
             </div>
         </div>
         <p class="mt-3 text-xs leading-5 text-slate-500">
-            Satu baris = satu hari rekap yang ditutup pukul 18.00 WIB, sama dengan Rekap Harian WhatsApp. Baris Jumlah dan Total tetap akumulasi sejak awal gelombang.
+            Satu baris = satu hari rekap yang ditutup pukul 16.30 WIB, sama dengan Rekap Harian WhatsApp. Baris Jumlah dan Total tetap akumulasi sejak awal gelombang.
             Mitra Industri / Afiliasi = pendaftar lulusan SMK Mitra Industri, gratis sehingga hanya dicatat jumlahnya.
             Total Uang hanya dari pendaftar umum yang pembayaran formulirnya sudah valid.
         </p>

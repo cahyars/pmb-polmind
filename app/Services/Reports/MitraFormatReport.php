@@ -13,7 +13,7 @@ use Illuminate\Support\Collection;
  * Report Format Mitra: tiga sheet laporan sore (docs/report pmb.xlsx) yang dulu diisi manual,
  * yaitu Rekap Akumulasi Pembayaran Registrasi, Data Pengisian Formulir, dan grafiknya.
  *
- * Satu baris = satu hari rekap per gelombang, ditutup pukul 18.00 WIB seperti Rekap Harian
+ * Satu baris = satu hari rekap per gelombang, ditutup pukul 16.30 WIB seperti Rekap Harian
  * WhatsApp (DailyRecap), jadi angkanya sama dengan teks yang dikirim bersamaan.
  * Baris yang ditampilkan default minggu berjalan (Minggu - Sabtu); baris Jumlah/Total tetap
  * akumulasi sejak awal gelombang, sama seperti tangkapan layar spreadsheet yang dipotong.
@@ -28,14 +28,14 @@ class MitraFormatReport
         $applicants = Applicant::query()
             ->with(['education', 'registrationInvoice.payments'])
             ->where('admission_wave_id', $wave->id)
-            ->where('created_at', '<', $date->copy()->setTime(DailyRecap::CUTOFF_HOUR, 0))
+            ->where('created_at', '<', DailyRecap::cutoff($date))
             ->get();
 
-        // Pendaftar malam (>= 18.00) masuk hari berikutnya; pendaftar sebelum gelombang dibuka masuk hari pertama.
+        // Pendaftar sore/malam (>= 16.31) masuk hari berikutnya; pendaftar sebelum gelombang dibuka masuk hari pertama.
         $dayOf = function (Applicant $applicant) use ($firstDay): string {
             $day = $applicant->created_at->copy();
 
-            if ($day->hour >= DailyRecap::CUTOFF_HOUR) {
+            if ($day->gte(DailyRecap::cutoff($day))) {
                 $day->addDay();
             }
 

@@ -44,7 +44,7 @@ class MitraFormatReportTest extends TestCase
         return $this->registerApplicant($overrides);
     }
 
-    public function test_report_rows_follow_18_oclock_cutoff_week_and_partner_school(): void
+    public function test_report_rows_follow_afternoon_cutoff_week_and_partner_school(): void
     {
         // Mendaftar sebelum gelombang dibuka: masuk baris hari pertama.
         $early = $this->registerAt('2026-10-10 09:00', ['email' => 'early@example.com']);
@@ -81,8 +81,8 @@ class MitraFormatReportTest extends TestCase
         ]);
         $offline->update(['registered_via' => 'kampus']);
 
-        // Setelah 18.00 hari H: masuk rekap besok, tidak dihitung.
-        $this->registerAt('2026-10-29 18:30', ['email' => 'besok@example.com']);
+        // Setelah 16.30 hari H: masuk rekap besok, tidak dihitung.
+        $this->registerAt('2026-10-29 16:31', ['email' => 'besok@example.com']);
 
         $this->travelTo(Carbon::parse('2026-10-29 18:45'));
         $admin = User::factory()->create();
